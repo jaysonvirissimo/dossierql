@@ -1,7 +1,7 @@
 # WhereQL — Software Design Document
 
 **Status:** Draft
-**Version:** 0.3
+**Version:** 0.4
 **Last updated:** November 20, 2026
 
 ## 1. Introduction and Overview
@@ -42,6 +42,8 @@ At least initially, the project will not require:
 - Sophisticated procedural mystery generation. Seeded variants of hand-authored missions (Section 3.12) are a much smaller feature and are in scope after the MVP.
 - Comprehensive coverage of every GraphQL feature. Subscriptions and schema authoring are out of scope.
 - Combat, action sequences, or complex character movement.
+- Real-time pressure. The mission clock counts game hours, and nothing in the game is timed against a real clock.
+- Telemetry or analytics.
 
 ## 2. Creative Direction and Narrative Design
 
@@ -120,9 +122,12 @@ Each mission has a budget of hours. Actions spend it.
 | Transmission (one executed query or mutation) | 1 hour |
 | Travel | Several hours, depending on distance |
 | Hint | 1 to 8 hours, rising with each step of the hint ladder |
+| Solution reveal | More than all the hints together |
 | Rejected warrant or wrong destination | Several hours |
 
 The clock exists to teach GraphQL's central idea. One nested query costs the same as one flat query, so a player who asks for everything they need in a single transmission is rewarded.
+
+The clock counts game hours only. The player may take as long as they like over any decision, and the cost of an action is shown before the player commits to it.
 
 The clock must not discourage experimentation:
 
@@ -170,7 +175,12 @@ Concepts are introduced in a fixed order. Each is tied to a clearance level and 
 | 9 | Directives | Request costly detail only when a standing query needs it | Later |
 | 10 | Mutations | File travel orders and warrants through the terminal | Later |
 
-Each mission declares the concept it teaches and the concepts it requires. A mission may only require concepts taught at or below its clearance level, and later missions should reuse earlier concepts so that they are practised more than once.
+Each mission declares the concept it teaches, the concepts it practises, and the concepts it requires. The course as a whole follows four rules:
+
+- A mission teaches at most one new concept. If two concepts will not separate, a mission is missing.
+- A mission may only require concepts taught at or below its clearance level.
+- Every concept is practised in at least one mission after the one that teaches it.
+- Each clearance level ends with an **assessment mission**. It teaches nothing new, has no scaffold, and combines the concepts learned so far.
 
 The curriculum governs what is taught and what a mission needs. It does not restrict what the terminal accepts: any valid GraphQL that the player's schema supports will execute at any time.
 
@@ -178,7 +188,7 @@ Wherever possible, a mission should teach through its situation and the clock ra
 
 ### 3.8 Clearance and Progression
 
-Clearance is the player's rank. It rises when the player completes a mission that teaches a new concept.
+Clearance is the player's rank. It rises when the player completes the assessment mission of their current level.
 
 Clearance controls two things:
 
@@ -197,6 +207,8 @@ Each stage declares a scaffold level:
 - **Partial:** The editor opens with the outer structure only.
 - **None:** The editor opens blank.
 
+Assessment missions always use the last of these.
+
 Hints follow a four-step ladder. Each step costs more time than the last.
 
 1. **Nudge:** Restates what the player is looking for.
@@ -204,7 +216,15 @@ Hints follow a four-step ladder. Each step costs more time than the last.
 3. **Schema pointer:** Names the relevant types and fields.
 4. **Skeleton:** Shows the shape of a working query.
 
-The interface should make GraphQL errors understandable. The original error is always shown unaltered, and the records clerk adds a plain-language annotation beneath it.
+Beyond the ladder there is a **solution reveal**, which shows the stage's reference solution. It is named as such and is never presented as one more hint.
+
+The player should always know what help costs. Each hint is labelled with its position and purpose, such as "Hint 2 of 4: names the concept", and the price of the ladder and of the solution reveal is stated before the first hint is taken.
+
+Hints carry technique, not reference material. Anything the player needs in order to reason, such as the schema documentation and the meaning of a term, is free and always available.
+
+Each completed mission records a **completion mode**: independent, hinted, or solution-revealed. All three count toward promotion, so no player is ever stuck. The mission list shows the mode honestly, and the player can investigate again to earn an independent result.
+
+The interface should make GraphQL errors understandable. The original error is always shown unaltered, and the records clerk adds a plain-language annotation beneath it. An annotation says where to look and is worded as a suggestion. It never contains the text to type. Errors are a routine part of the work and should not be presented as failures.
 
 ### 3.10 Debrief
 
@@ -213,7 +233,9 @@ Every mission ends with a debrief containing:
 - The narrative outcome.
 - The player's transmissions beside the mission's reference solution, with a note on the difference where it is instructive, such as several transmissions that could have been one.
 - The real geographical fact the mission turned on.
-- A concept card for the tradecraft manual, the player's growing reference of GraphQL concepts learned.
+- A concept card for the tradecraft manual.
+
+The tradecraft manual has two parts. Its glossary defines every term the game uses and is available from the start, because a definition is reference material. Its concept cards are earned, one per concept, and summarize what the player has learned to do.
 
 ### 3.11 Katas
 
@@ -226,6 +248,12 @@ Katas are the only place where the game inspects the structure of a query, for e
 After the MVP, a mission may define a pool of variants, such as different culprits, routes, and shipments. The game selects one by seed when the mission starts.
 
 Every variant is authored and validated in advance. This gives replay value and makes answers harder to share without requiring procedural generation.
+
+### 3.13 Orientation
+
+An optional orientation is offered before the first mission. It explains what the terminal is, how to read a result, what a transmission costs, and where the schema documentation and glossary are.
+
+The orientation is never required and can be reopened at any time. It exists so that the first mission can teach GraphQL without also having to teach the interface.
 
 ## 4. System Architecture
 
@@ -266,10 +294,16 @@ The GraphQL engine should know nothing about missions, so the same schema can su
 | Mission definitions | YAML |
 | Content validation | Zod or JSON Schema |
 | Geographical data | Static JSON |
-| Progress storage | localStorage or IndexedDB |
+| Progress storage | localStorage or IndexedDB, behind a single adapter |
+| Routing | Hash routes with a relative base path |
 | Hosting | GitHub Pages |
 
 These are initial preferences, not final implementation decisions.
+
+Two constraints follow from static hosting and should be designed in from the start:
+
+- **Linkable state.** Each mission, manual entry, and screen has its own route, so a reload returns the player to where they were and a link can point at a specific mission.
+- **Bundle size.** The editor, the GraphQL tooling, and the world data are loaded on demand. The size of the initial bundle is a budget checked in continuous integration, so that a size warning never becomes a standing one.
 
 ## 5. Data Design
 
@@ -385,7 +419,7 @@ Missions should be declarative and stored as human-readable YAML files in versio
 
 Each mission contains one or more stages. A stage represents an investigation objective, usually associated with a location.
 
-A mission declares what it teaches, what it requires, and its time budget. A stage declares its clues, scaffold, hint ladder, accepted solution with the evidence that must support it, dead ends, and a reference solution.
+A mission declares what it teaches, what it practises, what it requires, and its time budget. An assessment mission teaches nothing and lists the concepts it combines under `practises`. A stage declares its clues, scaffold, hint ladder, accepted solution with the evidence that must support it, dead ends, and a reference solution.
 
 Illustrative structure:
 
@@ -394,6 +428,7 @@ Illustrative structure:
     campaign: shadow-network
     clearance: 1
     teaches: nested-selections
+    practises: []
     requires: []
     clock:
       budgetHours: 48
@@ -503,7 +538,26 @@ A build-time validation process should check:
 - **Evidence:** Every piece of required evidence can be retrieved through the schema available at the mission's clearance.
 - **Solvability:** The reference solution executes without error, yields the required evidence, and fits within the mission clock with a margin.
 - **Curriculum order:** A mission requires only concepts taught at or below its clearance, and its reference solution uses the concept it claims to teach.
+- **Course shape:** The rules of Section 3.7 hold. Every taught concept is practised later, every clearance level ends with an assessment mission, and every mission file in the content directory is part of the course.
+- **Starter queries:** A stage's starter query does not, unchanged, yield the required evidence.
+- **Hints:** Every stage has the complete hint ladder, and each schema pointer names types and fields that exist at the mission's clearance.
+- **Terms:** GraphQL terms used in mission text are glossary entries, and are introduced at or below the mission's clearance.
+- **Text references:** Entity names and identifiers quoted in mission text exist in the data.
 - **Variants:** Where a mission defines variants, every variant passes all of the checks above.
+
+Every check is an error that fails the build. A check that only prints a warning will eventually be ignored.
+
+### 5.6 Authoring Rules
+
+Validation cannot catch everything, so mission authors also follow these rules.
+
+- **State the objective, not the method.** An objective says what to find. It never says which query to write or which GraphQL feature to use. Technique belongs in the hints, where the player chooses to see it.
+- **Run the queries before writing the text.** Briefings, clues, hints, and dead ends must describe what the engine actually returns. Text written from expectation is the most common source of broken missions.
+- **Introduce a term before using it.** Otherwise link its glossary entry.
+- **Say what to change.** A starter query marks the part the player is meant to complete.
+- **Write for an intelligent player.** Copy is short and concrete. The cast may be dry, but there is no tutorial chatter and no motivational filler.
+
+Missions are discovered from the content directory. There is no separate list of missions to keep in step with the files.
 
 ## 6. Interface Design
 
@@ -563,16 +617,21 @@ The system should make it practical to add new missions without implementing new
 
 ### 7.4 Progress System
 
-Responsible for recording clearance, concepts learned, completed missions, investigations in progress, and the contents of the tradecraft manual.
+Responsible for recording completed missions and their completion modes, investigations in progress, the editor's contents for each stage, and the player's preferences.
 
-Persistence should work without registration or a network connection.
+Persistence should work without registration or a network connection. The following rules keep saved progress trustworthy as the game changes:
+
+- All storage access goes through one adapter. If storage is unavailable, the game remains playable and simply does not remember.
+- Saved data carries a format version. An investigation in progress also records the version of its mission's content. If the mission has since changed, the investigation restarts instead of loading state that no longer fits.
+- The system stores what happened, such as which missions were completed and how. Clearance, concepts learned, and the earned concept cards are derived from that record, so a change to the curriculum needs no migration.
+- Preferences are global and stored apart from progress. Resetting progress keeps preferences and asks for confirmation first.
 
 ### 7.5 Feedback System
 
 Responsible for everything the game says about the player's GraphQL:
 
 - Annotating validation and execution errors in the records clerk's voice.
-- Serving the hint ladder and charging its cost.
+- Serving the hint ladder and the solution reveal, stating their cost in advance, and charging it.
 - Assembling the debrief, including the comparison with the reference solution.
 
 ## 8. User Interface Design
@@ -591,13 +650,23 @@ Potential visual elements include:
 
 The actual GraphQL editor should prioritize modern usability, readability, and accessibility over strict historical authenticity.
 
-Visual embellishments should support immersion without obstructing query composition or investigation.
+Visual embellishments should support immersion without obstructing query composition or investigation. In practice:
+
+- The interface is mostly a working tool and partly atmosphere. The editor and results take precedence over decoration, and query text is never smaller or fainter than the prose around it.
+- Display typefaces are for headings and short labels. Body text and code use plain, legible faces.
+- Hints, the manual, and other help open beside the editor and results and never cover them.
+- Status is never shown by color alone, and each color has one meaning.
+- No information needed to solve a mission exists only on the map or in decoration.
+- The whole game can be played from the keyboard, and motion respects the reduced-motion preference.
+- The layout remains usable in a window 1024 pixels wide.
 
 ### 8.2 Primary Screens
 
 The screens support the gameplay loop described in Section 3.1.
 
-**Mission Selection:** Available assignments, the clearance each requires, the concept each teaches, and campaign progress.
+**Orientation:** The optional introduction to the terminal and its tools (Section 3.13).
+
+**Mission Selection:** Available assignments, the clearance each requires, the concept each teaches, the completion mode of those already finished, and campaign progress.
 
 **Mission Briefing:** Classified narrative introduction, objectives, and initial intelligence.
 
@@ -611,7 +680,7 @@ The screens support the gameplay loop described in Section 3.1.
 
 **Debrief:** Displays the outcome, the comparison with the reference solution, the geographical fact, and the new concept card.
 
-**Tradecraft Manual:** The concept cards the player has earned, available for reference at any time.
+**Tradecraft Manual:** The glossary and the concept cards the player has earned, available for reference at any time.
 
 **Training Range:** Optional katas.
 
@@ -625,6 +694,7 @@ The screens support the gameplay loop described in Section 3.1.
 - Because game logic and answers reside client-side, determined players can inspect them. Preventing cheating is not a primary objective. The evidence requirement is a learning aid, not a security measure.
 - Present-day geography in a period-styled setting is intentional (Section 2.1).
 - Accessibility and keyboard navigation should be considered throughout development.
+- Agent-run playtests (Section 10.1) have limits. An agent that solves a mission shows that the material on screen is sufficient. It does not show that a beginner will find it, or how long that takes.
 - Fictional intelligence content should remain sufficiently distinct from existing protected characters, organizations, and stories.
 
 ## 10. Testing Strategy
@@ -635,22 +705,35 @@ Suggested coverage:
 
 - **Unit tests:** GraphQL resolvers, mission transitions, evidence recording, clock accounting, and evaluation of deductions and warrants.
 - **Schema tests:** Each clearance level exposes exactly its intended types and fields, including through introspection. Classified records return partial data with errors.
-- **Content tests:** The validation checks of Section 5.5, run against every mission.
+- **Content tests:** The validation checks of Section 5.5, run against every mission. These recompute what a mission asserts from the data and do not trust the authored answer.
 - **Integration tests:** Execute representative GraphQL operations against actual game data.
-- **End-to-end tests:** Complete an investigation through the browser UI.
+- **Persistence tests:** Saved data from an older format version, a changed mission, and unavailable storage are each handled as Section 7.4 describes.
+- **End-to-end tests:** Complete an investigation through the browser UI. At least one test submits a wrong deduction, corrects it, completes the mission, reloads the page, and confirms that the progress survived.
 
 Every authored mission must include a reference solution. Continuous integration plays each mission using its reference solution and fails if the mission cannot be completed within its clock.
+
+The test suite gates deployment. A build that fails any test or validation check is not published.
+
+### 10.1 Playtesting
+
+Automated tests show that a mission can be solved. They do not show that it teaches. Before a mission ships, two reviews are run by browser agents, so that neither depends on finding a human tester.
+
+- **Clean-room solve:** An agent that can only operate the page, starting from a verified empty save, solves the mission without taking a hint. For each step it lists the on-screen material that justified it. This answers one question: can the mission be solved from what the game shows?
+- **Novice walkthrough:** An agent plays in the persona of the audience described in Section 1.2. It records numbered points of confusion, each with where it happened and what would have helped, and reports where it stopped understanding and began matching patterns. Every point is either fixed or logged with a reason, and the walkthrough is then run again.
+
+The agents are given a self-contained prompt and no knowledge of how the game is built. A reviewer who knows the answer is not a fair test of what the game teaches.
 
 ## 11. Development Milestones
 
 ### Milestone 1 — Technical Prototype
 
+- Deploy a themed placeholder page through GitHub Pages, with tests gating the deployment.
 - Render a basic GraphQL editor.
 - Execute real queries locally.
 - Load a small geographical dataset.
 - Display results and errors.
 
-**Success criterion:** A player can query geographical data without a backend.
+**Success criterion:** A player can query geographical data without a backend, on the public site.
 
 ### Milestone 2 — First Playable Mission
 
@@ -661,20 +744,21 @@ Every authored mission must include a reference solution. Continuous integration
 - Implement the mission clock, destination selection, dead ends, and completion.
 - Validate uniqueness and run the mission's reference solution in tests.
 - Introduce an intelligence briefing and basic dossier interface.
-- Persist basic progress.
+- Persist basic progress in versioned saves.
+- Add the end-to-end test that fails a deduction, corrects it, and reloads.
 
 **Success criterion:** A player can solve a complete international mystery, and can only do so by using GraphQL.
 
 ### Milestone 3 — Educational MVP
 
-- Author missions covering clearance levels 1 through 5, from nested selections to variables.
+- Author teaching and assessment missions covering clearance levels 1 through 5, from nested selections to variables.
 - Implement clearance, promotion, and clearance-scoped schemas.
-- Add schema documentation, scaffolded starter queries, the hint ladder, and error annotations.
-- Add the debrief and the tradecraft manual.
+- Add schema documentation, scaffolded starter queries, the hint ladder, the solution reveal, and error annotations.
+- Add the orientation, the debrief, and the tradecraft manual with its glossary.
 - Incorporate a world map and Cold War–inspired visual design.
 - Introduce the recurring cast and a simple campaign.
-- Run the full set of content validation checks automatically.
-- Deploy publicly through GitHub Pages.
+- Run the full set of content validation checks automatically, including course shape.
+- Run the clean-room solve and the novice walkthrough on every mission, and act on what they find.
 
 **Success criterion:** A beginner can learn several fundamental GraphQL concepts through an engaging, self-directed espionage adventure.
 
@@ -698,6 +782,8 @@ The following decisions are intentionally deferred:
 5. **Narrative format:** Should missions use YAML exclusively, or combine YAML with Markdown?
 6. **Replayability:** Beyond seeded variants, should later versions support procedurally generated investigations?
 7. **Offline support:** Is full offline functionality an MVP requirement or a later enhancement?
+8. **Skipping ahead:** Should an experienced player be able to open missions above their clearance, with a warning? Locking nothing is friendlier, but the clearance-scoped schema assumes the player has been promoted.
+9. **Save portability:** Should the player be able to export and import their progress?
 
 ## 13. Glossary
 
@@ -731,11 +817,21 @@ The following decisions are intentionally deferred:
 
 **Learning Objective:** The GraphQL concept a mission is designed to teach.
 
-**Reference Solution:** An authored set of operations that solves a stage. It is used for testing, for the final hint, and for the debrief.
+**Reference Solution:** An authored set of operations that solves a stage. It is used for testing, for the solution reveal, and for the debrief.
+
+**Solution Reveal:** The step beyond the hint ladder, which shows the reference solution.
+
+**Completion Mode:** How a mission was completed: independently, with hints, or with the solution revealed.
+
+**Assessment Mission:** The mission that ends a clearance level. It teaches nothing new and combines the concepts learned so far.
+
+**Orientation:** The optional introduction to the terminal offered before the first mission.
+
+**Clean-Room Solve:** A playtest in which an agent solves a mission using only what the game shows, without hints.
 
 **Debrief:** The end-of-mission summary of the outcome and of what the player learned.
 
-**Tradecraft Manual:** The player's collection of concept cards.
+**Tradecraft Manual:** The in-game reference, made up of a glossary that is always available and the concept cards the player has earned.
 
 **GraphQL Kata:** An optional drill, outside the story, designed to develop proficiency with one piece of GraphQL syntax.
 
@@ -756,4 +852,4 @@ WhereQL is an independent project and is not affiliated with or endorsed by the 
 
 ---
 
-*This document is intended to evolve alongside the project. Architectural details, technology selections, narrative systems, and content models should be refined through working prototypes rather than finalized prematurely.*
+*This document is intended to evolve alongside the project. Architectural details, technology selections, narrative systems, and content models should be refined through working prototypes rather than finalized prematurely. When a decision changes, the document should say what replaced it and why.*
