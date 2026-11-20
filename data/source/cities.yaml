@@ -1,0 +1,113 @@
+# Cities the game knows about. Hand-maintained: append new entries here and
+# re-run `npm run world:build`; scripts/build-world.ts validates and sorts them.
+#
+#   id       lowercase kebab-case ASCII, unique
+#   name     display name
+#   country  ISO 3166-1 alpha-2 code of a country in data/world.json
+#   lat/lon  decimal degrees (north and east positive), 2 decimals
+#
+# Hong Kong is filed under CN because the dataset holds sovereign states only.
+
+# --- Europe
+- { id: lisbon, name: Lisbon, country: PT, lat: 38.72, lon: -9.14 }
+- { id: porto, name: Porto, country: PT, lat: 41.15, lon: -8.61 }
+- { id: marseille, name: Marseille, country: FR, lat: 43.30, lon: 5.37 }
+- { id: genoa, name: Genoa, country: IT, lat: 44.41, lon: 8.93 }
+- { id: trieste, name: Trieste, country: IT, lat: 45.65, lon: 13.78 }
+- { id: hamburg, name: Hamburg, country: DE, lat: 53.55, lon: 9.99 }
+- { id: rotterdam, name: Rotterdam, country: NL, lat: 51.92, lon: 4.48 }
+- { id: antwerp, name: Antwerp, country: BE, lat: 51.22, lon: 4.40 }
+- { id: london, name: London, country: GB, lat: 51.51, lon: -0.13 }
+- { id: reykjavik, name: Reykjavik, country: IS, lat: 64.15, lon: -21.94 }
+- { id: oslo, name: Oslo, country: "NO", lat: 59.91, lon: 10.75 }
+- { id: gdansk, name: Gdansk, country: PL, lat: 54.35, lon: 18.65 }
+- { id: riga, name: Riga, country: LV, lat: 56.95, lon: 24.11 }
+- { id: saint-petersburg, name: Saint Petersburg, country: RU, lat: 59.94, lon: 30.31 }
+- { id: odesa, name: Odesa, country: UA, lat: 46.48, lon: 30.72 }
+- { id: piraeus, name: Piraeus, country: GR, lat: 37.94, lon: 23.65 }
+- { id: vienna, name: Vienna, country: AT, lat: 48.21, lon: 16.37 }
+- { id: zurich, name: Zurich, country: CH, lat: 47.37, lon: 8.54 }
+- { id: prague, name: Prague, country: CZ, lat: 50.08, lon: 14.44 }
+- { id: budapest, name: Budapest, country: HU, lat: 47.50, lon: 19.04 }
+
+# --- Africa
+- { id: praia, name: Praia, country: CV, lat: 14.93, lon: -23.51 }
+- { id: tangier, name: Tangier, country: MA, lat: 35.77, lon: -5.80 }
+- { id: casablanca, name: Casablanca, country: MA, lat: 33.57, lon: -7.59 }
+- { id: algiers, name: Algiers, country: DZ, lat: 36.75, lon: 3.06 }
+- { id: tunis, name: Tunis, country: TN, lat: 36.81, lon: 10.18 }
+- { id: alexandria, name: Alexandria, country: EG, lat: 31.20, lon: 29.92 }
+- { id: cairo, name: Cairo, country: EG, lat: 30.04, lon: 31.24 }
+- { id: dakar, name: Dakar, country: SN, lat: 14.72, lon: -17.47 }
+- { id: accra, name: Accra, country: GH, lat: 5.56, lon: -0.20 }
+- { id: lagos, name: Lagos, country: NG, lat: 6.45, lon: 3.39 }
+- { id: kinshasa, name: Kinshasa, country: CD, lat: -4.32, lon: 15.31 }
+- { id: luanda, name: Luanda, country: AO, lat: -8.84, lon: 13.23 }
+- { id: lobito, name: Lobito, country: AO, lat: -12.36, lon: 13.54 }
+- { id: walvis-bay, name: Walvis Bay, country: NA, lat: -22.96, lon: 14.51 }
+- { id: windhoek, name: Windhoek, country: NA, lat: -22.56, lon: 17.08 }
+- { id: cape-town, name: Cape Town, country: ZA, lat: -33.92, lon: 18.42 }
+- { id: durban, name: Durban, country: ZA, lat: -29.86, lon: 31.02 }
+- { id: maputo, name: Maputo, country: MZ, lat: -25.97, lon: 32.57 }
+- { id: dar-es-salaam, name: Dar es Salaam, country: TZ, lat: -6.79, lon: 39.21 }
+- { id: zanzibar-city, name: Zanzibar City, country: TZ, lat: -6.16, lon: 39.19 }
+- { id: mombasa, name: Mombasa, country: KE, lat: -4.04, lon: 39.67 }
+- { id: nairobi, name: Nairobi, country: KE, lat: -1.29, lon: 36.82 }
+- { id: addis-ababa, name: Addis Ababa, country: ET, lat: 9.03, lon: 38.74 }
+
+# --- Asia
+- { id: istanbul, name: Istanbul, country: TR, lat: 41.01, lon: 28.98 }
+- { id: beirut, name: Beirut, country: LB, lat: 33.89, lon: 35.50 }
+- { id: jeddah, name: Jeddah, country: SA, lat: 21.49, lon: 39.19 }
+- { id: dubai, name: Dubai, country: AE, lat: 25.20, lon: 55.27 }
+- { id: tbilisi, name: Tbilisi, country: GE, lat: 41.72, lon: 44.79 }
+- { id: tashkent, name: Tashkent, country: UZ, lat: 41.30, lon: 69.24 }
+- { id: almaty, name: Almaty, country: KZ, lat: 43.24, lon: 76.89 }
+- { id: ulaanbaatar, name: Ulaanbaatar, country: MN, lat: 47.92, lon: 106.92 }
+- { id: vladivostok, name: Vladivostok, country: RU, lat: 43.12, lon: 131.89 }
+- { id: karachi, name: Karachi, country: PK, lat: 24.86, lon: 67.01 }
+- { id: mumbai, name: Mumbai, country: IN, lat: 19.08, lon: 72.88 }
+- { id: kolkata, name: Kolkata, country: IN, lat: 22.57, lon: 88.36 }
+- { id: kathmandu, name: Kathmandu, country: NP, lat: 27.72, lon: 85.32 }
+- { id: colombo, name: Colombo, country: LK, lat: 6.93, lon: 79.86 }
+- { id: chittagong, name: Chittagong, country: BD, lat: 22.36, lon: 91.78 }
+- { id: bangkok, name: Bangkok, country: TH, lat: 13.76, lon: 100.50 }
+- { id: ho-chi-minh-city, name: Ho Chi Minh City, country: VN, lat: 10.82, lon: 106.63 }
+- { id: singapore, name: Singapore, country: SG, lat: 1.29, lon: 103.85 }
+- { id: jakarta, name: Jakarta, country: ID, lat: -6.21, lon: 106.85 }
+- { id: manila, name: Manila, country: PH, lat: 14.60, lon: 120.98 }
+- { id: hong-kong, name: Hong Kong, country: CN, lat: 22.32, lon: 114.17 }
+- { id: shanghai, name: Shanghai, country: CN, lat: 31.23, lon: 121.47 }
+- { id: busan, name: Busan, country: KR, lat: 35.18, lon: 129.08 }
+- { id: yokohama, name: Yokohama, country: JP, lat: 35.44, lon: 139.64 }
+
+# --- Oceania
+- { id: sydney, name: Sydney, country: AU, lat: -33.87, lon: 151.21 }
+- { id: perth, name: Perth, country: AU, lat: -31.95, lon: 115.86 }
+- { id: auckland, name: Auckland, country: NZ, lat: -36.85, lon: 174.76 }
+
+# --- North America
+- { id: new-york, name: New York, country: US, lat: 40.71, lon: -74.01 }
+- { id: san-francisco, name: San Francisco, country: US, lat: 37.77, lon: -122.42 }
+- { id: montreal, name: Montreal, country: CA, lat: 45.50, lon: -73.57 }
+- { id: vancouver, name: Vancouver, country: CA, lat: 49.28, lon: -123.12 }
+- { id: veracruz, name: Veracruz, country: MX, lat: 19.17, lon: -96.13 }
+- { id: havana, name: Havana, country: CU, lat: 23.11, lon: -82.37 }
+- { id: panama-city, name: Panama City, country: PA, lat: 8.98, lon: -79.52 }
+
+# --- South America
+- { id: cartagena, name: Cartagena, country: CO, lat: 10.39, lon: -75.48 }
+- { id: callao, name: Callao, country: PE, lat: -12.06, lon: -77.15 }
+- { id: valparaiso, name: Valparaíso, country: CL, lat: -33.05, lon: -71.62 }
+- { id: buenos-aires, name: Buenos Aires, country: AR, lat: -34.60, lon: -58.38 }
+- { id: montevideo, name: Montevideo, country: UY, lat: -34.90, lon: -56.16 }
+- { id: santos, name: Santos, country: BR, lat: -23.96, lon: -46.33 }
+- { id: rio-de-janeiro, name: Rio de Janeiro, country: BR, lat: -22.91, lon: -43.17 }
+
+# --- Added for missions
+- { id: abidjan, name: Abidjan, country: CI, lat: 5.36, lon: -4.01 }
+- { id: douala, name: Douala, country: CM, lat: 4.05, lon: 9.70 }
+- { id: lusaka, name: Lusaka, country: ZM, lat: -15.42, lon: 28.28 }
+- { id: moroni, name: Moroni, country: KM, lat: -11.70, lon: 43.26 }
+- { id: vaduz, name: Vaduz, country: LI, lat: 47.14, lon: 9.52 }
+- { id: southampton, name: Southampton, country: GB, lat: 50.90, lon: -1.40 }

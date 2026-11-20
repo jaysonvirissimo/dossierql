@@ -1,0 +1,94 @@
+.drill__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+}
+
+.drill__pick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  background: transparent;
+  color: var(--terminal-dim);
+  border: 1px solid var(--navy-line);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.drill__pick[aria-current] {
+  color: var(--terminal-ink);
+  border-color: var(--terminal-ink);
+}
+
+.drill__task {
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.drill__task h2 {
+  margin-bottom: var(--space-1);
+}
+
+.drill__task .prose {
+  max-width: 64ch;
+}
+
+.drill__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.drill__grid .terminal,
+.drill__grid .results {
+  min-height: 20rem;
+  max-height: 30rem;
+}
+
+.drill__verdict {
+  margin: var(--space-3) 0;
+}
+
+.drill__passed {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+}
+
+.drill__passed .stamp {
+  flex: none;
+  animation: drill-stamp 180ms ease-out;
+}
+
+.drill__next {
+  margin-top: var(--space-2);
+}
+
+.drill__docs {
+  padding: var(--space-3) var(--space-4);
+}
+
+.drill__docs > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+@keyframes drill-stamp {
+  from {
+    opacity: 0;
+    transform: rotate(-4deg) scale(1.6);
+  }
+}
+
+@media (max-width: 900px) {
+  .drill__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

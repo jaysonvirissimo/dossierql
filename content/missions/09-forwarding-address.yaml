@@ -1,0 +1,351 @@
+id: forwarding-address
+title: The Forwarding Address
+campaign: shadow-network
+order: 9
+clearance: 5
+kind: teaching
+teaches: variables
+practises: [nested-selections, arguments]
+requires: [nested-selections, arguments]
+summary: >
+  With its accounts frozen, Limmat Holdings is moving a crate from port to
+  port. You have to ask the same question in each port.
+motif: route
+clock:
+  countdown: The crate is forwarded again in {remaining}
+  expired: The crate has been forwarded again
+  onExpiry: end
+startingStage: trieste
+
+debrief:
+  onTime: |
+    The crate is traced out of Trieste, through Istanbul, and on
+    to Porto. A third note is waiting there: "Nearly home. M."
+  stampOnTime: TRACED
+  comparison: >
+    The reference solution declares a [variable](glossary:variable), `$city`, and uses the
+    variable as the argument: `city(name: $city)`. In Trieste the value of
+    `$city` in the variables panel is `"Trieste"`. In Istanbul the
+    reference solution transmits the same operation without changing a
+    character of it. Only the value in the variables panel is different.
+  geography: >
+    Turkey is counted in Asia and Ukraine in Europe. Istanbul itself
+    stands on both shores of the Bosporus.
+
+stages:
+  trieste:
+    location: IT
+    objective: Identify the shipment Limmat Holdings forwarded out of Europe, and the country it went to.
+
+    briefing: |
+      Limmat Holdings cannot pay anyone, so it is moving its one
+      valuable crate instead. Three shipments left Trieste this
+      week. The crate will be forwarded again from wherever it
+      lands, and the clerk expects to be asked the same question
+      there.
+
+    clues:
+      - text: >
+          The shipment left Trieste.
+        constraint:
+          $shipment.origin: City:trieste
+      - text: >
+          The shipment is consigned to Limmat Holdings.
+        constraint:
+          $shipment.consignee: Company:CH-LIMMAT
+      - text: >
+          The forwarding note says the crate leaves Europe for Asia.
+        constraint:
+          $shipment.destination.country.continent: Continent:asia
+          $shipment.destination.country: $country
+
+    scaffold:
+      level: guided
+      starterQuery: |
+        query Departures($city: String!) {
+          city(name: $city) {
+            departingShipments {
+              id
+              manifest
+              # $city is a variable. The first line declares it,
+              # and its value comes from the variables panel below
+              # the editor. The glossary entry for a variable
+              # explains each part.
+              # Who receives each shipment, and on which continent
+              # does the shipment land?
+            }
+          }
+        }
+      starterVariables: |
+        { "city": "Trieste" }
+
+    hints:
+      nudge: >
+        Two shipments are consigned to Limmat Holdings. Which of the
+        two lands in Asia?
+      concept: >
+        The starter query declares a variable, $city, in parentheses
+        after the operation's name. The query then uses $city where the
+        city's name would go. You type the value of $city in the
+        variables panel, below the editor, and not in the query.
+      schema: >
+        Look at Shipment.consignee, Shipment.destination, City.country,
+        and Country.continent.
+      skeleton: |
+        consignee { name } destination { name country { name continent { name } } }
+
+    solution:
+      type: destination
+      shipment: TRS-0611
+      country: TR
+    labels:
+      shipment: Shipment
+      country: Destination country
+
+    claims:
+      - id: consignee
+        prompt: The shipment is consigned to Limmat Holdings.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: consignee
+                equals: Company:CH-LIMMAT
+          - facts:
+              - entity: Company:CH-LIMMAT
+                field: shipments
+                includes: Shipment:$shipment
+      - id: continent
+        prompt: The shipment's destination country is in Asia.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: continent
+                equals: Continent:asia
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Continent:asia
+                field: countries
+                includes: Country:$country
+
+    leadOutcomes:
+      TRS-0620:
+        location: UA
+        refutation:
+          claim: continent
+          facts:
+            - entity: Shipment:$shipment
+              field: destination
+              equals: City:$city
+            - entity: City:$city
+              field: country
+              equals: Country:$country
+            - entity: Country:$country
+              field: continent
+              equals: Continent:europe
+        ruledOut: |
+          Odesa has four crates for Limmat Holdings. The
+          harbourmaster reports that Ukraine is still in Europe.
+        fieldCheck: |
+          Odesa confirms the consignee. The harbourmaster asks
+          which continent the forwarding note gave.
+      TRS-0634:
+        location: TR
+        refutation:
+          claim: consignee
+          facts:
+            - entity: Shipment:$shipment
+              field: consignee
+              equals: Company:CH-UETLIBERG
+        ruledOut: |
+          Two crates reached Istanbul for Uetliberg Trust. They
+          contain machine parts and an apology from the shipper.
+        fieldCheck: |
+          Istanbul confirms the landing. The agent asks whose
+          name is on the consignment.
+
+    resolved: |
+      Travel order approved. Istanbul's quay has already sent
+      the crate on.
+
+    referenceSolution: |
+      query Departures($city: String!) {
+        city(name: $city) {
+          departingShipments {
+            id
+            manifest
+            consignee {
+              name
+            }
+            destination {
+              name
+              country {
+                name
+                continent {
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    referenceVariables:
+      city: Trieste
+
+    next: istanbul
+
+  istanbul:
+    location: TR
+    objective: Identify the shipment Limmat Holdings sent back to Europe.
+
+    briefing: |
+      The crate did not stay. Several shipments have left
+      Istanbul since it landed, and a second forwarding note says
+      it has gone back to Europe. Your request from Trieste is
+      still on the desk.
+
+    clues:
+      - text: >
+          The shipment left Istanbul.
+        constraint:
+          $shipment.origin: City:istanbul
+      - text: >
+          The shipment is still consigned to Limmat Holdings.
+        constraint:
+          $shipment.consignee: Company:CH-LIMMAT
+      - text: >
+          This time the note says the crate returns to Europe.
+        constraint:
+          $shipment.destination.country.continent: Continent:europe
+
+    scaffold:
+      level: partial
+      carryOver: true
+
+    hints:
+      nudge: >
+        The question is the one you asked in Trieste. Only the city
+        has changed.
+      concept: >
+        Leave the operation as it is and change the variable's value
+        in the variables panel.
+      schema: >
+        Look at Shipment.consignee, Shipment.destination, City.country,
+        and Country.continent.
+      skeleton: |
+        { "city": "Istanbul" }
+
+    solution:
+      type: deduction
+      shipment: IST-0702
+    labels:
+      shipment: Shipment
+
+    claims:
+      - id: consignee
+        prompt: The shipment is consigned to Limmat Holdings.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: consignee
+                equals: Company:CH-LIMMAT
+          - facts:
+              - entity: Company:CH-LIMMAT
+                field: shipments
+                includes: Shipment:$shipment
+      - id: continent
+        prompt: The shipment's destination country is in Europe.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: continent
+                equals: Continent:europe
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Continent:europe
+                field: countries
+                includes: Country:$country
+
+    leadOutcomes:
+      IST-0711:
+        location: UA
+        refutation:
+          claim: consignee
+          facts:
+            - entity: Shipment:$shipment
+              field: consignee
+              equals: Company:CH-UETLIBERG
+        ruledOut: |
+          Odesa is in Europe and its crates are for Uetliberg
+          Trust. The harbourmaster is beginning to recognise your hand.
+        fieldCheck: |
+          Odesa confirms it is in Europe. The harbourmaster asks
+          whose name is on the consignment.
+      IST-0725:
+        location: EG
+        refutation:
+          claim: continent
+          facts:
+            - entity: Shipment:$shipment
+              field: destination
+              equals: City:$city
+            - entity: City:$city
+              field: country
+              equals: Country:$country
+            - entity: Country:$country
+              field: continent
+              equals: Continent:africa
+        ruledOut: |
+          Alexandria has four crates for Limmat Holdings and a
+          clear view of Africa in every direction but north.
+        fieldCheck: |
+          Alexandria confirms the consignee. The agent asks which
+          continent the note said.
+
+    resolved: |
+      Deduction accepted. The crate is on its way to Porto.
+
+    referenceSolution: |
+      query Departures($city: String!) {
+        city(name: $city) {
+          departingShipments {
+            id
+            manifest
+            consignee {
+              name
+            }
+            destination {
+              name
+              country {
+                name
+                continent {
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    referenceVariables:
+      city: Istanbul

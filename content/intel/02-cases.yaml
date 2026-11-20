@@ -1,0 +1,265 @@
+# Records for the cases after The Vanishing Azulejos.
+
+Shipment:
+  # The Borrowed Chronometer
+  GEN-0211:
+    manifest: Marine chronometer, brass, gimballed
+    origin: genoa
+    destination: dakar
+    shipper: IT-LANTERNA
+    consignee: SN-GOREE
+    inspection: INS-GEN-0211
+  GEN-0236:
+    manifest: Marine chronometer, brass, gimballed
+    origin: genoa
+    destination: douala
+    shipper: IT-LANTERNA
+    consignee: CM-WOURI
+    inspection: INS-GEN-0236
+  GEN-0240:
+    manifest: Ship's barometer, brass, gimballed
+    origin: genoa
+    destination: abidjan
+    shipper: IT-LANTERNA
+    consignee: CI-EBRIE
+    inspection: INS-GEN-0240
+  GEN-0252:
+    manifest: Bicycle frames, 30
+    origin: genoa
+    destination: lagos
+    shipper: IT-LANTERNA
+    consignee: NG-APAPA
+  # The Quiet Consignee
+  VAL-0733:
+    manifest: Printing plates, 6 cases
+    origin: valparaiso
+    destination: callao
+    shipper: CL-MERIDIAN-FWD
+    consignee: PE-MERIDIAN-FRT
+  VAL-0740:
+    manifest: Dried fruit, 80 boxes
+    origin: valparaiso
+    destination: callao
+    shipper: CL-MERIDIAN-FWD
+    consignee: PE-RIMAC
+  # Bound Ledgers
+  DAR-0158:
+    manifest: Bound ledgers
+    origin: durban
+    destination: dar-es-salaam
+    consignee: TZ-MSASANI
+    inspection: INS-DAR-0158
+    unloadingReceipt: UNL-DAR-0158
+  MBA-0102:
+    manifest: Bound ledgers
+    origin: durban
+    destination: mombasa
+    consignee: KE-KILINDINI
+    inspection: INS-MBA-0102
+    unloadingReceipt: UNL-MBA-0102
+  MPM-0144:
+    manifest: Bound ledgers
+    origin: durban
+    destination: maputo
+    consignee: MZ-KAFUE
+    inspection: INS-MPM-0144
+    unloadingReceipt: UNL-MPM-0144
+  # Lantern Export
+  ALX-0301:
+    manifest: Lamp glass, 20 cases
+    origin: alexandria
+    destination: beirut
+    consignee: LUA-LANTERN
+  ALX-0317:
+    manifest: Lamp glass, 20 cases
+    origin: alexandria
+    destination: piraeus
+    consignee: LUA-LANTERN
+  IST-0290:
+    manifest: Lamp wick, 12 bales
+    origin: istanbul
+    destination: tunis
+    consignee: LUA-LANTERN
+  CAS-0275:
+    manifest: Lamp oil, 60 drums
+    origin: casablanca
+    destination: marseille
+    consignee: LUA-LANTERN
+  # The Forwarding Address
+  TRS-0611:
+    manifest: Machine parts, 4 crates
+    origin: trieste
+    destination: istanbul
+    consignee: CH-LIMMAT
+  TRS-0620:
+    manifest: Machine parts, 4 crates
+    origin: trieste
+    destination: odesa
+    consignee: CH-LIMMAT
+  TRS-0634:
+    manifest: Machine parts, 2 crates
+    origin: trieste
+    destination: istanbul
+    consignee: CH-UETLIBERG
+  IST-0702:
+    manifest: Machine parts, 4 crates
+    origin: istanbul
+    destination: porto
+    consignee: CH-LIMMAT
+  IST-0711:
+    manifest: Machine parts, 4 crates
+    origin: istanbul
+    destination: odesa
+    consignee: CH-UETLIBERG
+  IST-0725:
+    manifest: Machine parts, 4 crates
+    origin: istanbul
+    destination: alexandria
+    consignee: CH-LIMMAT
+  # The Registrar's Return
+  OPO-0811:
+    manifest: Glazed tiles, blue (14 cm)
+    origin: porto
+    destination: southampton
+    consignee: GB-SOLENT
+    inspection: INS-OPO-0811
+  OPO-0823:
+    manifest: Glazed tiles, blue (14 cm)
+    origin: porto
+    destination: rotterdam
+    consignee: NL-MAAS
+    inspection: INS-OPO-0823
+  OPO-0830:
+    manifest: Slate tiles (14 cm)
+    origin: porto
+    destination: southampton
+    consignee: GB-SOLENT
+    inspection: INS-OPO-0830
+  SOU-0907:
+    manifest: Glazed tiles, blue (14 cm)
+    origin: southampton
+    destination: reykjavik
+    consignee: IS-FAXA
+    inspection: INS-SOU-0907
+  SOU-0915:
+    manifest: Glazed tiles, blue (14 cm)
+    origin: southampton
+    destination: oslo
+    consignee: NO-AKER
+    inspection: INS-SOU-0915
+  SOU-0921:
+    manifest: Slate tiles (14 cm)
+    origin: southampton
+    destination: reykjavik
+    consignee: IS-HEKLA
+    inspection: INS-SOU-0921
+
+Inspection:
+  INS-GEN-0211: { finding: Brass timekeeper in a gimbal mount }
+  INS-GEN-0236: { finding: Brass timekeeper in a gimbal mount }
+  INS-GEN-0240: { finding: Brass barometer in a gimbal mount }
+  INS-DAR-0158: { finding: "Account books, handwritten" }
+  INS-MBA-0102: { finding: "Account books, handwritten" }
+  INS-MPM-0144: { finding: "Account books, blank" }
+  INS-OPO-0811: { finding: "Glazed ceramic tiles, blue, 14 cm" }
+  INS-OPO-0823: { finding: "Glazed ceramic tiles, blue, 14 cm" }
+  INS-OPO-0830: { finding: "Slate tiles, blue-grey, 14 cm" }
+  INS-SOU-0907: { finding: "Glazed ceramic tiles, blue, 14 cm" }
+  INS-SOU-0915: { finding: "Glazed ceramic tiles, blue, 14 cm" }
+  INS-SOU-0921: { finding: "Slate tiles, blue-grey, 14 cm" }
+
+UnloadingReceipt:
+  UNL-DAR-0158: { contents: "Ledgers, written up" }
+  UNL-MBA-0102: { contents: "Ledgers, written up" }
+  UNL-MPM-0144: { contents: "Ledgers, unused" }
+
+Company:
+  IT-LANTERNA: { name: Lanterna Instrument Brokers, registeredIn: IT }
+  SN-GOREE: { name: Gorée Chandlery, registeredIn: SN }
+  CM-WOURI: { name: Wouri River Supply, registeredIn: CM }
+  CI-EBRIE: { name: Ébrié Lagoon Outfitters, registeredIn: CI }
+  NG-APAPA: { name: Apapa Cycle Works, registeredIn: NG }
+  CL-MERIDIAN-FWD:
+    name: Meridian Forwarding
+    registeredIn: CL
+    director: UMBER_SKUA
+  PE-MERIDIAN-FRT:
+    name: Meridian Freight
+    registeredIn: PE
+    director: PEWTER_SWIFT
+  PE-RIMAC: { name: Rímac Provisions, registeredIn: PE, director: UMBER_SKUA }
+  LUA-LANTERN: { director: COPPER_KITE }
+  MZ-KAFUE:
+    name: Kafue Ceramics Trust
+    registeredIn: MZ
+    director: MARBLE_HERON
+  ZM-COPPERBELT:
+    name: Copperbelt Clay Works
+    registeredIn: ZM
+    director: OPAL_WREN
+  MZ-BEIRA:
+    name: Beira Tile Agency
+    registeredIn: MZ
+    director: TIN_FALCON
+  TZ-MSASANI:
+    name: Msasani Stationers
+    registeredIn: TZ
+    director: SABLE_IBIS
+  KE-KILINDINI:
+    name: Kilindini Paper Company
+    registeredIn: KE
+    director: TIN_FALCON
+  CH-LIMMAT:
+    name: Limmat Holdings
+    registeredIn: CH
+    director: OPAL_WREN
+    auditor: BRASS_PIPIT
+  CH-UETLIBERG:
+    name: Uetliberg Trust
+    registeredIn: CH
+    director: OPAL_WREN
+    auditor: IRON_FINCH
+  CH-GLARUS:
+    name: Glarus Assay Office
+    registeredIn: CH
+    director: IRON_FINCH
+    auditor: BRASS_PIPIT
+  GB-SOLENT:
+    name: Solent Sample Rooms
+    registeredIn: GB
+    director: CHALK_PLOVER
+  NL-MAAS:
+    { name: Maas Tile Importers, registeredIn: NL, director: AMBER_SHRIKE }
+  IS-FAXA:
+    name: Faxa Bay Collectors
+    registeredIn: IS
+    director: GILT_MAGPIE
+  NO-AKER:
+    { name: Aker Quay Antiques, registeredIn: "NO", director: AMBER_SHRIKE }
+  IS-HEKLA: { name: Hekla Stone Yard, registeredIn: IS, director: CHALK_PLOVER }
+
+Sighting:
+  SGT-027:
+    city: mombasa
+    operative: NIGHTJAR
+    nameGiven: h-brandt
+    note: Asked the harbour office for sailing times. Left no address.
+  SGT-031:
+    city: zanzibar-city
+    operative: NIGHTJAR
+    nameGiven: m-calloway
+    note: Took a room facing the harbour. Paid in advance.
+  SGT-034:
+    city: maputo
+    operative: NIGHTJAR
+    nameGiven: m-calloway
+    note: Collected a letter at the post office.
+  SGT-040:
+    city: zanzibar-city
+    nameGiven: dr-lund
+    note: Dined with M. Calloway. Signed the register after the soup.
+  SGT-041:
+    city: zanzibar-city
+    operative: SABLE_IBIS
+    nameGiven: p-okello
+    note: Hired a dhow for the evening.

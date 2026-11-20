@@ -1,0 +1,200 @@
+# The training range. Each drill teaches one skill and is passed by any
+# transmission whose response holds the facts under `expects`.
+
+- id: one-field
+  title: Ask for a field
+  task: >
+    The records clerk hands you a request form that is already filled in.
+    The form is a query. Read it from the outside in. The word `query` and
+    the outer braces hold the whole request. `country(name: "Portugal")`
+    asks for one record, and the part in parentheses says which record: the
+    country whose name is Portugal. The inner braces hold the fields you
+    want from that record. At present they hold one field, `name`, and the
+    archive returns that field and nothing more. Fields go one to a line,
+    with no commas between them. Add a second field: ask for the country's
+    `capital` as well.
+  starter: |
+    query {
+      country(name: "Portugal") {
+        name
+      }
+    }
+  expects:
+    - entity: Country:PT
+      field: capital
+      equals: Lisbon
+  reference: |
+    query {
+      country(name: "Portugal") {
+        name
+        capital
+      }
+    }
+  nudge: >
+    Add the word `capital` on a line of its own, under `name`.
+  payoff: >
+    The clerk nods. The response has the same shape as your query: two
+    fields asked for, two fields returned. Every query works like this.
+
+- id: open-a-record
+  title: Open a record
+  task: >
+    A city's `country` field does not hold a single value such as a word
+    or a number. It holds another record, the country, which has fields of
+    its own. To read one of those fields, write braces after `country` and
+    put the field you want inside them. Find the name of the country that
+    Lisbon is in.
+  starter: |
+    query {
+      city(name: "Lisbon") {
+        name
+      }
+    }
+  expects:
+    - entity: City:lisbon
+      field: country
+      equals: Country:PT
+    - entity: Country:PT
+      field: name
+      equals: Portugal
+  reference: |
+    query {
+      city(name: "Lisbon") {
+        name
+        country {
+          name
+        }
+      }
+    }
+  nudge: >
+    After `country`, write braces with the field you want inside them:
+    `country { name }`.
+  payoff: >
+    Braces open a record. Wherever a field holds a record, you can open it.
+
+- id: lists
+  title: Read a list
+  task: >
+    Some fields hold a list of records instead of just one. A country's
+    `borders` is one: it holds every country that shares a border with it.
+    You open a list with braces, the way you opened `country` in the last
+    drill. The fields you put inside the braces come back once for each
+    record in the list. Find the name of each country that borders
+    Portugal.
+  starter: |
+    query {
+      country(name: "Portugal") {
+        name
+      }
+    }
+  expects:
+    - entity: Country:PT
+      field: borders
+      includes: Country:ES
+    - entity: Country:ES
+      field: name
+      equals: Spain
+  reference: |
+    query {
+      country(name: "Portugal") {
+        name
+        borders {
+          name
+        }
+      }
+    }
+  nudge: >
+    Add `borders { name }` inside the braces after `country(name: "Portugal")`.
+  payoff: >
+    Portugal has one land border. The clerk points out that a list of
+    one is still a list.
+
+- id: two-links
+  title: Follow two links
+  task: >
+    A field that holds a record, or a list of records, is a link from one
+    record to another. A
+    record that you have opened can have links of its own, and you can open
+    those too. The query below opens Lisbon's `country`, which is Portugal.
+    Portugal has a `borders` list. Starting from the city of Lisbon, find
+    the capital of each country that borders Portugal.
+  starter: |
+    query {
+      city(name: "Lisbon") {
+        country {
+          name
+        }
+      }
+    }
+  expects:
+    - entity: City:lisbon
+      field: country
+      equals: Country:PT
+    - entity: Country:PT
+      field: borders
+      includes: Country:ES
+    - entity: Country:ES
+      field: capital
+      equals: Madrid
+  reference: |
+    query {
+      city(name: "Lisbon") {
+        country {
+          name
+          borders {
+            name
+            capital
+          }
+        }
+      }
+    }
+  nudge: >
+    Inside the braces after `country`, add `borders { }`. Then ask for
+    `capital` inside the braces after `borders`.
+  payoff: >
+    One request went from a city, to its country, to that country's
+    neighbours. A query can keep following links like this for as long as
+    you need.
+
+- id: documentation
+  title: Consult the documentation
+  task: >
+    The documentation below lists every kind of record and the fields each
+    one has. Use the documentation to find the name of the currency used
+    in the country where Luanda is.
+  starter: |
+    query {
+      city(name: "Luanda") {
+        name
+      }
+    }
+  expects:
+    - entity: City:luanda
+      field: country
+      equals: Country:AO
+    - entity: Country:AO
+      field: currency
+      equals: Currency:AOA
+    - entity: Currency:AOA
+      field: name
+      equals: Angolan kwanza
+  reference: |
+    query {
+      city(name: "Luanda") {
+        name
+        country {
+          currency {
+            name
+          }
+        }
+      }
+    }
+  nudge: >
+    In the documentation, open City to see which field links a city to its
+    country. Then open Country to find the field that links a country to
+    its currency. Each link you follow is one more pair of braces in the
+    query.
+  payoff: >
+    The kwanza is named after a river. The clerk stamps your induction
+    form and slides a case file across the desk: tiles missing from a
+    museum in Lisbon, and a crate that may be bound for Luanda.

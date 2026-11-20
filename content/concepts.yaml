@@ -1,0 +1,97 @@
+- id: nested-selections
+  title: Fields and nested selections
+  clearance: 1
+  summary: >
+    A query lists the fields you want. Some fields, such as a shipment's
+    `destination`, hold another record instead of a single value. Write
+    braces after a field of that kind, and ask for the fields you want from
+    the record inside. The example opens `destination`, and then opens
+    `country` inside it. Braces inside braces are a nested selection.
+  example: |
+    query {
+      city(name: "Lisbon") {
+        departingShipments {
+          manifest
+          destination { name country { name } }
+        }
+      }
+    }
+  payoff: >
+    One nested query follows every link in a single transmission.
+- id: arguments
+  title: Arguments
+  clearance: 2
+  summary: >
+    The registry holds dozens of operatives, and `operative` returns only
+    one of them. You say which one in parentheses after the field:
+    `operative(codename: "NIGHTJAR")`. The part in parentheses is an
+    argument. The documentation lists the arguments that each field accepts.
+  example: |
+    query {
+      operative(codename: "NIGHTJAR") {
+        coverNames { name }
+      }
+    }
+  payoff: >
+    You get the one file you asked for, out of the dozens the registry holds.
+- id: aliases
+  title: Aliases
+  clearance: 3
+  summary: >
+    Ask for `operative` twice in one query and the two results collide,
+    because both would come back as `operative`. Write a name of your own
+    and a colon in front of each one, as in
+    `first: operative(codename: "GREY_PETREL")`. Each result then comes
+    back under the name you wrote. That name is an alias.
+  example: |
+    query {
+      first: operative(codename: "GREY_PETREL") { codename }
+      second: operative(codename: "SABLE_IBIS") { codename }
+    }
+  payoff: >
+    Several files come back side by side in one transmission.
+- id: fragments
+  title: Fragments
+  clearance: 4
+  summary: >
+    The example asks for the same two fields from an operative and from
+    each of that operative's associates. Instead of writing the fields in
+    both places, you write them once as a fragment:
+    `fragment Dossier on Operative`, followed by the fields in braces.
+    `Dossier` is a name you choose, and `Operative` is the type of record
+    the fields belong to. Then write three dots and the fragment's name,
+    `...Dossier`, in each place where the query opens an operative. Writing
+    the three dots is called spreading the fragment.
+  example: |
+    query {
+      operative(codename: "GREY_PETREL") {
+        ...Dossier
+        knownAssociates { ...Dossier }
+      }
+    }
+    fragment Dossier on Operative {
+      codename
+      organization { name }
+    }
+  payoff: >
+    Every dossier comes back with the same fields, and you change them all
+    by editing one place.
+- id: variables
+  title: Variables
+  clearance: 5
+  summary: >
+    A variable stands in for a value that changes from one transmission to
+    the next. In the example, `$city` is a variable. You declare it, with
+    its type, in parentheses after the operation's name: `($city: String!)`.
+    You then write it where the value would go: `city(name: $city)`. You
+    type the value itself in the variables panel below the editor, as JSON:
+    `{ "city": "Lisbon" }`.
+  example: |
+    query Departures($city: String!) {
+      city(name: $city) {
+        departingShipments { id manifest }
+      }
+    }
+  payoff: >
+    To ask about the next city, you change the value and leave the query
+    alone.

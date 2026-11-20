@@ -1,0 +1,197 @@
+id: bound-ledgers
+title: Bound Ledgers
+campaign: shadow-network
+order: 6
+clearance: 3
+kind: assessment
+teaches: null
+practises: [nested-selections, arguments, aliases]
+requires: [nested-selections, arguments, aliases]
+summary: >
+  The Parallax Circle keeps its accounts on paper and moves them by sea.
+  Three ports each logged a crate of ledgers.
+motif: ledger
+clock:
+  countdown: The ledgers are collected in {remaining}
+  expired: The ledgers have been collected
+  onExpiry: end
+startingStage: ports
+
+debrief:
+  onTime: |
+    Dar es Salaam impounds twelve volumes of accounts. The clerk
+    begins reading and asks not to be disturbed until spring.
+  stampOnTime: IMPOUNDED
+  comparison: >
+    The reference solution asks for `city` three times in one request,
+    once for each port, and puts an alias in front of each one. Inside
+    each city it asks for the same fields. One request, and one hour,
+    covers all three ports.
+  geography: >
+    Mombasa, Dar es Salaam, and Maputo are the chief ports of Kenya,
+    Tanzania, and Mozambique, in that order down the Indian Ocean coast.
+
+stages:
+  ports:
+    location: TZ
+    objective: Identify the shipment carrying the Parallax Circle's accounts.
+
+    briefing: |
+      Three ports each logged an arriving shipment declared as
+      bound ledgers: Mombasa, Dar es Salaam, and Maputo. One crate
+      holds the Parallax Circle's accounts. The other two are
+      stationery, or somebody else's embarrassment.
+
+    clues:
+      - text: >
+          All three crates were declared as bound ledgers.
+        constraint:
+          $shipment.manifest: Bound ledgers
+      - text: >
+          Accounts have been written in. The crate's contents are
+          account books, handwritten.
+        constraint:
+          $shipment.inspection.finding: Account books, handwritten
+      - text: >
+          The crate is consigned to a company whose director is a
+          member of the Parallax Circle.
+        constraint:
+          $shipment.consignee.director.organization: Organization:parallax-circle
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        One crate holds written ledgers and is going to a company the
+        Parallax Circle directs. Each of the other two fails one of
+        those two tests.
+      concept: >
+        You can ask for the city field three times in one request, once
+        for each port, if you put a different alias in front of each
+        one. Inside each city, ask for the same fields.
+      schema: >
+        Look at City.arrivingShipments, Shipment.inspection,
+        Shipment.consignee, Company.director, and Operative.organization.
+      skeleton: |
+        first: city(name: "Mombasa") {
+          arrivingShipments { id manifest inspection { finding } consignee { name director { codename organization { name } } } }
+        }
+
+    solution:
+      type: deduction
+      shipment: DAR-0158
+    labels:
+      shipment: Shipment
+
+    claims:
+      - id: written
+        prompt: The crate holds ledgers that have been written in.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: inspection
+                equals: Inspection:$inspection
+              - entity: Inspection:$inspection
+                field: finding
+                equals: Account books, handwritten
+          - facts:
+              - entity: Shipment:$shipment
+                field: unloadingReceipt
+                equals: UnloadingReceipt:$receipt
+              - entity: UnloadingReceipt:$receipt
+                field: contents
+                equals: Ledgers, written up
+      - id: consignee
+        prompt: The consignee's director is a member of the Parallax Circle.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: consignee
+                equals: Company:$company
+              - entity: Company:$company
+                field: director
+                equals: Operative:$director
+              - entity: Operative:$director
+                field: organization
+                equals: Organization:parallax-circle
+          - facts:
+              - entity: Shipment:$shipment
+                field: consignee
+                equals: Company:$company
+              - entity: Company:$company
+                field: director
+                equals: Operative:$director
+              - entity: Organization:parallax-circle
+                field: members
+                includes: Operative:$director
+
+    leadOutcomes:
+      MBA-0102:
+        location: KE
+        refutation:
+          claim: consignee
+          facts:
+            - entity: Shipment:$shipment
+              field: consignee
+              equals: Company:$company
+            - entity: Company:$company
+              field: director
+              equals: Operative:$director
+            - entity: Operative:$director
+              field: organization
+              equals: Organization:baltic-exchange
+        ruledOut: |
+          Mombasa's ledgers are written up, in a tidy northern hand.
+          Their consignee answers to the Baltic Exchange Bureau.
+        fieldCheck: |
+          Mombasa confirms the ledgers are full of figures. The
+          port office asks who directs the company collecting them.
+      MPM-0144:
+        location: MZ
+        refutation:
+          claim: written
+          facts:
+            - entity: Shipment:$shipment
+              field: inspection
+              equals: Inspection:$inspection
+            - entity: Inspection:$inspection
+              field: finding
+              equals: Account books, blank
+        ruledOut: |
+          Maputo's crate is going to the right sort of company. Its
+          forty volumes are blank, and the inspector has borrowed one.
+        fieldCheck: |
+          Maputo confirms the consignee's connections. The inspector
+          asks what, if anything, is written in the books.
+
+    resolved: |
+      Deduction accepted. Dar es Salaam impounds the crate.
+
+    referenceSolution: |
+      query {
+        mombasa: city(name: "Mombasa") {
+          arrivingShipments {
+            id
+            manifest
+            inspection { finding }
+            consignee { name director { codename organization { name } } }
+          }
+        }
+        dar: city(name: "Dar es Salaam") {
+          arrivingShipments {
+            id
+            manifest
+            inspection { finding }
+            consignee { name director { codename organization { name } } }
+          }
+        }
+        maputo: city(name: "Maputo") {
+          arrivingShipments {
+            id
+            manifest
+            inspection { finding }
+            consignee { name director { codename organization { name } } }
+          }
+        }
+      }

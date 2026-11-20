@@ -1,0 +1,223 @@
+id: lantern-export
+title: Lantern Export
+campaign: shadow-network
+order: 8
+clearance: 4
+kind: assessment
+teaches: null
+practises: [nested-selections, arguments, fragments]
+requires: [nested-selections, arguments, fragments]
+summary: >
+  The company whose label was replaced in Luanda is still shipping. One of
+  its crates is not lamp glass.
+motif: lamp
+clock:
+  countdown: The crate is landed in {remaining}
+  expired: The crate has been landed
+  onExpiry: end
+startingStage: alexandria
+
+debrief:
+  onTime: |
+    Beirut opens twenty cases of lamp glass and finds, under the
+    straw, the Parallax Circle's letter book. COPPER_KITE sends
+    word that Lantern Export was only ever asked to lend its name.
+  stampOnTime: INTERCEPTED
+  comparison: >
+    Every shipment has two cities, its origin and its destination, and the
+    reference solution asks for the same fields from both. It writes those
+    fields once, in a fragment called `Port`, and spreads the fragment in
+    both places by writing `...Port`.
+  geography: >
+    Arabic is an official language of both Egypt and Lebanon, on two
+    continents. Alexandria is on the African shore of the Mediterranean
+    and Beirut on the Asian.
+
+stages:
+  alexandria:
+    location: EG
+    objective: Identify the Lantern Export shipment carrying the letter book.
+
+    briefing: |
+      Lantern Export has shipments on the water between half a
+      dozen ports. A courier's note says one crate carries the
+      Parallax Circle's letter book, and that the crate never
+      leaves the Arabic-speaking world: it is loaded in one such
+      country and landed in another.
+
+    clues:
+      - text: >
+          The crate is consigned to Lantern Export.
+        constraint:
+          $shipment.consignee: Company:LUA-LANTERN
+      - text: >
+          The crate is loaded in a country where Arabic is spoken.
+        constraint:
+          $shipment.origin.country.languages: Language:arabic
+      - text: >
+          The crate is landed in a country where Arabic is spoken.
+        constraint:
+          $shipment.destination.country.languages: Language:arabic
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        For every Lantern Export shipment, check the languages of the
+        country it leaves and of the country it lands in.
+      concept: >
+        A shipment's origin and its destination are both cities, and you
+        need the same fields from each. Write those fields once, as a
+        fragment on City. Then spread the fragment inside the origin and
+        again inside the destination.
+      schema: >
+        Look at Company.shipments, Shipment.origin,
+        Shipment.destination, City.country, and Country.languages.
+      skeleton: |
+        company(name: "Lantern Export") { shipments { id origin { ...Port } destination { ...Port } } }
+
+    solution:
+      type: deduction
+      shipment: ALX-0301
+    labels:
+      shipment: Shipment
+
+    claims:
+      - id: loaded
+        prompt: The shipment is loaded in a country where Arabic is spoken.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: origin
+                equals: City:$port
+              - entity: City:$port
+                field: country
+                equals: Country:$from
+              - entity: Country:$from
+                field: languages
+                includes: Language:arabic
+          - facts:
+              - entity: Shipment:$shipment
+                field: origin
+                equals: City:$port
+              - entity: City:$port
+                field: country
+                equals: Country:$from
+              - entity: Language:arabic
+                field: countries
+                includes: Country:$from
+      - id: landed
+        prompt: The shipment is landed in a country where Arabic is spoken.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$harbour
+              - entity: City:$harbour
+                field: country
+                equals: Country:$to
+              - entity: Country:$to
+                field: languages
+                includes: Language:arabic
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$harbour
+              - entity: City:$harbour
+                field: country
+                equals: Country:$to
+              - entity: Language:arabic
+                field: countries
+                includes: Country:$to
+
+    leadOutcomes:
+      ALX-0317:
+        location: GR
+        refutation:
+          claim: landed
+          facts:
+            - entity: Shipment:$shipment
+              field: destination
+              equals: City:$harbour
+            - entity: City:$harbour
+              field: country
+              equals: Country:$to
+            - entity: Country:$to
+              field: languages
+              excludes: Language:arabic
+        ruledOut: |
+          The crate for Piraeus was loaded in Alexandria. Greece
+          answers in Greek and holds twenty cases of lamp glass.
+        fieldCheck: |
+          Alexandria confirms the loading. The Piraeus agent asks
+          which language the courier expected on the quay.
+      IST-0290:
+        location: TN
+        refutation:
+          claim: loaded
+          facts:
+            - entity: Shipment:$shipment
+              field: origin
+              equals: City:$port
+            - entity: City:$port
+              field: country
+              equals: Country:$from
+            - entity: Country:$from
+              field: languages
+              excludes: Language:arabic
+        ruledOut: |
+          Tunis is expecting twelve bales of lamp wick. They were
+          loaded in Istanbul, where the stevedores speak Turkish.
+        fieldCheck: |
+          Tunis confirms the landing. The agent asks where the
+          bales were put aboard.
+      CAS-0275:
+        location: FR
+        refutation:
+          claim: landed
+          facts:
+            - entity: Shipment:$shipment
+              field: destination
+              equals: City:$harbour
+            - entity: City:$harbour
+              field: country
+              equals: Country:$to
+            - entity: Country:$to
+              field: languages
+              excludes: Language:arabic
+        ruledOut: |
+          Sixty drums of lamp oil left Casablanca for Marseille.
+          France lists one language and it is not Arabic.
+        fieldCheck: |
+          Casablanca confirms the loading. The Marseille agent asks
+          what is spoken at his end.
+
+    resolved: |
+      Deduction accepted. Beirut is waiting on the quay.
+
+    referenceSolution: |
+      query {
+        company(name: "Lantern Export") {
+          shipments {
+            id
+            manifest
+            origin {
+              ...Port
+            }
+            destination {
+              ...Port
+            }
+          }
+        }
+      }
+
+      fragment Port on City {
+        name
+        country {
+          name
+          languages {
+            name
+          }
+        }
+      }

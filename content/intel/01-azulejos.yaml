@@ -1,0 +1,101 @@
+# Records for The Vanishing Azulejos. Grouped by type, keyed by identifier.
+Shipment:
+  LIS-0417:
+    manifest: Blue ceramic squares (14 cm)
+    origin: lisbon
+    destination: luanda
+    shipper: LIS-TAGUS
+    consignee: LUA-LANTERN
+    inspection: INS-LIS-0417
+    intake: INT-LUA-0417
+    unloadingReceipt: UNL-LUA-0417
+    transferOrders: [LUA-011, LUA-012]
+  LIS-0486:
+    manifest: Blue slate squares (14 cm)
+    origin: lisbon
+    destination: cape-town
+    shipper: LIS-TAGUS
+    consignee: CPT-BREAKWATER
+    inspection: INS-LIS-0486
+    transferOrders: []
+  LIS-0522:
+    manifest: Blue ceramic squares (14 cm)
+    origin: lisbon
+    destination: praia
+    shipper: LIS-ALFAMA
+    consignee: RAI-SOTAVENTO
+    inspection: INS-LIS-0522
+    transferOrders: []
+  # Other traffic through Luanda, so the crate is not the only arrival.
+  OPO-0102:
+    manifest: Cork stoppers, 40 sacks
+    origin: porto
+    destination: luanda
+    shipper: OPO-DOURO
+    consignee: LUA-LANTERN
+    intake: INT-LUA-0102
+    unloadingReceipt: UNL-LUA-0102
+    transferOrders: [LUA-009]
+  WVB-0031:
+    manifest: Salted fish, 12 barrels
+    origin: walvis-bay
+    destination: luanda
+    shipper: WVB-PELICAN
+    consignee: LUA-PARALLAX
+    intake: INT-LUA-0031
+    unloadingReceipt: UNL-LUA-0031
+    transferOrders: []
+
+Inspection:
+  INS-LIS-0417: { finding: "Glazed ceramic tiles, blue, 14 cm" }
+  INS-LIS-0486: { finding: "Slate tiles, blue-grey, 14 cm" }
+  INS-LIS-0522: { finding: "Glazed ceramic tiles, blue, 14 cm" }
+
+Company:
+  LIS-TAGUS: { name: Tagus Sample Agency, registeredIn: PT }
+  LIS-ALFAMA: { name: Alfama Trading House, registeredIn: PT }
+  OPO-DOURO: { name: Douro Cork Cooperative, registeredIn: PT }
+  WVB-PELICAN: { name: Pelican Point Fisheries, registeredIn: NA }
+  LUA-PARALLAX: { name: Parallax Freight, registeredIn: AO }
+  LUA-LANTERN: { name: Lantern Export, registeredIn: AO }
+  CPT-BREAKWATER: { name: Breakwater Stone Merchants, registeredIn: ZA }
+  RAI-SOTAVENTO: { name: Sotavento Ceramics, registeredIn: CV }
+
+IntakeRecord:
+  INT-LUA-0417: { consignee: LUA-PARALLAX }
+  INT-LUA-0102: { consignee: LUA-LANTERN }
+  INT-LUA-0031: { consignee: LUA-PARALLAX }
+
+UnloadingReceipt:
+  UNL-LUA-0417:
+    labelConsignee: LUA-PARALLAX
+    contents: One crate, tiles packed in straw
+  UNL-LUA-0102:
+    labelConsignee: LUA-LANTERN
+    contents: Forty sacks, cork
+  UNL-LUA-0031:
+    labelConsignee: LUA-PARALLAX
+    contents: Twelve barrels, fish
+
+TransferOrder:
+  LUA-009:
+    consignee: LUA-LANTERN
+    authorizedBy: COPPER_KITE
+    authorizationLog: LOG-009
+  LUA-011:
+    consignee: LUA-LANTERN
+    authorizedBy: COPPER_KITE
+    authorizationLog: LOG-011
+  LUA-012:
+    consignee: LUA-PARALLAX
+    authorizedBy: NIGHTJAR
+    authorizationLog: LOG-012
+
+AuthorizationLog:
+  LOG-009: { signedBy: COPPER_KITE }
+  LOG-011: { signedBy: COPPER_KITE }
+  LOG-012: { signedBy: NIGHTJAR }
+
+Operative:
+  NIGHTJAR: { codename: NIGHTJAR }
+  COPPER_KITE: { codename: COPPER_KITE }

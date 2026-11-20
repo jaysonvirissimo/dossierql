@@ -1,0 +1,170 @@
+# Hand corrections applied by scripts/build-world.ts on top of the vendored
+# sources. Every entry says why it exists. Never edit data/world.json itself:
+# change this file (or the script) and re-run `npm run world:build`.
+#
+# Sections
+#   factbookCodes    ISO alpha-2 -> Factbook (GEC) file code, where matching the
+#                    two sources by internet domain is ambiguous
+#   languageAliases  Factbook spelling -> the one name used across the dataset
+#   borders          land-border pairs to add to / remove from the supplement
+#   countries        per-country field replacements: name, capital, capitalLat,
+#                    capitalLon, continent, languages, currency
+
+factbookCodes:
+  # The Factbook has no "Palestine" profile; it splits it into "West Bank" (we)
+  # and "Gaza Strip" (gz), both with the .ps domain. Use the West Bank profile.
+  PS: we
+
+languageAliases:
+  # --- One language, several Factbook spellings. Using a single name lets a
+  # --- query such as "countries where Swahili is spoken" work across countries.
+  Castilian Spanish: Spanish # ES
+  Castilian: Spanish # AD
+  Bangla: Bengali # BD; India's entry already says Bengali
+  Bahasa Indonesia: Indonesian # ID
+  Bahasa Malaysia: Malay # MY; Brunei and Singapore say Malay
+  Persian Farsi: Persian # IR
+  Farsi: Persian # BH
+  Kiswahili: Swahili # KE
+  Kingwana: Swahili # CD: "Kingwana (a dialect of Kiswahili or Swahili)"
+  Kiunguja: Swahili # TZ: "name for Swahili in Zanzibar"
+  Swahili/Kiswahili: Swahili # RW
+  Bokmal Norwegian: Norwegian # NO: the two written standards of one language
+  Nynorsk Norwegian: Norwegian # NO
+  Moldovan/Romanian: Romanian # MD: the state language is Romanian since 2023
+  Azeri: Azerbaijani # GE, IR; Azerbaijan's entry says Azerbaijani
+  Uzbeki: Uzbek # AF
+  Turkmani: Turkmen # AF
+  Sangho: Sango # CF: usual English spelling
+  Tigrigna: Tigrinya # ET; Eritrea's entry says Tigrinya
+  Setswana: Tswana # BW; South Africa's entry gives "Setswana or Tswana"
+  Sesotho: Sotho # LS; South Africa's entry gives "Sesotho or Sotho"
+  siSwati: Swati # SZ: the script rejects names that start in lower case
+  iTaukei: Fijian # FJ: same reason; iTaukei is the Fijian language
+  Sekalanga: Kalanga # BW
+  Pular: Fula # GN, GW, MR: Fula goes by many local names
+  Pulaar: Fula # SN
+  Fufulde: Fula # NE
+  Fulani: Fula # NG
+  Peuhl/Foulfoulbe/Fulani: Fula # ML
+  Maithali: Maithili # NP: usual spelling
+  Baluchi: Balochi # OM; Pakistan and Iran say Balochi
+  Roma: Romani # SK
+  Serbo-Croat: Serbo-Croatian # ME
+  Sranang Tongo: Sranan Tongo # SR: usual spelling
+  Shikomoro: Comorian # KM: the list names the same language twice
+  Ta Bedawie: Beja # SD: usual English name
+  # --- Descriptions rather than names
+  Crioulo: Cape Verdean Creole # CV
+  Cabo Verdian: Cape Verdean Creole # ST
+  Portuguese-based Creole: Guinea-Bissau Creole # GW
+  Melanesian pidgin: Pijin # SB
+  Jamaican patois: Jamaican Patois # JM: "patois" is otherwise dropped as generic
+
+borders:
+  remove:
+    # The supplement lists India as a land neighbour of Sri Lanka, but not the
+    # reverse. The two are separated by the Palk Strait; there is no land border.
+    - [LK, IN]
+
+countries:
+  # ------------------------------------------------------------------ names
+  # The Factbook's "conventional short form" is used as-is except below.
+  BS:
+    name: Bahamas # Factbook: "The Bahamas"; drop the article
+    languages: [English, Haitian Creole] # source: "Creole (among Haitian immigrants)"
+  GM: { name: Gambia } # Factbook: "The Gambia"; drop the article
+  CD: { name: Democratic Republic of the Congo } # Factbook short form is the abbreviation "DRC"
+  DO: { name: Dominican Republic } # Factbook short form is the fragment "The Dominican"
+  VA: { name: Vatican City } # Factbook: "Holy See (Vatican City)"
+
+  FM:
+    # The Factbook has no short form ("none"); its long form is "Federated
+    # States of Micronesia".
+    name: Micronesia
+    # The supplement's currency list is empty; the country uses the US dollar.
+    currency: { code: USD, name: United States dollar }
+
+  CG:
+    name: Republic of the Congo # Factbook: "Congo (Brazzaville)"
+    # Source text is garbled ("French Lingala and Monokutuba (trade languages)").
+    languages: [French, Lingala, Kituba, Kikongo]
+
+  MM:
+    name: Myanmar # Factbook keeps the US-government name "Burma"
+    # The Factbook lists Rangoon (Yangon) first for US policy reasons; the seat
+    # of government has been Naypyidaw since 2006.
+    capital: Naypyidaw
+    capitalLat: 19.76
+    capitalLon: 96.08
+
+  PS:
+    name: Palestine # Factbook profile is "West Bank" (see factbookCodes)
+    # The West Bank profile names no capital. Ramallah is the administrative
+    # seat of the Palestinian Authority (East Jerusalem is the declared capital).
+    capital: Ramallah
+    capitalLat: 31.9
+    capitalLon: 35.2
+
+  # ---------------------------------------------------------------- capitals
+  # States with several capitals: the script takes the one the Factbook lists
+  # first, which is the administrative/executive seat and the one its
+  # coordinates refer to. No override needed for: BI Gitega, BJ Porto-Novo,
+  # BO La Paz, CI Yamoussoukro, LK Colombo, MY Kuala Lumpur, NL Amsterdam,
+  # SZ Mbabane, TZ Dodoma, ZA Pretoria.
+  BE: { capitalLat: 50.85, capitalLon: 4.35 } # source typo: "50 84 N, 4 35 E" (84 minutes)
+  MD: { capital: Chisinau } # source: "Chisinau in Romanian (Kishinev in Russian)"
+  US: { capital: "Washington, D.C." } # the script cuts capitals at the first comma
+  NR:
+    # Nauru has no official capital; government offices are in Yaren District.
+    capital: Yaren
+    capitalLat: -0.55
+    capitalLon: 166.92
+    # English (2% as a first language) is the language of government and would
+    # otherwise fall under the script's 5% cut-off.
+    languages: [Nauruan, English]
+
+  # -------------------------------------------------------------- continents
+  RU: { continent: Europe } # the Factbook files Russia under "Central Asia"
+  PG: { continent: Oceania } # the Factbook files it under "East & Southeast Asia"
+
+  # --------------------------------------------------------------- languages
+  # Belize: the source says just "Creole".
+  BZ: { languages: [English, Spanish, Belizean Creole, Maya] }
+  # Spain: co-official regional languages are marked "official in ..." and
+  # Basque (2%) would fall under the 5% cut-off.
+  ES: { languages: [Spanish, Catalan, Galician, Basque] }
+  # Ghana: the source list gives first-language shares only and omits English,
+  # the official language.
+  GH: { languages: [English, Asante, Ewe, Fante] }
+  # Equatorial Guinea: the two other official languages are buried in a
+  # parenthetical ("other (includes Fang, Bubi, Portuguese (official), ...)").
+  GQ: { languages: [Spanish, French, Portuguese, Fang] }
+  # Haiti: the source says just "Creole".
+  HT: { languages: [French, Haitian Creole] }
+  # India: English ("subsidiary official language") is only mentioned in a note.
+  IN: { languages: [Hindi, English, Bengali, Marathi, Telugu, Tamil] }
+  # Mauritius: the source says just "Creole", and English/French, the languages
+  # of the National Assembly, are in a parenthetical or under the cut-off.
+  MU: { languages: [Mauritian Creole, Bhojpuri, French, English] }
+  # Philippines: the source lists regional first languages and does not name
+  # the two official languages, Filipino (standardised Tagalog) and English.
+  PH: { languages: [Filipino, English, Bisaya, Hiligaynon, Ilocano, Cebuano] }
+  # Pakistan: the source gives first-language shares and does not mark the
+  # official languages, Urdu and English.
+  PK: { languages: [Urdu, English, Punjabi, Pashto, Sindhi, Saraiki] }
+  # Timor-Leste: the source lists first languages only; the official languages
+  # are Tetum (Tetun) and Portuguese.
+  TL: { languages: [Tetum, Portuguese, Mambai, Makasai] }
+  # Tonga: the source reads "Tongan only 85%, Tongan and other language ...";
+  # English is the second official language.
+  TO: { languages: [Tongan, English] }
+
+  # -------------------------------------------------------------- currencies
+  # Where the supplement lists several currencies the script picks the one the
+  # Factbook quotes exchange rates for. These two it cannot settle:
+  # Eswatini: the Factbook line has no ISO code ("emalangeni per US dollar").
+  SZ: { currency: { code: SZL, name: Swazi lilangeni } }
+  # Zimbabwe: the supplement lists nine currencies in use; the Factbook still
+  # quotes the abolished ZWD. The Zimbabwe Gold (ZiG) replaced it in April 2024.
+  ZW: { currency: { code: ZWG, name: Zimbabwe Gold } }

@@ -1,0 +1,146 @@
+# Every term the game uses. `clearance` is the level at which mission text
+# may first use the term; `matches` lists other spellings to look for.
+# A definition may use only terms from its own clearance or below.
+- id: query
+  term: query
+  clearance: 1
+  matches: [queries]
+  definition: >
+    A request for information from the archive. You write the fields you
+    want, in the shape you want them back, and the archive fills in the
+    values. A query begins with the word `query` and a pair of braces. You
+    can ask for more than one thing directly inside those braces.
+- id: transmission
+  term: transmission
+  clearance: 1
+  matches: [transmissions]
+  definition: >
+    One query sent to the archive. On a case, each transmission costs one
+    hour, however much it asks for. Asking for everything you need in one
+    transmission is therefore cheaper than asking for it in several.
+- id: field
+  term: field
+  clearance: 1
+  matches: [fields]
+  definition: >
+    One piece of information in a record, such as a shipment's `manifest`.
+    Every field has a name, and you ask for a field by writing its name in
+    a query.
+- id: selection
+  term: selection
+  clearance: 1
+  matches: [selections, selection set]
+  definition: >
+    The fields you list between one pair of braces. When a field holds a
+    record, such as a shipment's `destination`, you must write a selection
+    after it to say which of that record's fields you want:
+    `destination { name }`.
+- id: nested-selection
+  term: nested selection
+  clearance: 1
+  matches: [nested selections, nesting, nested]
+  definition: >
+    A selection inside another selection, as in
+    `destination { country { name } }`. Nesting lets one query follow the
+    links between records: from a shipment, to its destination city, to
+    that city's country.
+- id: type
+  term: type
+  clearance: 1
+  matches: [types]
+  definition: >
+    A kind of record, such as `Shipment` or `Country`. Every record of one
+    type has the same fields. The documentation panel lists the fields of
+    each type.
+- id: schema
+  term: schema
+  clearance: 1
+  definition: >
+    The full list of the archive's types and their fields. A query can ask
+    only for what is in the schema. The documentation panel shows the
+    schema.
+- id: result
+  term: result
+  clearance: 1
+  matches: [results, response]
+  definition: >
+    What the archive sends back for a query. A result holds data in the
+    same shape as the query. If the archive could not answer part of the
+    query, the result also holds a list of errors.
+- id: evidence
+  term: evidence
+  clearance: 1
+  definition: >
+    A fact that one of your queries returned. You can cite only facts that
+    you have retrieved.
+- id: citation
+  term: citation
+  clearance: 1
+  matches: [citations, cite]
+  definition: >
+    A fact that you attach to a claim on a travel order or a deduction
+    form, to show that the claim is true. You cite a fact with the Cite
+    button beside it in the results of a query.
+- id: argument
+  term: argument
+  clearance: 2
+  matches: [arguments]
+  definition: >
+    A value you give to a field, in parentheses after the field, as in
+    `operative(codename: "NIGHTJAR")`. Here the argument is `codename`, and
+    it tells `operative` which record you want. Put text and identifiers in
+    double quotes. The documentation lists the arguments that each field
+    accepts.
+- id: alias
+  term: alias
+  clearance: 3
+  matches: [aliases]
+  definition: >
+    A name you choose for a field's result. You write it before the field,
+    followed by a colon, as in `first: operative(codename: "NIGHTJAR")`.
+    The result then comes back as `first` instead of `operative`. With
+    aliases, one query can ask for the same field twice with different
+    arguments, because each result comes back under its own alias.
+- id: fragment
+  term: fragment
+  clearance: 4
+  matches: [fragments, fragment spread]
+  definition: >
+    A selection that you write once, give a name, and reuse. You define a
+    fragment after the query's closing brace, as
+    `fragment Dossier on Operative { codename }`. Here `Dossier` is the
+    name you chose, and `Operative` is the type of record the fields belong
+    to. To use the fragment, write three dots and its name, `...Dossier`,
+    in any place where the query opens a record of the type `Operative`.
+    Writing the three dots is called spreading the fragment. One fragment
+    may spread another.
+- id: variable
+  term: variable
+  clearance: 5
+  matches: [variables]
+  definition: >
+    A value that you leave out of the query and supply separately. A
+    variable's name starts with `$`. You declare the variable, with its
+    type, in parentheses after the operation's name:
+    `query Departures($city: String!)`. You then write the variable where
+    the value would go: `city(name: $city)`. You type the value in the
+    variables panel as JSON, such as `{ "city": "Lisbon" }`. The variable's
+    type must be the type that the documentation shows for the argument it
+    fills, which here is the `name` argument of `city`. To ask about
+    another city, you change the value and leave the query as it is.
+- id: operation
+  term: operation
+  clearance: 5
+  matches: [operations, operation name]
+  definition: >
+    One whole request, from the word `query` to its closing brace. You can
+    give an operation a name, as in `query Departures`, and a list of the
+    variables it accepts.
+- id: partial-result
+  term: partial result
+  clearance: 3
+  matches: [partial results]
+  definition: >
+    A result that holds both data and errors. A field that the archive
+    could not answer comes back as `null`, with an error that says why. The
+    rest of the data is still good.

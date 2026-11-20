@@ -1,0 +1,346 @@
+id: guest-register
+title: The Guest Register
+campaign: shadow-network
+order: 3
+clearance: 2
+kind: teaching
+teaches: arguments
+practises: [nested-selections]
+requires: [nested-selections]
+summary: >
+  NIGHTJAR signed for the crate and left Luanda. Three hotels think they
+  have seen the same guest.
+motif: register
+clock:
+  countdown: NIGHTJAR's contact leaves in {remaining}
+  expired: NIGHTJAR's contact has left
+  onExpiry: end
+startingStage: luanda
+
+debrief:
+  onTime: |
+    The registry adds a line to MARBLE_HERON's file: dined with
+    NIGHTJAR, Zanzibar City. The clerk underlines the soup.
+  stampOnTime: IDENTIFIED
+  comparison: >
+    In Luanda, the reference solution gives `operative` a codename as its
+    [argument](glossary:argument): `operative(codename: "NIGHTJAR")`. The argument picks one
+    record out of the registry, so the result holds one file and not
+    sixteen. In Zanzibar City, the reference solution asks for two things
+    directly inside the outer braces of one query: a cover name, with
+    `coverName(name: "Dr. Lund")`, and a city, with
+    `city(name: "Zanzibar City")`. Two questions in one query are still a
+    single transmission.
+  geography: >
+    Swahili is an official language of Tanzania and Kenya. Mozambique,
+    just to the south, has Portuguese as its official language.
+
+stages:
+  luanda:
+    location: AO
+    objective: Identify the sighting that is NIGHTJAR and the country it was in.
+
+    briefing: |
+      NIGHTJAR signed order LUA-012 and left Luanda the same
+      night. Three sightings have been filed under the codename.
+      The registry holds a great many files, and the clerk asks
+      that you request the one you need.
+
+    clues:
+      - text: >
+          All three sightings were filed under NIGHTJAR.
+        constraint:
+          $sighting.operative: Operative:NIGHTJAR
+      - text: >
+          NIGHTJAR travels under cover names. A true sighting gives a
+          name that is in NIGHTJAR's own file.
+        constraint:
+          $sighting.nameGiven: $sighting.operative.coverNames
+      - text: >
+          A porter overheard the guest bargaining in Swahili, in a
+          country where it is spoken.
+        constraint:
+          $sighting.city.country.languages: Language:swahili
+          $sighting.city.country: $country
+
+    scaffold:
+      level: guided
+      starterQuery: |
+        query {
+          operative(codename: "") {
+            # Whose file? Write the codename between the quotes.
+            codename
+            # Which names does this operative travel under,
+            # and where has the operative been seen?
+          }
+        }
+
+    hints:
+      nudge: >
+        One sighting gives a name from NIGHTJAR's file and is in a
+        country where Swahili is spoken. The other two each fail one of
+        those two tests.
+      concept: >
+        The registry holds many operatives, so the operative field has
+        to be told which one you want. You tell it with an argument, in
+        parentheses after the field. The starter query already has the
+        argument, with empty quotes. Write the codename between the quotes.
+      schema: >
+        Look at Operative.coverNames, Operative.sightings,
+        Sighting.nameGiven, Sighting.city, and Country.languages.
+      skeleton: |
+        operative(codename: "NIGHTJAR") {
+          coverNames { name }
+          sightings { id nameGiven { name } city { name country { name languages { name } } } }
+        }
+
+    solution:
+      type: destination
+      sighting: SGT-031
+      country: TZ
+    labels:
+      sighting: Sighting
+      country: Country of the sighting
+
+    claims:
+      - id: name
+        prompt: The name the guest gave is one of NIGHTJAR's cover names.
+        evidenceSets:
+          - facts:
+              - entity: Sighting:$sighting
+                field: nameGiven
+                equals: CoverName:$name
+              - entity: Operative:NIGHTJAR
+                field: coverNames
+                includes: CoverName:$name
+          - facts:
+              - entity: Sighting:$sighting
+                field: nameGiven
+                equals: CoverName:$name
+              - entity: CoverName:$name
+                field: operative
+                equals: Operative:NIGHTJAR
+      - id: language
+        prompt: The sighting was in a country where Swahili is spoken.
+        evidenceSets:
+          - facts:
+              - entity: Sighting:$sighting
+                field: city
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: languages
+                includes: Language:swahili
+          - facts:
+              - entity: Sighting:$sighting
+                field: city
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Language:swahili
+                field: countries
+                includes: Country:$country
+
+    leadOutcomes:
+      SGT-027:
+        location: KE
+        refutation:
+          claim: name
+          facts:
+            - entity: Sighting:$sighting
+              field: nameGiven
+              equals: CoverName:$name
+            - entity: CoverName:$name
+              field: operative
+              equals: Operative:COPPER_KITE
+        ruledOut: |
+          Mombasa's guest signed as H. Brandt. The registry files
+          that name under COPPER_KITE, who is entitled to a holiday.
+        fieldCheck: |
+          Mombasa confirms the guest spoke Swahili. The desk clerk
+          asks whose file the name H. Brandt is kept in.
+      SGT-034:
+        location: MZ
+        refutation:
+          claim: language
+          facts:
+            - entity: Sighting:$sighting
+              field: city
+              equals: City:$city
+            - entity: City:$city
+              field: country
+              equals: Country:$country
+            - entity: Country:$country
+              field: languages
+              excludes: Language:swahili
+        ruledOut: |
+          Maputo's guest gave the right name. The post office adds
+          that nobody there bargains in Swahili, least of all the porter.
+        fieldCheck: |
+          Maputo confirms the name M. Calloway. The postmaster asks
+          which languages the porter is supposed to have overheard.
+      SGT-031:
+        location: TZ
+        fieldCheck: |
+          Zanzibar City has a guest of that name. The hotel asks for
+          a travel order with every claim cited before it shows the register.
+
+    resolved: |
+      Travel order approved. The hotel in Zanzibar City produces
+      its register and a pot of tea.
+
+    referenceSolution: |
+      query {
+        operative(codename: "NIGHTJAR") {
+          coverNames {
+            name
+          }
+          sightings {
+            id
+            nameGiven {
+              name
+            }
+            city {
+              name
+              country {
+                name
+                languages {
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+
+    next: zanzibar
+
+  zanzibar:
+    location: TZ
+    objective: Identify the operative who dined with NIGHTJAR.
+
+    briefing: |
+      The register shows that M. Calloway dined with a guest who
+      signed as Dr. Lund. The registry keeps two cover names that a
+      hurried clerk could read as Dr. Lund. Find which operative the
+      name in the register belongs to.
+
+    clues:
+      - text: >
+          The guest signed the register as Dr. Lund, title included.
+        constraint:
+          $name.name: Dr. Lund
+      - text: >
+          The registry files each cover name under one operative.
+        constraint:
+          $operative.coverNames: $name
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          coverName(name: "") {
+            # Write the cover name between the quotes, exactly as
+            # the register has it. Which operative uses that cover
+            # name, and did a guest in Zanzibar City give it?
+          }
+        }
+
+    hints:
+      nudge: >
+        First confirm that a guest in Zanzibar City gave the cover name
+        Dr. Lund. Then ask the registry which operative that cover name
+        is filed under.
+      concept: >
+        The coverName field has an argument that says which cover name
+        you want. Write the cover name exactly as the register has it,
+        title included. A different spelling is a different argument,
+        and it returns a different record.
+      schema: >
+        Look at CoverName.operative, CoverName.sightings,
+        City.sightings, and Sighting.nameGiven.
+      skeleton: |
+        coverName(name: "Dr. Lund") { name operative { codename } }
+        city(name: "Zanzibar City") { sightings { id nameGiven { name } } }
+
+    solution:
+      type: deduction
+      name: dr-lund
+      operative: MARBLE_HERON
+    labels:
+      name: Name in the register
+      operative: Filed under
+
+    claims:
+      - id: seen
+        prompt: A guest in Zanzibar City gave this name.
+        evidenceSets:
+          - facts:
+              - entity: City:zanzibar-city
+                field: sightings
+                includes: Sighting:$sighting
+              - entity: Sighting:$sighting
+                field: nameGiven
+                equals: CoverName:$name
+          - facts:
+              - entity: CoverName:$name
+                field: sightings
+                includes: Sighting:$sighting
+              - entity: Sighting:$sighting
+                field: city
+                equals: City:zanzibar-city
+          - facts:
+              - entity: Sighting:$sighting
+                field: city
+                equals: City:zanzibar-city
+              - entity: Sighting:$sighting
+                field: nameGiven
+                equals: CoverName:$name
+      - id: owner
+        prompt: The registry files this name under this operative.
+        evidenceSets:
+          - facts:
+              - entity: CoverName:$name
+                field: operative
+                equals: Operative:$operative
+          - facts:
+              - entity: Operative:$operative
+                field: coverNames
+                includes: CoverName:$name
+
+    leadOutcomes:
+      d-lund:
+        refutation:
+          claim: seen
+          facts:
+            - entity: CoverName:$name
+              field: sightings
+              excludes: Sighting:SGT-040
+        ruledOut: |
+          TIN_FALCON signs as D. Lund and has never claimed a
+          doctorate. No sighting in the register gives that name.
+
+    resolved: |
+      Deduction accepted. The registry notes the dinner in
+      MARBLE_HERON's file.
+
+    referenceSolution: |
+      query {
+        coverName(name: "Dr. Lund") {
+          name
+          operative {
+            codename
+          }
+        }
+        city(name: "Zanzibar City") {
+          sightings {
+            id
+            nameGiven {
+              name
+            }
+          }
+        }
+      }
