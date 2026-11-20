@@ -1,7 +1,7 @@
 # WhereQL — Software Design Document
 
 **Status:** Draft
-**Version:** 0.4
+**Version:** 0.5
 **Last updated:** November 20, 2026
 
 ## 1. Introduction and Overview
@@ -97,8 +97,8 @@ This section describes how the game plays and how it teaches. Later sections des
 
 1. Receive a classified mission briefing.
 2. Query the intelligence terminal.
-3. Read the results. Every fact returned is recorded as evidence.
-4. Pin the evidence that matters to the evidence board.
+3. Read the results and compare leads. Every fact returned is recorded as evidence.
+4. Pin relevant facts to the evidence board directly from the results or the ledger.
 5. Submit a deduction, travel, or apply for a warrant, citing pinned evidence.
 6. Receive the consequence: new intelligence, a dead end, or a resolution.
 7. Repeat until the mission is resolved, then read the debrief.
@@ -107,15 +107,17 @@ This section describes how the game plays and how it teaches. Later sections des
 
 The player's conclusions must rest on what their queries returned.
 
-The game records every fact that appears in a query result in an **evidence ledger**. A fact is a field value of an entity, or a relationship between two entities. The player pins facts from the ledger to an evidence board and cites them when submitting a deduction.
+The game records every fact that appears in a query result in an **evidence ledger**. A fact is a field value of an entity, or a relationship between two entities. A player can pin a fact directly from the result or from the ledger, then jump back from the pin to the response that contained it. A fact can appear in multiple responses and keeps its identity across queries.
 
-A deduction is accepted only when it is correct and the cited evidence supports it. A player who already knows the answer still has to retrieve the facts that prove it.
+Deduction, travel, and warrant forms present the claims the player must support in plain language. A stage can define several sufficient sets of facts for each claim. A claim is supported when its citations contain any one complete set. Extra citations are allowed. Facts in a set must refer to the lead under consideration. For example, a shipment's destination and the destination country's border must form a connected chain.
 
-To make this meaningful, every puzzle should depend on fictional intelligence data, such as shipments, aliases, and transactions, that no player can know in advance. Real geography then narrows the possibilities. A typical clue chain joins the two: an intercepted shipment leads to a city, and the city's country must satisfy a geographical clue.
+The form returns missing or unrelated citations for correction before spending time. If the player cites relevant facts that disprove a claim, the outcome names the claim and the conflicting fact. An absent entry can refute a claim about a list only when the player retrieved the complete list without an error. A deduction is accepted when the conclusion is correct and all claims are supported.
+
+Every puzzle should depend on fictional intelligence data, such as shipments, aliases, and transactions, that no player can know in advance. Real geography then narrows the possibilities. For example, an intercepted shipment leads to a city, and the city's country must satisfy a geographical clue.
 
 ### 3.3 The Mission Clock
 
-Each mission has a budget of hours. Actions spend it.
+Each mission has a budget of hours. Actions spend it while the clock is active.
 
 | Action | Provisional cost |
 |---|---|
@@ -123,7 +125,7 @@ Each mission has a budget of hours. Actions spend it.
 | Travel | Several hours, depending on distance |
 | Hint | 1 to 8 hours, rising with each step of the hint ladder |
 | Solution reveal | More than all the hints together |
-| Rejected warrant or wrong destination | Several hours |
+| Rejected warrant | Several hours |
 
 The clock exists to teach GraphQL's central idea. One nested query costs the same as one flat query, so a player who asks for everything they need in a single transmission is rewarded.
 
@@ -136,21 +138,25 @@ The clock must not discourage experimentation:
 - Onboarding missions have generous budgets.
 - Katas (Section 3.11) have no clock.
 
-When the clock runs out, the suspect escapes and the mission can be restarted. There is no numeric score in the MVP. Actual costs and budgets will be set by playtesting.
+An action that uses the last available hour resolves before the clock expires. If an action costs more than the time remaining, show the shortfall and let the player choose to let the deadline pass.
+
+In the first mission, the suspect gets away at the deadline and the player can continue the investigation untimed from their current stage. The game keeps their evidence, pins, transcripts, and editor draft. A late completion still requires a supported deduction and gets a different narrative outcome in the debrief. The player can also restart. In later missions, the deadline ends the attempt and the player can restart. The current stage's solution becomes free to view once the deadline passes in either case (Section 3.9).
+
+There is no numeric score in the MVP. Actual costs and budgets will be set by playtesting.
 
 ### 3.4 Warrants
 
 Missions that end with an arrest require a warrant. The player names an operative and cites evidence for each claim the warrant makes, such as an alias link or presence at the scene.
 
-The bureaucracy rejects a warrant that names the wrong operative or lacks support, and the rejection costs time. Early missions end with a destination rather than an arrest, so warrants are introduced once the player is comfortable gathering evidence.
+The bureaucracy returns missing or unrelated citations for correction. Once a warrant is submitted, a rejection costs time. Warrants are introduced after destination missions, once the player is comfortable gathering evidence.
 
 ### 3.5 Failure and Dead Ends
 
 Failure should be entertaining and informative.
 
-Traveling to the wrong destination produces an in-character dead end, written for that destination where the author has provided one, and costs travel time. The player then returns to the investigation with less time and no penalty beyond that.
+Give players a credible reason to investigate a wrong lead. At a stage with several leads, let players examine them in any order. Before travel, show the quoted cost and check that the citations address each required claim. A player who commits to a mistaken lead spends the quoted travel time and sees an in-character dead end. The player returns to the same stage with their evidence and can reconsider the lead.
 
-A dead end should, where possible, hint at which piece of evidence was misread.
+A dead end should explain why that lead looked plausible and point to the claim the evidence undermines. The scene leaves the player to work out which lead to pursue next.
 
 ### 3.6 Unreliable Sources
 
@@ -164,11 +170,11 @@ Concepts are introduced in a fixed order. Each is tied to a clearance level and 
 
 | Clearance | Concept | Story reason | Scope |
 |---|---|---|---|
-| 1 | Fields and nested selections | Follow a shipment to its destination and that destination's country | MVP |
+| 1 | Fields and nested selections | Compare shipment manifests and trace destinations to countries and their borders | MVP |
 | 2 | Arguments | Pull one operative's file instead of the whole registry | MVP |
-| 3 | Aliases | Compare two suspects side by side in one transmission | MVP |
-| 4 | Fragments | Reuse one dossier template for every associate | MVP |
-| 5 | Variables | Keep a standing query and rerun it in each city of a pursuit | MVP |
+| 3 | Aliases | Call the same dossier field with two suspect IDs and compare the named results side by side | MVP |
+| 4 | Fragments | Keep the same fields in a suspect's dossier and in nested dossiers for their associates by writing the selection once | MVP |
+| 5 | Variables | Carry a query into a second city and change its input in the variables panel | MVP |
 | 6 | Introspection | Explore a newly seized archive that has no documentation | Later |
 | 7 | Unions and inline fragments | Read a case file whose records are of mixed kinds | Later |
 | 8 | Pagination | Work through surveillance logs too long to request whole | Later |
@@ -180,11 +186,11 @@ Each mission declares the concept it teaches, the concepts it practises, and the
 - A mission teaches at most one new concept. If two concepts will not separate, a mission is missing.
 - A mission may only require concepts taught at or below its clearance level.
 - Every concept is practised in at least one mission after the one that teaches it.
-- Each clearance level ends with an **assessment mission**. It teaches nothing new, has no scaffold, and combines the concepts learned so far.
+- Each clearance level ends with an **assessment mission**. It teaches nothing new, starts with a blank editor, and uses a different case and data to see whether players can apply the concepts learned so far.
 
 The curriculum governs what is taught and what a mission needs. It does not restrict what the terminal accepts: any valid GraphQL that the player's schema supports will execute at any time.
 
-Wherever possible, a mission should teach through its situation and the clock rather than by checking syntax. A player comparing two suspects will reach for aliases because the alternative is two transmissions.
+Give the target feature a visible payoff during the case. Aliases save a transmission, fragments save duplicate selections that would need to stay in sync, and variables let the player reuse the operation when the input changes. The assessment gives players a fresh reason to use the same technique. The game accepts any query that yields sufficient evidence.
 
 ### 3.8 Clearance and Progression
 
@@ -216,13 +222,13 @@ Hints follow a four-step ladder. Each step costs more time than the last.
 3. **Schema pointer:** Names the relevant types and fields.
 4. **Skeleton:** Shows the shape of a working query.
 
-Beyond the ladder there is a **solution reveal**, which shows the stage's reference solution. It is named as such and is never presented as one more hint.
+Beyond the ladder there is a **solution reveal**, which shows the stage's reference solution. It is available at its stated cost while the clock is active and free after the deadline, even if the attempt has ended. In the first mission's untimed continuation, hints are also free.
 
 The player should always know what help costs. Each hint is labelled with its position and purpose, such as "Hint 2 of 4: names the concept", and the price of the ladder and of the solution reveal is stated before the first hint is taken.
 
 Hints carry technique, not reference material. Anything the player needs in order to reason, such as the schema documentation and the meaning of a term, is free and always available.
 
-Each completed mission records a **completion mode**: independent, hinted, or solution-revealed. All three count toward promotion, so no player is ever stuck. The mission list shows the mode honestly, and the player can investigate again to earn an independent result.
+Each completed mission records how much help the player used during that attempt as its **completion mode**. The modes are independent, hinted, and solution-revealed. All three count toward promotion, including a completion after the first mission's deadline. The mission list shows the help used and whether the investigation finished after the deadline. The player can investigate again for a different result.
 
 The interface should make GraphQL errors understandable. The original error is always shown unaltered, and the records clerk adds a plain-language annotation beneath it. An annotation says where to look and is worded as a suggestion. It never contains the text to type. Errors are a routine part of the work and should not be presented as failures.
 
@@ -230,12 +236,12 @@ The interface should make GraphQL errors understandable. The original error is a
 
 Every mission ends with a debrief containing:
 
-- The narrative outcome.
-- The player's transmissions beside the mission's reference solution, with a note on the difference where it is instructive, such as several transmissions that could have been one.
+- The narrative outcome, including what changed if the player resolved the case after the deadline.
+- The player's transmissions beside the mission's reference solution. Highlight a concrete difference where it helps explain the concept, such as which repeated selections a fragment replaces or which input can change without editing the operation. A successful alternative is also worth showing.
 - The real geographical fact the mission turned on.
-- A concept card for the tradecraft manual.
+- A concept card for the tradecraft manual when the player earns one.
 
-The tradecraft manual has two parts. Its glossary defines every term the game uses and is available from the start, because a definition is reference material. Its concept cards are earned, one per concept, and summarize what the player has learned to do.
+The tradecraft manual has two parts. Its glossary defines every term the game uses and is available from the start, because a definition is reference material. Its concept cards are earned, one per concept, and summarize what the player has learned to do. Each teaching mission's debrief links to the next available case that practises that concept with new data.
 
 ### 3.11 Katas
 
@@ -279,7 +285,7 @@ Major subsystems:
 The GraphQL engine should know nothing about missions, so the same schema can support different missions and game mechanics. It meets the game at three narrow points:
 
 - **Schema construction.** The engine builds its schema for a given clearance level. Elements above that level are left out, so validation, documentation, and introspection all agree on what exists.
-- **Evidence reporting.** After executing an operation, the engine reports the facts contained in the result. The game engine records them in the evidence ledger.
+- **Evidence reporting.** After executing an operation, the engine reports the facts contained in the result and their response paths. The game engine records those facts and links them to the transmission in the evidence ledger.
 - **Actions.** Mutation resolvers do not change game state themselves. They call an action interface supplied through the execution context, and the game engine decides the outcome.
 
 ### 4.3 Technology Considerations
@@ -419,7 +425,7 @@ Missions should be declarative and stored as human-readable YAML files in versio
 
 Each mission contains one or more stages. A stage represents an investigation objective, usually associated with a location.
 
-A mission declares what it teaches, what it practises, what it requires, and its time budget. An assessment mission teaches nothing and lists the concepts it combines under `practises`. A stage declares its clues, scaffold, hint ladder, accepted solution with the evidence that must support it, dead ends, and a reference solution.
+A mission declares what it teaches, what it practises, what it requires, and its time budget. An assessment mission teaches nothing and lists the concepts it combines under `practises`. A stage declares its clues, scaffold, hint ladder, forms of evidence for each claim, accepted solution, dead ends, and a reference solution. Each evidence set lists facts that must be cited together. In the example, `$shipment`, `$city`, and `$country` refer to the shipment and destination under consideration. The claim checks use those bindings for every lead.
 
 Illustrative structure:
 
@@ -432,22 +438,37 @@ Illustrative structure:
     requires: []
     clock:
       budgetHours: 48
+      onExpiry: continue
     startingStage: lisbon
+
+    debrief:
+      onTime: |
+        Your dispatch reaches Luanda in time to hold the shipment.
+        The buyer's calling card is now in the case file.
+      afterDeadline: |
+        The tiles are traced to Luanda. By the time your dispatch
+        arrives, the buyer has already collected the crate. The
+        records clerk files the route for the next case.
 
     stages:
       lisbon:
         location: PT
-        objective: Find where the stolen tiles were shipped.
+        objective: Identify the shipment carrying the tiles and its destination.
 
         briefing: |
           A priceless collection of azulejos has vanished from a
-          Lisbon museum. Three shipments have left the port since.
-          One of them is not roofing samples.
+          Lisbon museum. Three shipments declared as samples left the
+          port that morning. Customs would appreciate a narrower list.
 
         clues:
           - text: >
-              An informant overheard the buyer complaining about
-              the long drive to the Namibian border.
+              The museum registrar describes blue ceramic squares,
+              14 centimetres across.
+            constraint:
+              manifest: Blue ceramic squares (14 cm)
+          - text: >
+              An intercepted dispatch says the truck will cross into
+              Namibia directly from the country receiving the shipment.
             constraint:
               destinationCountry:
                 borders: NA
@@ -458,6 +479,7 @@ Illustrative structure:
             query {
               city(name: "Lisbon") {
                 departingShipments {
+                  id
                   manifest
                   # Where is each shipment going?
                 }
@@ -466,8 +488,8 @@ Illustrative structure:
 
         hints:
           nudge: >
-            Each shipment has a destination, and each destination
-            is in a country.
+            Some manifests fit the registrar's description. Which
+            of those routes fits the intercepted dispatch?
           concept: >
             A field that returns an object needs its own selection
             in braces.
@@ -479,18 +501,40 @@ Illustrative structure:
 
         solution:
           type: destination
+          shipment: LIS-0417
           country: AO
-          requiredEvidence:
-            - entity: Shipment:LIS-0417
-              field: destination
-            - entity: Country:AO
-              field: borders
-              includes: Country:NA
+
+        claims:
+          - id: manifest
+            prompt: The shipment matches the museum registrar's description.
+            evidenceSets:
+              - facts:
+                  - entity: Shipment:$shipment
+                    field: manifest
+                    equals: Blue ceramic squares (14 cm)
+          - id: route
+            prompt: The shipment's destination country borders Namibia.
+            evidenceSets:
+              - facts:
+                  - entity: Shipment:$shipment
+                    field: destination
+                    equals: City:$city
+                  - entity: City:$city
+                    field: country
+                    equals: Country:$country
+                  - entity: Country:$country
+                    field: borders
+                    includes: Country:NA
 
         deadEnds:
-          MZ: |
-            The harbourmaster in Maputo opens the crate with some
-            ceremony. It contains roofing samples.
+          ZA: |
+            The Cape Town harbourmaster opens the crate with some
+            ceremony. It contains blue slate, exactly the size on
+            the manifest. The tiles in the museum were ceramic.
+          CV: |
+            The ceramic squares in Praia fit the description. The
+            harbourmaster asks to see the truck that can drive from
+            an island to the Namibian border.
           default: |
             Nobody here has seen any tiles. The agency has billed
             you for the flight.
@@ -499,6 +543,7 @@ Illustrative structure:
           query {
             city(name: "Lisbon") {
               departingShipments {
+                id
                 manifest
                 destination {
                   name
@@ -519,7 +564,13 @@ Illustrative structure:
         location: AO
         # Remaining stages omitted.
 
-In this example the three shipments are bound for Luanda, Maputo, and Praia. Only Angola borders Namibia, so the clue identifies exactly one destination, and the player cannot know which shipments exist without querying.
+The countries receiving the Luanda and Cape Town shipments both border Namibia. The Luanda and Praia manifests fit the registrar's description. Only the Luanda shipment satisfies both clues. [Angola’s land borders](https://governo.gov.ao/angola/dados-sobre-o-pa%C3%ADs) · [Cape Town and South Africa’s borders](https://www.gov.za/about-sa/south-africas-provinces) · [Praia and the islands of Cabo Verde](https://www.aai.gov.cv/cabo-verd)
+
+| Shipment | Destination | Manifest | Borders Namibia |
+|---|---|---|---|
+| LIS-0417 | Luanda, Angola | Blue ceramic squares (14 cm) | Yes |
+| LIS-0486 | Cape Town, South Africa | Blue slate squares (14 cm) | Yes |
+| LIS-0522 | Praia, Cabo Verde | Blue ceramic squares (14 cm) | No |
 
 The starter query supplies the `name` argument, so the player only has to add nested selections. Arguments are taught at the next clearance level.
 
@@ -534,8 +585,8 @@ A build-time validation process should check:
 - **Structure:** Mission definitions have the required fields.
 - **References:** Geographical entities, operatives, organizations, stages, missions, and campaigns that are referred to all exist.
 - **Reachability:** Every stage can be reached and every mission has a terminal outcome.
-- **Uniqueness:** The machine-verifiable clues of a stage identify exactly one solution among the candidates the data offers. Where reports conflict, the corroborating data settles the conflict.
-- **Evidence:** Every piece of required evidence can be retrieved through the schema available at the mission's clearance.
+- **Uniqueness:** The machine-verifiable clues of a stage identify exactly one solution among the candidates the data offers. For the Azulejos opening, each clue must also leave at least one wrong lead plausible on its own. Where reports conflict, the corroborating data settles the conflict.
+- **Evidence:** Every authored evidence set is retrievable at the mission's clearance. For each claim, the tests accept every complete set, allow extra citations, and reject incomplete sets or facts from unrelated leads unless the cited facts form another complete set.
 - **Solvability:** The reference solution executes without error, yields the required evidence, and fits within the mission clock with a margin.
 - **Curriculum order:** A mission requires only concepts taught at or below its clearance, and its reference solution uses the concept it claims to teach.
 - **Course shape:** The rules of Section 3.7 hold. Every taught concept is practised later, every clearance level ends with an assessment mission, and every mission file in the content directory is part of the course.
@@ -552,6 +603,8 @@ Every check is an error that fails the build. A check that only prints a warning
 Validation cannot catch everything, so mission authors also follow these rules.
 
 - **State the objective, not the method.** An objective says what to find. It never says which query to write or which GraphQL feature to use. Technique belongs in the hints, where the player chooses to see it.
+- **Make wrong leads plausible.** A plausible wrong lead fits at least one clue. Give players a way to disqualify it from query results before traveling, and explain the mistake in its dead-end scene.
+- **Write a fresh assessment case.** Change the evidence or relationships enough that a player has to decide which fields to retrieve. Keep the goal clear and leave the editor blank.
 - **Run the queries before writing the text.** Briefings, clues, hints, and dead ends must describe what the engine actually returns. Text written from expectation is the most common source of broken missions.
 - **Introduce a term before using it.** Otherwise link its glossary entry.
 - **Say what to change.** A starter query marks the part the player is meant to complete.
@@ -565,7 +618,7 @@ Missions are discovered from the content directory. There is no separate list of
 
 The application will expose a local execution interface to the editor and game engine.
 
-It takes an operation, its variables, and the player's clearance level. It returns the standard GraphQL result together with the facts that result contains.
+It takes an operation, its variables, and the player's clearance level. It returns the standard GraphQL result together with the facts that result contains and their response paths.
 
 Operations should support normal GraphQL functionality, including schema validation, variables, fragments, aliases, directives, and introspection, within the schema for the given clearance.
 
@@ -577,13 +630,15 @@ The game engine will receive player actions, update investigation state, and rep
 
 Actions:
 
-- Transmit a query. This spends time and adds facts to the evidence ledger.
+- Transmit a query. This spends time while the clock is active and adds facts to the evidence ledger.
 - Pin or unpin evidence.
 - Examine a dossier, report, or the schema documentation. This is free.
 - Request a hint.
-- Travel to a destination.
+- View the stage's solution.
+- Travel to a destination, citing pinned evidence for the lead.
 - Submit a deduction, citing pinned evidence.
 - Apply for a warrant, citing pinned evidence.
+- Let the deadline pass, or restart the investigation.
 
 Travel and deductions are available as controls in the interface from the first mission, and warrants from the first mission that ends in an arrest. Once the player reaches the clearance level that teaches mutations, the same actions can also be performed through the terminal, and missions at that level ask for the paperwork to be filed that way. Both routes call the same engine actions.
 
@@ -605,7 +660,7 @@ Campaign-level state may track recurring suspects, discoveries, or narrative dev
 
 Responsible for executing user-authored operations against local geographical and intelligence data.
 
-It builds a schema for each clearance level from clearance annotations on the schema definition. After execution, it walks the result using the schema's type information and reports each entity field and relationship it contains as a fact.
+It builds a schema for each clearance level from clearance annotations on the schema definition. After execution, it walks the result using the schema's type information and reports each entity field and relationship it contains as a fact, with its response path. It marks a returned list as complete only when the field returns the full collection without filtering, pagination, or errors affecting that list.
 
 Potential considerations include query complexity limits, execution timeouts, and Web Workers to avoid blocking the interface.
 
@@ -617,7 +672,7 @@ The system should make it practical to add new missions without implementing new
 
 ### 7.4 Progress System
 
-Responsible for recording completed missions and their completion modes, investigations in progress, the editor's contents for each stage, and the player's preferences.
+Responsible for recording completed missions, the help used, and whether completion was after the deadline. For investigations in progress, it records deadline state, the evidence ledger and pins, their source transmissions, and the editor's contents for each stage. It also stores the player's preferences.
 
 Persistence should work without registration or a network connection. The following rules keep saved progress trustworthy as the game changes:
 
@@ -666,13 +721,13 @@ The screens support the gameplay loop described in Section 3.1.
 
 **Orientation:** The optional introduction to the terminal and its tools (Section 3.13).
 
-**Mission Selection:** Available assignments, the clearance each requires, the concept each teaches, the completion mode of those already finished, and campaign progress.
+**Mission Selection:** Available assignments, the clearance each requires, the concept each teaches, and campaign progress. For completed assignments, show the help used and whether the case was resolved after the deadline.
 
 **Mission Briefing:** Classified narrative introduction, objectives, and initial intelligence.
 
-**Intelligence Terminal:** GraphQL editor, schema documentation for the player's clearance, query results, error annotations, hints, the mission clock, and current location.
+**Intelligence Terminal:** GraphQL editor, schema documentation for the player's clearance, query results with pin controls, error annotations, hints, and current location. The clock shows remaining hours or that the investigation is continuing untimed.
 
-**Evidence Board:** The evidence ledger, the facts the player has pinned, and the forms for submitting a deduction or applying for a warrant.
+**Evidence Board:** The evidence ledger and pinned facts, with links back to their query results. Deduction and warrant forms show the claims and their citations. Travel uses the same evidence form.
 
 **World Map:** Visualizes geographical locations and supports travel decisions, showing the time each journey would cost.
 
@@ -703,12 +758,12 @@ Testing should prioritize deterministic game behavior and content correctness.
 
 Suggested coverage:
 
-- **Unit tests:** GraphQL resolvers, mission transitions, evidence recording, clock accounting, and evaluation of deductions and warrants.
+- **Unit tests:** GraphQL resolvers, mission transitions, evidence recording and source links, and claim evaluation. Verify that missing citations cost no time, committed dead ends spend the quoted cost, a final-hour action resolves before expiry, and a solution reveal is free after expiry.
 - **Schema tests:** Each clearance level exposes exactly its intended types and fields, including through introspection. Classified records return partial data with errors.
 - **Content tests:** The validation checks of Section 5.5, run against every mission. These recompute what a mission asserts from the data and do not trust the authored answer.
 - **Integration tests:** Execute representative GraphQL operations against actual game data.
 - **Persistence tests:** Saved data from an older format version, a changed mission, and unavailable storage are each handled as Section 7.4 describes.
-- **End-to-end tests:** Complete an investigation through the browser UI. At least one test submits a wrong deduction, corrects it, completes the mission, reloads the page, and confirms that the progress survived.
+- **End-to-end tests:** In the Azulejos case, commit to a wrong lead, read the feedback, correct the deduction, complete the mission, and reload to confirm that progress survived. In a separate run, let the deadline pass, reload, and check that the retained evidence and draft support a successful late completion with its own debrief.
 
 Every authored mission must include a reference solution. Continuous integration plays each mission using its reference solution and fails if the mission cannot be completed within its clock.
 
@@ -716,12 +771,14 @@ The test suite gates deployment. A build that fails any test or validation check
 
 ### 10.1 Playtesting
 
-Automated tests show that a mission can be solved. They do not show that it teaches. Before a mission ships, two reviews are run by browser agents, so that neither depends on finding a human tester.
+Use automated tests to check solvability and browser-agent reviews to check what the game communicates on screen. Run both agent reviews before a mission ships.
 
 - **Clean-room solve:** An agent that can only operate the page, starting from a verified empty save, solves the mission without taking a hint. For each step it lists the on-screen material that justified it. This answers one question: can the mission be solved from what the game shows?
 - **Novice walkthrough:** An agent plays in the persona of the audience described in Section 1.2. It records numbered points of confusion, each with where it happened and what would have helped, and reports where it stopped understanding and began matching patterns. Every point is either fixed or logged with a reason, and the walkthrough is then run again.
 
 The agents are given a self-contained prompt and no knowledge of how the game is built. A reviewer who knows the answer is not a fair test of what the game teaches.
+
+Once the first mission is playable, observe a few people who know JSON and are new to GraphQL before expanding the campaign. Record by hand where they get stuck, whether they can explain how the two clues support their destination, and which moments they remember. Ask whether they would choose to play another case and why. Give each player a short follow-up case with different data and a blank editor. Observe whether they can write a nested selection and explain how its result supports the new deduction. Use these sessions to tune the deadline, citation feedback, and starter query before authoring the remaining clearance levels.
 
 ## 11. Development Milestones
 
@@ -739,22 +796,24 @@ The agents are given a self-contained prompt and no knowledge of how the game is
 
 - Implement the mission definition format.
 - Add a small intelligence dataset linked to the geographical data.
-- Load one espionage-themed investigation with several stages.
-- Record evidence from query results and require it for deductions.
-- Implement the mission clock, destination selection, dead ends, and completion.
-- Validate uniqueness and run the mission's reference solution in tests.
+- Load *The Vanishing Azulejos* with several stages and a plausible wrong lead in the opening.
+- Let players pin evidence from query results, trace it back to the source, and cite it against plain-language claims.
+- Implement the mission clock, evidence feedback, destination selection, and dead ends. Support an untimed continuation and a free solution reveal after the deadline.
+- Validate that the two clues together identify one shipment and that each clue alone leaves more than one. Run the mission's reference solution in tests.
 - Introduce an intelligence briefing and basic dossier interface.
-- Persist basic progress in versioned saves.
-- Add the end-to-end test that fails a deduction, corrects it, and reloads.
+- Add the guided starter query and a basic debrief that explains the query and shows the on-time or late outcome.
+- Persist progress, source transmissions, and editor drafts in versioned saves.
+- Run end-to-end tests for recovering from a wrong deduction and finishing after the deadline.
+- Observe beginners playing the mission and a short follow-up case with a blank editor, using the findings to refine the first mission.
 
-**Success criterion:** A player can solve a complete international mystery, and can only do so by using GraphQL.
+**Success criterion:** A player can use GraphQL to compare plausible leads and solve a complete international mystery, including after the first mission's deadline. Beginner playtests show whether players can explain their deductions and use nested selections in a fresh case.
 
 ### Milestone 3 — Educational MVP
 
-- Author teaching and assessment missions covering clearance levels 1 through 5, from nested selections to variables.
+- Author teaching and assessment missions covering clearance levels 1 through 5, from nested selections to variables. Give each feature a visible payoff and test it again in a different case with a blank editor.
 - Implement clearance, promotion, and clearance-scoped schemas.
-- Add schema documentation, scaffolded starter queries, the hint ladder, the solution reveal, and error annotations.
-- Add the orientation, the debrief, and the tradecraft manual with its glossary.
+- Add schema documentation, scaffolding throughout the course, the hint ladder, and error annotations. Make the solution reveal available in every mission.
+- Add the orientation and the tradecraft manual with its glossary. Extend the debrief to compare the player's approach with the reference solution and point to a follow-up case.
 - Incorporate a world map and Cold War–inspired visual design.
 - Introduce the recurring cast and a simple campaign.
 - Run the full set of content validation checks automatically, including course shape.
@@ -776,7 +835,7 @@ The agents are given a self-contained prompt and no knowledge of how the game is
 The following decisions are intentionally deferred:
 
 1. **Clock tuning:** What costs and budgets reward economical queries without making beginners afraid to experiment?
-2. **Evidence strictness:** Must a deduction cite exactly the required evidence, or is any sufficient set acceptable? How is sufficiency defined for missions with several valid lines of reasoning?
+2. **Evidence authoring:** How many independent sources should later missions offer for the same claim?
 3. **MVP curriculum:** Should introspection move into the MVP, given how central schema exploration is to working with GraphQL?
 4. **Data scope:** What is the smallest geographical and intelligence dataset capable of supporting compelling mysteries?
 5. **Narrative format:** Should missions use YAML exclusively, or combine YAML with Markdown?
@@ -801,7 +860,7 @@ The following decisions are intentionally deferred:
 
 **Game State:** The player's current investigation, discoveries, decisions, and progress.
 
-**Transmission:** One executed GraphQL operation. Each transmission spends time on the mission clock.
+**Transmission:** One executed GraphQL operation. A transmission spends time while the mission clock is active.
 
 **Mission Clock:** The budget of hours a mission allows, spent by transmissions, travel, hints, and mistakes.
 
@@ -821,9 +880,9 @@ The following decisions are intentionally deferred:
 
 **Solution Reveal:** The step beyond the hint ladder, which shows the reference solution.
 
-**Completion Mode:** How a mission was completed: independently, with hints, or with the solution revealed.
+**Completion Mode:** The help used during an attempt that resolved the case, recorded as independent, hinted, or solution-revealed.
 
-**Assessment Mission:** The mission that ends a clearance level. It teaches nothing new and combines the concepts learned so far.
+**Assessment Mission:** The mission that ends a clearance level. It starts with a blank editor and asks the player to apply familiar concepts to a fresh case.
 
 **Orientation:** The optional introduction to the terminal offered before the first mission.
 
