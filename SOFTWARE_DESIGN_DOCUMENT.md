@@ -1,7 +1,7 @@
 # WhereQL — Software Design Document
 
 **Status:** Draft
-**Version:** 0.2
+**Version:** 0.3
 **Last updated:** November 20, 2026
 
 ## 1. Introduction and Overview
@@ -16,44 +16,50 @@ Players assume the role of intelligence operatives investigating crimes, trackin
 
 The game should make learning GraphQL feel like conducting an international intelligence operation rather than completing conventional programming exercises.
 
-### 1.2 Goals
+### 1.2 Audience
 
-- Teach GraphQL progressively, from basic queries to advanced features such as variables, fragments, and nested relationships.
+The game is written for people who have seen JSON or used an API but have never written GraphQL. It does not teach what an API is, and it does not assume experience with any particular programming language.
+
+Experienced developers should still find the later missions interesting, because those missions depend on deduction as much as on syntax.
+
+### 1.3 Goals
+
+- Make GraphQL the means of solving every mystery. A mission should not be solvable from general knowledge alone.
+- Teach GraphQL progressively. Each mission introduces or practises a named concept, from basic selections to mutations.
 - Encourage exploration, deduction, and independent problem-solving rather than reproducing predetermined queries.
 - Incorporate real geographical facts, providing incidental geography education.
 - Create a memorable atmosphere inspired by mid-20th-century espionage fiction, balancing intrigue with understated humor.
 - Operate entirely client-side, with static hosting through GitHub Pages.
 - Support easily authored, version-controlled missions that can be added without modifying application code.
-- Remain approachable for beginners while offering interesting challenges for experienced developers.
 
-### 1.3 Non-Goals
+### 1.4 Non-Goals
 
 At least initially, the project will not require:
 
 - User accounts, authentication, or multiplayer functionality.
 - A backend API, hosted database, or server-side GraphQL execution.
 - Real-time geographical or economic data.
-- Sophisticated procedural mystery generation.
-- Comprehensive coverage of every GraphQL feature.
+- Sophisticated procedural mystery generation. Seeded variants of hand-authored missions (Section 3.12) are a much smaller feature and are in scope after the MVP.
+- Comprehensive coverage of every GraphQL feature. Subscriptions and schema authoring are out of scope.
 - Combat, action sequences, or complex character movement.
 
 ## 2. Creative Direction and Narrative Design
 
 ### 2.1 Setting and Atmosphere
 
-WhereQL takes place in a fictional international intelligence agency, drawing stylistic inspiration from the Cold War era of the 1950s and 1960s.
+WhereQL takes place in a fictional international intelligence agency whose style is drawn from the Cold War era of the 1950s and 1960s.
 
 Its visual and narrative vocabulary includes classified dossiers, intelligence briefings, vintage cartography, diplomatic intrigue, coded messages, secret organizations, and international travel.
 
 The aesthetic should evoke the early Ian Fleming novels rather than the gadget-heavy spectacle of later spy films.
 
-The setting need not be historically literal. A deliberately anachronistic GraphQL intelligence terminal can coexist with typewriters, rotary telephones, and mid-century office furnishings.
+The setting is timeless and deliberately anachronistic. The world has present-day countries, borders, and capitals, because the geography the player learns should be true today. The agency simply never updated its furniture: a GraphQL intelligence terminal sits beside typewriters, rotary telephones, and mid-century office fittings. Missions should avoid dates and real historical events.
 
 ### 2.2 Tone
 
 The narrative should balance three qualities:
 
-- **Espionage intrigue:** Missions involve genuine mysteries, conflicting evidence, hidden relationships, and consequential deductions.
+- **Espionage intrigue:** Missions involve genuine mysteries, conflicting evidence, hidden relationships, and consequential deductions. Conflicting evidence is a mechanic, not only a flavor (Section 3.6).
 - **Geographical curiosity:** Locations possess recognizable cultural, historical, and geographical identities.
 - **Understated absurdity:** Eccentric villains, improbable crimes, bureaucratic frustrations, and dry humor prevent the atmosphere from becoming overly serious.
 
@@ -73,9 +79,157 @@ Early missions may involve stolen artifacts, missing diplomats, or suspicious tr
 
 All characters, agencies, organizations, and storylines will be original creations. References to the game's creative influences must not imply affiliation with the owners of the source franchises.
 
-## 3. System Architecture
+### 2.4 Recurring Cast
 
-### 3.1 Overview
+A small recurring cast gives the game's systems a voice.
+
+- **The records clerk** runs the archive behind the terminal. The clerk annotates GraphQL errors, delivers hints, and returns malformed requests unprocessed. The clerk is weary and precise, never mocking.
+- **The adversary** is a recurring figure in the campaign's criminal organization who leaves notes, narrowly escapes, and gives the player someone to pursue across missions.
+- **The bureaucracy** grants clearance, approves or rejects warrants, and bills travel. It explains the game's rules in the form of regulations.
+
+## 3. Game and Learning Design
+
+This section describes how the game plays and how it teaches. Later sections describe the systems that support it.
+
+### 3.1 Core Gameplay Loop
+
+1. Receive a classified mission briefing.
+2. Query the intelligence terminal.
+3. Read the results. Every fact returned is recorded as evidence.
+4. Pin the evidence that matters to the evidence board.
+5. Submit a deduction, travel, or apply for a warrant, citing pinned evidence.
+6. Receive the consequence: new intelligence, a dead end, or a resolution.
+7. Repeat until the mission is resolved, then read the debrief.
+
+### 3.2 Evidence
+
+The player's conclusions must rest on what their queries returned.
+
+The game records every fact that appears in a query result in an **evidence ledger**. A fact is a field value of an entity, or a relationship between two entities. The player pins facts from the ledger to an evidence board and cites them when submitting a deduction.
+
+A deduction is accepted only when it is correct and the cited evidence supports it. A player who already knows the answer still has to retrieve the facts that prove it.
+
+To make this meaningful, every puzzle should depend on fictional intelligence data, such as shipments, aliases, and transactions, that no player can know in advance. Real geography then narrows the possibilities. A typical clue chain joins the two: an intercepted shipment leads to a city, and the city's country must satisfy a geographical clue.
+
+### 3.3 The Mission Clock
+
+Each mission has a budget of hours. Actions spend it.
+
+| Action | Provisional cost |
+|---|---|
+| Transmission (one executed query or mutation) | 1 hour |
+| Travel | Several hours, depending on distance |
+| Hint | 1 to 8 hours, rising with each step of the hint ladder |
+| Rejected warrant or wrong destination | Several hours |
+
+The clock exists to teach GraphQL's central idea. One nested query costs the same as one flat query, so a player who asks for everything they need in a single transmission is rewarded.
+
+The clock must not discourage experimentation:
+
+- Queries that fail validation are returned by the records clerk before transmission and cost nothing.
+- Browsing schema documentation and the evidence ledger is free.
+- Onboarding missions have generous budgets.
+- Katas (Section 3.11) have no clock.
+
+When the clock runs out, the suspect escapes and the mission can be restarted. There is no numeric score in the MVP. Actual costs and budgets will be set by playtesting.
+
+### 3.4 Warrants
+
+Missions that end with an arrest require a warrant. The player names an operative and cites evidence for each claim the warrant makes, such as an alias link or presence at the scene.
+
+The bureaucracy rejects a warrant that names the wrong operative or lacks support, and the rejection costs time. Early missions end with a destination rather than an arrest, so warrants are introduced once the player is comfortable gathering evidence.
+
+### 3.5 Failure and Dead Ends
+
+Failure should be entertaining and informative.
+
+Traveling to the wrong destination produces an in-character dead end, written for that destination where the author has provided one, and costs travel time. The player then returns to the investigation with less time and no penalty beyond that.
+
+A dead end should, where possible, hint at which piece of evidence was misread.
+
+### 3.6 Unreliable Sources
+
+Intelligence reports carry a source and a reliability grade. Later missions include reports that conflict, and the player resolves the conflict by corroborating one account against other data.
+
+A mission with conflicting reports must contain enough corroborating data to settle the conflict in favor of a single answer.
+
+### 3.7 Curriculum
+
+Concepts are introduced in a fixed order. Each is tied to a clearance level and to a story situation that makes the concept the natural tool.
+
+| Clearance | Concept | Story reason | Scope |
+|---|---|---|---|
+| 1 | Fields and nested selections | Follow a shipment to its destination and that destination's country | MVP |
+| 2 | Arguments | Pull one operative's file instead of the whole registry | MVP |
+| 3 | Aliases | Compare two suspects side by side in one transmission | MVP |
+| 4 | Fragments | Reuse one dossier template for every associate | MVP |
+| 5 | Variables | Keep a standing query and rerun it in each city of a pursuit | MVP |
+| 6 | Introspection | Explore a newly seized archive that has no documentation | Later |
+| 7 | Unions and inline fragments | Read a case file whose records are of mixed kinds | Later |
+| 8 | Pagination | Work through surveillance logs too long to request whole | Later |
+| 9 | Directives | Request costly detail only when a standing query needs it | Later |
+| 10 | Mutations | File travel orders and warrants through the terminal | Later |
+
+Each mission declares the concept it teaches and the concepts it requires. A mission may only require concepts taught at or below its clearance level, and later missions should reuse earlier concepts so that they are practised more than once.
+
+The curriculum governs what is taught and what a mission needs. It does not restrict what the terminal accepts: any valid GraphQL that the player's schema supports will execute at any time.
+
+Wherever possible, a mission should teach through its situation and the clock rather than by checking syntax. A player comparing two suspects will reach for aliases because the alternative is two transmissions.
+
+### 3.8 Clearance and Progression
+
+Clearance is the player's rank. It rises when the player completes a mission that teaches a new concept.
+
+Clearance controls two things:
+
+- **Mission availability.** The first two clearance levels form a short linear onboarding. After that, the player may choose any mission at or below their clearance.
+- **The visible schema.** Types and fields above the player's clearance are absent from the schema and from introspection. A beginner sees a small schema that grows with each promotion.
+
+Separately, individual records may be classified above the player's clearance. A field on such a record returns `null` with an error, alongside the rest of the data. This teaches GraphQL's partial-result behavior and gives the player a reason to come back after a promotion.
+
+### 3.9 Scaffolding and Hints
+
+Support is strongest when a concept is new and is then withdrawn.
+
+Each stage declares a scaffold level:
+
+- **Guided:** The editor opens with a starter query that has a gap to fill.
+- **Partial:** The editor opens with the outer structure only.
+- **None:** The editor opens blank.
+
+Hints follow a four-step ladder. Each step costs more time than the last.
+
+1. **Nudge:** Restates what the player is looking for.
+2. **Concept:** Names the GraphQL idea involved.
+3. **Schema pointer:** Names the relevant types and fields.
+4. **Skeleton:** Shows the shape of a working query.
+
+The interface should make GraphQL errors understandable. The original error is always shown unaltered, and the records clerk adds a plain-language annotation beneath it.
+
+### 3.10 Debrief
+
+Every mission ends with a debrief containing:
+
+- The narrative outcome.
+- The player's transmissions beside the mission's reference solution, with a note on the difference where it is instructive, such as several transmissions that could have been one.
+- The real geographical fact the mission turned on.
+- A concept card for the tradecraft manual, the player's growing reference of GraphQL concepts learned.
+
+### 3.11 Katas
+
+A GraphQL kata is an optional drill outside the story, offered in a training range with no clock and no narrative stakes.
+
+Katas are the only place where the game inspects the structure of a query, for example to confirm that a fragment was used. Missions never do.
+
+### 3.12 Replay
+
+After the MVP, a mission may define a pool of variants, such as different culprits, routes, and shipments. The game selects one by seed when the mission starts.
+
+Every variant is authored and validated in advance. This gives replay value and makes answers harder to share without requiring procedural generation.
+
+## 4. System Architecture
+
+### 4.1 Overview
 
 The application will be a static web application bundling a GraphQL execution engine, geographical and fictional intelligence data, and declarative game content.
 
@@ -83,17 +237,24 @@ All query execution and game-state management will occur within the player's bro
 
 Major subsystems:
 
-1. **Game UI:** Displays briefings, dossiers, clues, maps, query results, and investigation progress.
-2. **GraphQL Engine:** Parses, validates, and executes genuine GraphQL queries against local data.
+1. **Game UI:** Displays briefings, dossiers, the evidence board, maps, query results, and investigation progress.
+2. **GraphQL Engine:** Parses, validates, and executes genuine GraphQL operations against local data.
 3. **World Data:** Provides factual geographical entities and relationships.
 4. **Intelligence Data:** Provides fictional operatives, organizations, incidents, and other investigative entities.
-5. **Game Engine:** Manages missions, stages, player decisions, and completion conditions.
-6. **Content Loader:** Loads and validates declarative mission definitions.
-7. **Persistence:** Stores local game progress.
+5. **Game Engine:** Manages missions, stages, the evidence ledger, the mission clock, deductions, warrants, and completion conditions.
+6. **Feedback System:** Produces error annotations, hints, and debriefs.
+7. **Content Loader:** Loads and validates declarative mission definitions.
+8. **Persistence:** Stores local game progress.
 
-The GraphQL engine should remain independent of game presentation so the same schema can support different missions and game mechanics.
+### 4.2 Boundary Between the GraphQL Engine and the Game
 
-### 3.2 Technology Considerations
+The GraphQL engine should know nothing about missions, so the same schema can support different missions and game mechanics. It meets the game at three narrow points:
+
+- **Schema construction.** The engine builds its schema for a given clearance level. Elements above that level are left out, so validation, documentation, and introspection all agree on what exists.
+- **Evidence reporting.** After executing an operation, the engine reports the facts contained in the result. The game engine records them in the evidence ledger.
+- **Actions.** Mutation resolvers do not change game state themselves. They call an action interface supplied through the execution context, and the game engine decides the outcome.
+
+### 4.3 Technology Considerations
 
 | Concern | Candidate |
 |---|---|
@@ -110,9 +271,9 @@ The GraphQL engine should remain independent of game presentation so the same sc
 
 These are initial preferences, not final implementation decisions.
 
-## 4. Data Design
+## 5. Data Design
 
-### 4.1 World Data
+### 5.1 World Data
 
 The game will use a normalized geographical dataset derived primarily from archived CIA World Factbook information, potentially supplemented by other openly available geographical sources.
 
@@ -131,7 +292,7 @@ Relationships should be navigable where useful. For example, players should be a
 
 A versioned snapshot of geographical data will ensure puzzles remain deterministic.
 
-### 4.2 Intelligence Data
+### 5.2 Intelligence Data
 
 A complementary fictional dataset will represent the intelligence world.
 
@@ -145,15 +306,21 @@ Candidate entities include:
 - Shipment
 - Company
 - Financial transaction
+- Sighting
 - Intelligence report
+- Case file
 
 These entities should connect naturally to geographical data and to one another.
 
-For example, an operative may have several aliases, belong to an organization, maintain known associates, and have a history of visiting particular countries.
+For example, an operative may have several aliases, belong to an organization, maintain known associates, and have a history of visiting particular countries. A shipment has an origin city, a destination city, a manifest, and a consignee.
+
+Intelligence reports carry a source and a reliability grade (Section 3.6). A case file gathers records of different kinds, such as reports, shipments, transactions, and sightings, which the schema exposes as a union.
+
+Every entity has a stable identifier so that evidence can refer to it.
 
 The intelligence graph should support increasingly sophisticated investigations without requiring a fundamentally different GraphQL interface.
 
-### 4.3 GraphQL Schema
+### 5.3 GraphQL Schema
 
 The schema should expose meaningful relationships rather than simply mirror the underlying datasets.
 
@@ -177,118 +344,240 @@ An illustrative query:
       }
     }
 
+Each schema element is assigned a clearance level, and the schema served to the player contains only the elements at or below their clearance.
+
+A record classified above the player's clearance produces an ordinary GraphQL partial result:
+
+    {
+      "data": {
+        "operative": {
+          "codename": "SCARLET_FOX",
+          "handler": null
+        }
+      },
+      "errors": [
+        {
+          "message": "Operative.handler is classified above your clearance.",
+          "path": ["operative", "handler"]
+        }
+      ]
+    }
+
+At the highest clearance level, game actions become available as mutations. An illustrative warrant application:
+
+    mutation {
+      requestWarrant(input: {
+        operative: "SCARLET_FOX"
+        evidence: ["EV-0031", "EV-0044"]
+      }) {
+        approved
+        reasons
+      }
+    }
+
 Schema design should balance educational usefulness, realism, discoverability, and implementation simplicity.
 
 The schema will evolve as new missions introduce additional entities, relationships, and GraphQL features.
 
-### 4.4 Mission Definitions
+### 5.4 Mission Definitions
 
 Missions should be declarative and stored as human-readable YAML files in version control.
 
 Each mission contains one or more stages. A stage represents an investigation objective, usually associated with a location.
 
+A mission declares what it teaches, what it requires, and its time budget. A stage declares its clues, scaffold, hint ladder, accepted solution with the evidence that must support it, dead ends, and a reference solution.
+
 Illustrative structure:
 
     id: vanishing-azulejos
     title: The Vanishing Azulejos
-    difficulty: beginner
     campaign: shadow-network
+    clearance: 1
+    teaches: nested-selections
+    requires: []
+    clock:
+      budgetHours: 48
     startingStage: lisbon
 
     stages:
       lisbon:
         location: PT
-        objective: Find the thief's destination.
+        objective: Find where the stolen tiles were shipped.
 
         briefing: |
-          A priceless collection of Portuguese
-          tiles has disappeared from Lisbon.
+          A priceless collection of azulejos has vanished from a
+          Lisbon museum. Three shipments have left the port since.
+          One of them is not roofing samples.
 
         clues:
-          - The suspect speaks Portuguese.
-          - The destination is in Africa.
+          - text: >
+              An informant overheard the buyer complaining about
+              the long drive to the Namibian border.
+            constraint:
+              destinationCountry:
+                borders: NA
+
+        scaffold:
+          level: guided
+          starterQuery: |
+            query {
+              city(name: "Lisbon") {
+                departingShipments {
+                  manifest
+                  # Where is each shipment going?
+                }
+              }
+            }
 
         hints:
-          - Investigate countries and languages.
+          nudge: >
+            Each shipment has a destination, and each destination
+            is in a country.
+          concept: >
+            A field that returns an object needs its own selection
+            in braces.
+          schema: >
+            Look at Shipment.destination, City.country, and
+            Country.borders.
+          skeleton: |
+            destination { name country { name borders { name } } }
 
         solution:
           type: destination
           country: AO
+          requiredEvidence:
+            - entity: Shipment:LIS-0417
+              field: destination
+            - entity: Country:AO
+              field: borders
+              includes: Country:NA
+
+        deadEnds:
+          MZ: |
+            The harbourmaster in Maputo opens the crate with some
+            ceremony. It contains roofing samples.
+          default: |
+            Nobody here has seen any tiles. The agency has billed
+            you for the flight.
+
+        referenceSolution: |
+          query {
+            city(name: "Lisbon") {
+              departingShipments {
+                manifest
+                destination {
+                  name
+                  country {
+                    name
+                    borders {
+                      name
+                    }
+                  }
+                }
+              }
+            }
+          }
 
         next: luanda
 
-The content model should eventually support branching investigations, multiple acceptable solutions, optional GraphQL learning objectives, and connections between missions.
+      luanda:
+        location: AO
+        # Remaining stages omitted.
+
+In this example the three shipments are bound for Luanda, Maputo, and Praia. Only Angola borders Namibia, so the clue identifies exactly one destination, and the player cannot know which shipments exist without querying.
+
+The starter query supplies the `name` argument, so the player only has to add nested selections. Arguments are taught at the next clearance level.
+
+The content model should eventually support branching investigations, multiple acceptable solutions, variant pools (Section 3.12), and connections between missions.
 
 Longer narrative content may use Markdown, either embedded in YAML or stored separately.
 
-### 4.5 Data Validation
+### 5.5 Data Validation
 
 A build-time validation process should check:
 
-- Mission definition structure and required fields.
-- References to geographical entities, operatives, organizations, and stages.
-- Reachability of stages and existence of terminal outcomes.
-- Consistency between clues and expected solutions, where clues are machine-verifiable.
-- Valid references between missions and campaigns.
+- **Structure:** Mission definitions have the required fields.
+- **References:** Geographical entities, operatives, organizations, stages, missions, and campaigns that are referred to all exist.
+- **Reachability:** Every stage can be reached and every mission has a terminal outcome.
+- **Uniqueness:** The machine-verifiable clues of a stage identify exactly one solution among the candidates the data offers. Where reports conflict, the corroborating data settles the conflict.
+- **Evidence:** Every piece of required evidence can be retrieved through the schema available at the mission's clearance.
+- **Solvability:** The reference solution executes without error, yields the required evidence, and fits within the mission clock with a margin.
+- **Curriculum order:** A mission requires only concepts taught at or below its clearance, and its reference solution uses the concept it claims to teach.
+- **Variants:** Where a mission defines variants, every variant passes all of the checks above.
 
-## 5. Interface Design
+## 6. Interface Design
 
-### 5.1 GraphQL Execution Interface
+### 6.1 GraphQL Execution Interface
 
-The application will expose a local query-execution interface to the editor and game engine.
+The application will expose a local execution interface to the editor and game engine.
 
-Queries should support normal GraphQL functionality, including schema validation, variables, fragments, aliases, and introspection.
+It takes an operation, its variables, and the player's clearance level. It returns the standard GraphQL result together with the facts that result contains.
 
-The implementation should preserve ordinary GraphQL result and error semantics.
+Operations should support normal GraphQL functionality, including schema validation, variables, fragments, aliases, directives, and introspection, within the schema for the given clearance.
 
-### 5.2 Game Engine Interface
+The implementation should preserve ordinary GraphQL result and error semantics. Error annotations are produced separately by the feedback system and never replace or reword the original errors.
+
+### 6.2 Game Engine Interface
 
 The game engine will receive player actions, update investigation state, and report outcomes.
 
-Typical actions include:
+Actions:
 
-- Execute an intelligence query.
-- Examine a dossier or report.
+- Transmit a query. This spends time and adds facts to the evidence ledger.
+- Pin or unpin evidence.
+- Examine a dossier, report, or the schema documentation. This is free.
 - Request a hint.
-- Select a travel destination.
-- Identify an operative.
-- Submit a deduction or request an arrest warrant.
+- Travel to a destination.
+- Submit a deduction, citing pinned evidence.
+- Apply for a warrant, citing pinned evidence.
+
+Travel and deductions are available as controls in the interface from the first mission, and warrants from the first mission that ends in an arrest. Once the player reaches the clearance level that teaches mutations, the same actions can also be performed through the terminal, and missions at that level ask for the paperwork to be filed that way. Both routes call the same engine actions.
 
 **Query validation and puzzle validation must remain distinct.** A syntactically valid query does not necessarily solve a puzzle, and multiple different queries may support the same correct deduction.
 
-Missions should generally evaluate the player's conclusions rather than require an exact query string. Explicit GraphQL syntax challenges may optionally inspect the query's abstract syntax tree.
+Missions evaluate the player's conclusion and the evidence cited for it. They never require an exact query string. Only katas inspect a query's abstract syntax tree.
 
-## 6. Component Design
+## 7. Component Design
 
-### 6.1 Investigation Engine
+### 7.1 Investigation Engine
 
-Responsible for mission progression, clue availability, travel decisions, and success or failure conditions.
+Responsible for mission progression, the evidence ledger, the mission clock, travel decisions, evaluating deductions and warrants, and success or failure conditions.
 
 Each mission may be modeled as a small state machine whose transitions depend on player decisions.
 
 Campaign-level state may track recurring suspects, discoveries, or narrative developments across multiple missions.
 
-### 6.2 GraphQL Runtime
+### 7.2 GraphQL Runtime
 
-Responsible for executing user-authored queries against local geographical and intelligence data.
+Responsible for executing user-authored operations against local geographical and intelligence data.
+
+It builds a schema for each clearance level from clearance annotations on the schema definition. After execution, it walks the result using the schema's type information and reports each entity field and relationship it contains as a fact.
 
 Potential considerations include query complexity limits, execution timeouts, and Web Workers to avoid blocking the interface.
 
-### 6.3 Content System
+### 7.3 Content System
 
-Responsible for loading declarative missions, briefings, dialogue, and other narrative material.
+Responsible for loading declarative missions, briefings, dialogue, hints, dead ends, and other narrative material, along with each mission's curriculum metadata and any variant pool.
 
 The system should make it practical to add new missions without implementing new application logic.
 
-### 6.4 Progress System
+### 7.4 Progress System
 
-Responsible for recording completed missions, current investigations, and potentially achievements, agent ranks, or scores.
+Responsible for recording clearance, concepts learned, completed missions, investigations in progress, and the contents of the tradecraft manual.
 
 Persistence should work without registration or a network connection.
 
-## 7. User Interface Design
+### 7.5 Feedback System
 
-### 7.1 Visual Direction
+Responsible for everything the game says about the player's GraphQL:
+
+- Annotating validation and execution errors in the records clerk's voice.
+- Serving the hint ladder and charging its cost.
+- Assembling the debrief, including the comparison with the reference solution.
+
+## 8. User Interface Design
+
+### 8.1 Visual Direction
 
 The interface should evoke a mid-century intelligence headquarters adapted to a modern browser.
 
@@ -304,65 +593,55 @@ The actual GraphQL editor should prioritize modern usability, readability, and a
 
 Visual embellishments should support immersion without obstructing query composition or investigation.
 
-### 7.2 Core Gameplay Loop
+### 8.2 Primary Screens
 
-1. Receive a classified mission briefing.
-2. Examine available clues and intelligence reports.
-3. Investigate using GraphQL queries.
-4. Interpret the returned data.
-5. Make a deduction or travel decision.
-6. Receive additional intelligence or consequences.
-7. Repeat until the mission is resolved.
+The screens support the gameplay loop described in Section 3.1.
 
-### 7.3 Primary Screens
-
-**Mission Selection:** Available assignments, difficulty levels, agent rank, and campaign progress.
+**Mission Selection:** Available assignments, the clearance each requires, the concept each teaches, and campaign progress.
 
 **Mission Briefing:** Classified narrative introduction, objectives, and initial intelligence.
 
-**Intelligence Terminal:** GraphQL editor, schema documentation, query results, clues, and current location.
+**Intelligence Terminal:** GraphQL editor, schema documentation for the player's clearance, query results, error annotations, hints, the mission clock, and current location.
 
-**World Map:** Visualizes geographical locations and supports travel decisions.
+**Evidence Board:** The evidence ledger, the facts the player has pinned, and the forms for submitting a deduction or applying for a warrant.
 
-**Operative Dossiers:** Displays known suspects, aliases, associations, and collected evidence.
+**World Map:** Visualizes geographical locations and supports travel decisions, showing the time each journey would cost.
 
-**Mission Resolution:** Displays the outcome, narrative consequences, and learning achievements.
+**Operative Dossiers:** Displays known suspects, aliases, and associations. A dossier shows only what the player's queries have retrieved.
 
-### 7.4 Educational Experience
+**Debrief:** Displays the outcome, the comparison with the reference solution, the geographical fact, and the new concept card.
 
-The game should gradually introduce more advanced GraphQL concepts while preserving player agency.
+**Tradecraft Manual:** The concept cards the player has earned, available for reference at any time.
 
-Hints should provide progressively greater assistance without immediately revealing solutions.
+**Training Range:** Optional katas.
 
-The interface should make GraphQL errors understandable and encourage experimentation.
-
-Potential future features include query history, schema exploration, query efficiency scoring, optional tutorials, and agent promotions.
-
-## 8. Assumptions, Dependencies, and Constraints
+## 9. Assumptions, Dependencies, and Constraints
 
 - GitHub Pages can serve all required application assets.
 - Geographical and intelligence data can be bundled in a reasonably sized static distribution.
-- GraphQL.js provides the required client-side execution functionality.
+- GraphQL.js provides the required client-side execution functionality, including building a reduced schema for each clearance level.
 - Source datasets and assets must be checked for licensing and attribution requirements.
 - The application should work offline after its required assets have been cached, if offline support is implemented.
-- Because game logic and answers reside client-side, determined players can inspect them. Preventing cheating is not a primary objective.
+- Because game logic and answers reside client-side, determined players can inspect them. Preventing cheating is not a primary objective. The evidence requirement is a learning aid, not a security measure.
+- Present-day geography in a period-styled setting is intentional (Section 2.1).
 - Accessibility and keyboard navigation should be considered throughout development.
 - Fictional intelligence content should remain sufficiently distinct from existing protected characters, organizations, and stories.
 
-## 9. Testing Strategy
+## 10. Testing Strategy
 
 Testing should prioritize deterministic game behavior and content correctness.
 
 Suggested coverage:
 
-- **Unit tests:** GraphQL resolvers, mission transitions, and solution validation.
-- **Content tests:** Schema validation, references, mission integrity, and campaign relationships.
-- **Integration tests:** Execute representative GraphQL queries against actual game data.
+- **Unit tests:** GraphQL resolvers, mission transitions, evidence recording, clock accounting, and evaluation of deductions and warrants.
+- **Schema tests:** Each clearance level exposes exactly its intended types and fields, including through introspection. Classified records return partial data with errors.
+- **Content tests:** The validation checks of Section 5.5, run against every mission.
+- **Integration tests:** Execute representative GraphQL operations against actual game data.
 - **End-to-end tests:** Complete an investigation through the browser UI.
 
-Every authored mission should ideally include a test demonstrating that it can be solved using the available data.
+Every authored mission must include a reference solution. Continuous integration plays each mission using its reference solution and fails if the mission cannot be completed within its clock.
 
-## 10. Initial Development Milestones
+## 11. Development Milestones
 
 ### Milestone 1 — Technical Prototype
 
@@ -375,40 +654,52 @@ Every authored mission should ideally include a test demonstrating that it can b
 
 ### Milestone 2 — First Playable Mission
 
-- Implement a mission definition format.
+- Implement the mission definition format.
+- Add a small intelligence dataset linked to the geographical data.
 - Load one espionage-themed investigation with several stages.
-- Support clues, destination selection, and completion.
+- Record evidence from query results and require it for deductions.
+- Implement the mission clock, destination selection, dead ends, and completion.
+- Validate uniqueness and run the mission's reference solution in tests.
 - Introduce an intelligence briefing and basic dossier interface.
 - Persist basic progress.
 
-**Success criterion:** A player can solve a complete international mystery using GraphQL.
+**Success criterion:** A player can solve a complete international mystery, and can only do so by using GraphQL.
 
 ### Milestone 3 — Educational MVP
 
-- Introduce progressively harder missions.
-- Add schema documentation and contextual hints.
+- Author missions covering clearance levels 1 through 5, from nested selections to variables.
+- Implement clearance, promotion, and clearance-scoped schemas.
+- Add schema documentation, scaffolded starter queries, the hint ladder, and error annotations.
+- Add the debrief and the tradecraft manual.
 - Incorporate a world map and Cold War–inspired visual design.
-- Introduce recurring characters or a simple campaign.
-- Add automated mission validation.
+- Introduce the recurring cast and a simple campaign.
+- Run the full set of content validation checks automatically.
 - Deploy publicly through GitHub Pages.
 
 **Success criterion:** A beginner can learn several fundamental GraphQL concepts through an engaging, self-directed espionage adventure.
 
-## 11. Open Questions
+### After the MVP
+
+- Clearance levels 6 through 10, from introspection to mutations.
+- Warrants and missions that end in an arrest.
+- Conflicting reports and source reliability.
+- Game actions as mutations.
+- Seeded mission variants.
+- The training range and katas.
+
+## 12. Open Questions
 
 The following decisions are intentionally deferred:
 
-1. **Audience:** Should the game assume prior programming experience, or teach GraphQL to complete beginners?
-2. **Setting:** Should the fictional world explicitly take place during the Cold War, or use a deliberately anachronistic, timeless espionage setting?
-3. **Progression:** Should missions follow a fixed sequence, or can players choose freely?
-4. **Game mechanics:** Should time, travel costs, incorrect guesses, or query efficiency affect scoring?
-5. **Query requirements:** How much should exercises constrain GraphQL syntax versus evaluate deductions?
-6. **Data scope:** What is the smallest geographical and intelligence dataset capable of supporting compelling mysteries?
-7. **Narrative format:** Should missions use YAML exclusively, or combine YAML with Markdown?
-8. **Replayability:** Should later versions support procedurally generated investigations?
-9. **Offline support:** Is full offline functionality an MVP requirement or a later enhancement?
+1. **Clock tuning:** What costs and budgets reward economical queries without making beginners afraid to experiment?
+2. **Evidence strictness:** Must a deduction cite exactly the required evidence, or is any sufficient set acceptable? How is sufficiency defined for missions with several valid lines of reasoning?
+3. **MVP curriculum:** Should introspection move into the MVP, given how central schema exploration is to working with GraphQL?
+4. **Data scope:** What is the smallest geographical and intelligence dataset capable of supporting compelling mysteries?
+5. **Narrative format:** Should missions use YAML exclusively, or combine YAML with Markdown?
+6. **Replayability:** Beyond seeded variants, should later versions support procedurally generated investigations?
+7. **Offline support:** Is full offline functionality an MVP requirement or a later enhancement?
 
-## 12. Glossary
+## 13. Glossary
 
 **Campaign:** A sequence of related missions forming a larger narrative.
 
@@ -424,9 +715,31 @@ The following decisions are intentionally deferred:
 
 **Game State:** The player's current investigation, discoveries, decisions, and progress.
 
-**GraphQL Kata:** An educational exercise designed to develop GraphQL proficiency.
+**Transmission:** One executed GraphQL operation. Each transmission spends time on the mission clock.
 
-## 13. References
+**Mission Clock:** The budget of hours a mission allows, spent by transmissions, travel, hints, and mistakes.
+
+**Evidence:** A fact that has appeared in one of the player's query results.
+
+**Evidence Ledger:** The record of all evidence gathered during a mission.
+
+**Deduction:** A conclusion the player submits, citing pinned evidence.
+
+**Warrant:** An application to arrest a named operative, supported by cited evidence.
+
+**Clearance:** The player's rank, which determines the missions available and the schema visible.
+
+**Learning Objective:** The GraphQL concept a mission is designed to teach.
+
+**Reference Solution:** An authored set of operations that solves a stage. It is used for testing, for the final hint, and for the debrief.
+
+**Debrief:** The end-of-mission summary of the outcome and of what the player learned.
+
+**Tradecraft Manual:** The player's collection of concept cards.
+
+**GraphQL Kata:** An optional drill, outside the story, designed to develop proficiency with one piece of GraphQL syntax.
+
+## 14. References
 
 - [Atlassian — How to Create a Software Design Document](https://www.atlassian.com/work-management/knowledge-sharing/documentation/software-design-document)
 - [GraphQL Specification](https://spec.graphql.org/)
