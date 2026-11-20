@@ -1,7 +1,7 @@
 # WhereQL — Software Design Document
 
 **Status:** Draft
-**Version:** 0.6
+**Version:** 0.7
 **Last updated:** November 20, 2026
 
 ## 1. Introduction and Overview
@@ -98,20 +98,22 @@ This section describes how the game plays and how it teaches. Later sections des
 1. Receive a classified mission briefing.
 2. Query the intelligence terminal.
 3. Read the results and compare leads. Every fact returned is recorded as evidence.
-4. Pin relevant facts to the evidence board directly from the results or the ledger.
-5. Submit a deduction, travel, or apply for a warrant, citing pinned evidence.
-6. Receive the consequence: new intelligence, a dead end, or a resolution.
+4. Cite relevant findings from the results or pin them for later. Compare what each lead explains and what it leaves open.
+5. Rule out a lead, submit a deduction, travel, or apply for a warrant using the evidence you gathered.
+6. Read the dispatch or decision that follows, then follow the next lead.
 7. Repeat until the mission is resolved, then read the debrief.
 
 ### 3.2 Evidence
 
 The player's conclusions must rest on what their queries returned.
 
-The game records every fact that appears in a query result in an **evidence ledger**. A fact is a field value of an entity, or a relationship between two entities. A player can pin a fact directly from the result or from the ledger, then jump back from the pin to the response that contained it. A fact can appear in multiple responses and keeps its identity across queries.
+The game records every fact that appears in a query result in an **evidence ledger**. A fact is a field value of an entity, or a relationship between two entities. A fact can appear in multiple responses and keeps its identity across queries.
+
+Players can cite a finding in the open draft directly from the results or the ledger. They can also pin evidence to collect it for later. A single citation can carry a connected chain of facts. In the Lisbon opening, **Cite cargo** attaches the manifest and **Cite route** attaches the shipment → city → country → border chain. Each fact in a citation remains inspectable and links back to its source response. The player chooses which findings to attach and can remove them.
 
 Deduction, travel, and warrant forms present the claims the player must support in plain language. A stage defines at least two sufficient sets of facts for each claim, reached through different records, so that no claim depends on the player finding one particular field. A claim is supported when its citations contain any one complete set. Extra citations are allowed. Facts in a set must refer to the lead under consideration. For example, a shipment's destination and the destination country's border must form a connected chain.
 
-The form returns missing or unrelated citations for correction before spending time. If the player cites relevant facts that disprove a claim, the outcome names the claim and the conflicting fact. An absent entry can refute a claim about a list only when the player retrieved the complete list without an error. A deduction is accepted when the conclusion is correct and all claims are supported.
+The draft shows which claims the citations support and which still need evidence. Unrelated citations receive feedback before any time is spent. A cited refutation identifies the claim and its conflicting evidence. An absent entry can refute a claim about a list only when the player retrieved the complete list without an error. A deduction is accepted when the conclusion is correct and all required claims are supported. Travel that advances the investigation meets the same standard. A field check can investigate a lead whose case is still incomplete (Section 3.5).
 
 Every puzzle should depend on fictional intelligence data, such as shipments, aliases, and transactions, that no player can know in advance. Real geography then narrows the possibilities. For example, an intercepted shipment leads to a city, and the city's country must satisfy a geographical clue.
 
@@ -122,14 +124,14 @@ Each mission has a budget of hours. Actions spend it while the clock is active.
 | Action | Provisional cost |
 |---|---|
 | Transmission (one executed query or mutation) | 1 hour |
-| Travel | Several hours, depending on distance |
+| Travel or field check | Several hours, depending on distance |
 | Hint | 1 to 8 hours, rising with each step of the hint ladder |
 | Solution reveal | More than all the hints together |
 | Rejected warrant | Several hours |
 
 The clock exists to teach GraphQL's central idea. One nested query costs the same as one flat query, so a player who asks for everything they need in a single transmission is rewarded.
 
-The clock counts game hours only. The player may take as long as they like over any decision, and the cost of an action is shown before the player commits to it.
+The clock counts game hours only. The player may take as long as they like over any decision, and the cost of an action is shown before the player commits to it. The briefing names the event the deadline represents, and the terminal counts down to it. In the Azulejos case, it reads “Buyer collects the crate in 6 hours” when six hours remain.
 
 A mission's budget is computed, not chosen by hand. It is the time spent by following the reference solution through every stage, travel included, multiplied by a factor and rounded up to a whole hour.
 
@@ -144,13 +146,13 @@ The budget is never less than the reference solution's time plus the cost of one
 The clock must not discourage experimentation:
 
 - Queries that fail validation are returned by the records clerk before transmission and cost nothing.
-- Browsing schema documentation and the evidence ledger is free.
+- Browsing schema documentation and the evidence ledger, drafting citations, and ruling out a lead with retrieved evidence are free.
 - Budgets leave room for exploration, most of all in the onboarding missions.
 - Katas (Section 3.11) have no clock.
 
 An action that uses the last available hour resolves before the clock expires. If an action costs more than the time remaining, show the shortfall and let the player choose to let the deadline pass.
 
-In the first mission, the suspect gets away at the deadline and the player can continue the investigation untimed from their current stage. The game keeps their evidence, pins, transcripts, and editor draft. A late completion still requires a supported deduction and gets a different narrative outcome in the debrief. The player can also restart. In later missions, the deadline ends the attempt and the player can restart. The current stage's solution becomes free to view once the deadline passes in either case (Section 3.9).
+In the first mission, the buyer collects the crate at the deadline and the player can continue untimed from their current stage. The game keeps their evidence, pins, transcripts, drafts, and ruled-out leads. A late completion still requires a supported deduction. The debrief records who authorized the transfer and that the tiles have moved on. The player can also restart. In later missions, the deadline ends the attempt and the player can restart. The current stage's solution becomes free to view once the deadline passes in either case (Section 3.9).
 
 There is no numeric score in the MVP. The costs and factors in the two tables are provisional. Playtesting tunes those numbers and never the budget of an individual mission.
 
@@ -162,11 +164,9 @@ The bureaucracy returns missing or unrelated citations for correction. Once a wa
 
 ### 3.5 Failure and Dead Ends
 
-Failure should be entertaining and informative.
+Give players a credible reason to investigate a wrong lead and let them examine leads in any order. A player who cites a refutation can mark that lead **Ruled out** without spending mission hours. File a short dispatch that acknowledges what made the lead plausible and points to the fact that rules it out. Keep the lead and its citations available for review.
 
-Give players a credible reason to investigate a wrong lead. At a stage with several leads, let players examine them in any order. Before travel, show the quoted cost and check that the citations address each required claim. A player who commits to a mistaken lead spends the quoted travel time and sees an in-character dead end. The player returns to the same stage with their evidence and can reconsider the lead.
-
-A dead end should explain why that lead looked plausible and point to the claim the evidence undermines. The scene leaves the player to work out which lead to pursue next.
+Before travel, show the cost and any claims that still need evidence. When a mission offers a **field check**, a player with at least one supported claim, at least one unverified claim, and no cited refutation can choose to spend the quoted travel hours on a provisional lead. The field check returns a dispatch and leaves the player at the same stage with their evidence intact. A wrong lead gets a dead-end dispatch that explains the gap. A viable lead can receive a provisional acknowledgement. These dispatches point back to the archive so the player can verify the lead with GraphQL.
 
 ### 3.6 Unreliable Sources
 
@@ -180,7 +180,7 @@ Concepts are introduced in a fixed order. Each is tied to a clearance level and 
 
 | Clearance | Concept | Story reason | Scope |
 |---|---|---|---|
-| 1 | Fields and nested selections | Compare shipment manifests and trace destinations to countries and their borders | MVP |
+| 1 | Fields and nested selections | Trace shipments to countries and borders, then find the signer of the order that matches a replacement label | MVP |
 | 2 | Arguments | Pull one operative's file instead of the whole registry | MVP |
 | 3 | Aliases | Call the same dossier field with two suspect IDs and compare the named results side by side | MVP |
 | 4 | Fragments | Keep the same fields in a suspect's dossier and in nested dossiers for their associates by writing the selection once | MVP |
@@ -451,9 +451,9 @@ Missions should be declarative and stored as human-readable YAML files in versio
 
 Each mission contains one or more stages. A stage represents an investigation objective, usually associated with a location.
 
-A mission declares what it teaches, what it practises, what it requires, and what happens when its clock expires. Its time budget is computed from its reference solution (Section 3.3). An assessment mission teaches nothing and lists the concepts it combines under `practises`. A stage declares its clues, scaffold, hint ladder, forms of evidence for each claim, accepted solution, dead ends, and a reference solution. Each evidence set lists facts that must be cited together, and each claim has at least two sets. In the example, `$shipment`, `$inspection`, `$city`, and `$country` refer to the shipment under consideration, its inspection, and its destination. The claim checks use those bindings for every lead.
+A mission declares what it teaches, what it practises, what it requires, and the event its deadline represents. Its time budget is computed from its reference solution (Section 3.3). An assessment mission teaches nothing and lists the concepts it combines under `practises`. A stage declares its clues, scaffold, hint ladder, evidence sets, accepted solution, and a reference solution. It can also declare which leads can be ruled out, what evidence refutes them, and what dispatch a field check returns. Each evidence set lists facts that must be cited together, and each claim has at least two sets that support it. A reference such as `$shipment` binds a fact to the shipment under consideration. Related bindings such as `$city` resolve through the cited relationships.
 
-Illustrative structure:
+This example follows both stages of *The Vanishing Azulejos*.
 
     id: vanishing-azulejos
     title: The Vanishing Azulejos
@@ -463,17 +463,18 @@ Illustrative structure:
     practises: []
     requires: []
     clock:
+      countdown: Buyer collects the crate in {remaining}
+      expired: Buyer has collected the crate
       onExpiry: continue
     startingStage: lisbon
 
     debrief:
       onTime: |
-        Your dispatch reaches Luanda in time to hold the shipment.
-        The buyer's calling card is now in the case file.
+        Luanda holds the crate. The clerk files the transfer order
+        with NIGHTJAR's name circled.
       afterDeadline: |
-        The tiles are traced to Luanda. By the time your dispatch
-        arrives, the buyer has already collected the crate. The
-        records clerk files the route for the next case.
+        The buyer has collected the crate. Your copy of the transfer
+        order ties NIGHTJAR to the reroute.
 
     stages:
       lisbon:
@@ -484,6 +485,7 @@ Illustrative structure:
           A priceless collection of azulejos has vanished from a
           Lisbon museum. Three shipments declared as samples left the
           port that morning. Customs would appreciate a narrower list.
+          Put a hold on the crate before the buyer collects it.
 
         clues:
           - text: >
@@ -568,18 +570,44 @@ Illustrative structure:
                     field: borders
                     includes: Country:$country
 
-        deadEnds:
-          ZA: |
-            The Cape Town harbourmaster opens the crate with some
-            ceremony. It contains blue slate, exactly the size on
-            the manifest. The tiles in the museum were ceramic.
-          CV: |
-            The ceramic squares in Praia fit the description. The
-            harbourmaster asks to see the truck that can drive from
-            an island to the Namibian border.
-          default: |
-            Nobody here has seen any tiles. The agency has billed
-            you for the flight.
+        leadOutcomes:
+          LIS-0486:
+            refutation:
+              claim: manifest
+              facts:
+                - entity: Shipment:$shipment
+                  field: manifest
+                  equals: Blue slate squares (14 cm)
+            ruledOut: |
+              Cape Town confirms the measurements. The harbourmaster
+              offers to send a sample of the slate.
+            fieldCheck: |
+              The crate contains blue slate. The harbourmaster
+              suggests consulting the manifest's description of the goods.
+          LIS-0522:
+            refutation:
+              claim: route
+              facts:
+                - entity: Shipment:$shipment
+                  field: destination
+                  equals: City:$city
+                - entity: City:$city
+                  field: country
+                  equals: Country:$country
+                - entity: Country:$country
+                  field: borders
+                  excludes: Country:NA
+            ruledOut: |
+              The ceramic squares in Praia fit the description. The
+              harbourmaster asks to see the truck that can drive from
+              an island to the Namibian border.
+            fieldCheck: |
+              Praia confirms the size and material. The harbourmaster
+              asks which land border the truck is meant to cross.
+          LIS-0417:
+            fieldCheck: |
+              Luanda has opened a file on the shipment. The freight
+              office asks for citations for the whole travel order.
 
         referenceSolution: |
           query {
@@ -604,7 +632,115 @@ Illustrative structure:
 
       luanda:
         location: AO
-        # Remaining stages omitted.
+        objective: Identify who authorized the crate's transfer to the replacement consignee.
+
+        briefing: |
+          The crate arrived under a replacement consignee label.
+          Two transfer orders name different consignees and have
+          different signatures. Find who signed the order that
+          matches the label on the crate.
+
+        clues:
+          - text: >
+              The depot logged the label attached to LIS-0417 on arrival.
+            constraint:
+              shipment: LIS-0417
+          - text: >
+              The transfer order must name the consignee on that label.
+            constraint:
+              orderConsignee: shipment.intake.consignee
+
+        scaffold:
+          level: partial
+          starterQuery: |
+            query {
+              city(name: "Luanda") {
+                # What did the depot record for the arriving shipments?
+              }
+            }
+
+        hints:
+          nudge: >
+            Check who the depot says should receive the crate, then
+            look for that same name on the two orders.
+          concept: >
+            Select fields inside both the intake record and the
+            transfer orders. Follow the matching order to its signer.
+          schema: >
+            Look at City.arrivingShipments, Shipment.intake,
+            Shipment.transferOrders, and TransferOrder.authorizedBy.
+          skeleton: |
+            arrivingShipments {
+              id
+              intake { consignee { name } }
+              transferOrders { id consignee { name } authorizedBy { codename } }
+            }
+
+        solution:
+          type: deduction
+          shipment: LIS-0417
+          order: LUA-012
+          operative: NIGHTJAR
+
+        claims:
+          - id: matching-order
+            prompt: This order names the consignee on the crate's replacement label.
+            evidenceSets:
+              - facts:
+                  - entity: Shipment:$shipment
+                    field: intake
+                    equals: IntakeRecord:$intake
+                  - entity: IntakeRecord:$intake
+                    field: consignee
+                    equals: Company:LUA-PARALLAX
+                  - entity: Shipment:$shipment
+                    field: transferOrders
+                    includes: TransferOrder:$order
+                  - entity: TransferOrder:$order
+                    field: consignee
+                    equals: Company:LUA-PARALLAX
+              - facts:
+                  - entity: Shipment:$shipment
+                    field: unloadingReceipt
+                    equals: UnloadingReceipt:$receipt
+                  - entity: UnloadingReceipt:$receipt
+                    field: labelConsignee
+                    equals: Company:LUA-PARALLAX
+                  - entity: Shipment:$shipment
+                    field: transferOrders
+                    includes: TransferOrder:$order
+                  - entity: TransferOrder:$order
+                    field: consignee
+                    equals: Company:LUA-PARALLAX
+          - id: authorizer
+            prompt: This operative authorized the matching order.
+            evidenceSets:
+              - facts:
+                  - entity: TransferOrder:$order
+                    field: authorizedBy
+                    equals: Operative:$operative
+              - facts:
+                  - entity: TransferOrder:$order
+                    field: authorizationLog
+                    equals: AuthorizationLog:$log
+                  - entity: AuthorizationLog:$log
+                    field: signedBy
+                    equals: Operative:$operative
+
+        referenceSolution: |
+          query {
+            city(name: "Luanda") {
+              arrivingShipments {
+                id
+                intake { consignee { name } }
+                transferOrders {
+                  id
+                  consignee { name }
+                  authorizedBy { codename }
+                }
+              }
+            }
+          }
 
 The countries receiving the Luanda and Cape Town shipments both border Namibia. The Luanda and Praia manifests fit the registrar's description. Only the Luanda shipment satisfies both clues. [Angola’s land borders](https://governo.gov.ao/angola/dados-sobre-o-pa%C3%ADs) · [Cape Town and South Africa’s borders](https://www.gov.za/about-sa/south-africas-provinces) · [Praia and the islands of Cabo Verde](https://www.aai.gov.cv/cabo-verd)
 
@@ -616,7 +752,9 @@ The countries receiving the Luanda and Cape Town shipments both border Namibia. 
 
 Each claim can be supported in two ways. The port inspector's finding describes the goods in different words from the manifest: slate for the Cape Town crate and glazed ceramic for the other two. Namibia's own list of borders confirms the route from the other side.
 
-The starter query supplies the `name` argument, so the player only has to add nested selections. Arguments are taught at the next clearance level.
+In Luanda, the intake record and the unloading receipt both give the consignee on the replacement label as Parallax Freight. Order LUA-012 names Parallax Freight and was signed by NIGHTJAR. The other order, LUA-011, names Lantern Export and was signed by COPPER_KITE. The order's signature and the authorization log both identify its signer. Both evidence paths are available at clearance 1.
+
+Both starter queries supply the `name` argument. The Lisbon query guides the player to the missing destination selection. The Luanda query leaves the player to choose which shipment records and nested fields to retrieve. Arguments are taught at the next clearance level.
 
 The content model should eventually support branching investigations, multiple acceptable solutions, variant pools (Section 3.12), and connections between missions.
 
@@ -630,8 +768,9 @@ A build-time validation process should check:
 - **References:** Geographical entities, operatives, organizations, stages, missions, and campaigns that are referred to all exist.
 - **World data:** Every border is recorded from both sides, and every city belongs to a country.
 - **Reachability:** Every stage can be reached and every mission has a terminal outcome.
-- **Uniqueness:** The machine-verifiable clues of a stage identify exactly one solution among the candidates the data offers. For the Azulejos opening, each clue must also leave at least one wrong lead plausible on its own. Where reports conflict, the corroborating data settles the conflict.
-- **Evidence:** Every claim has at least two evidence sets, and no set contains another. Every authored evidence set is retrievable at the mission's clearance. For each claim, the tests accept every complete set, allow extra citations, and reject incomplete sets or facts from unrelated leads unless the cited facts form another complete set.
+- Verify that the clues for each stage identify exactly one solution among the candidates in the data. For the Azulejos opening, each clue must also leave at least one wrong lead plausible on its own. In Luanda, only one order for the crate names the consignee on the logged label. Where reports conflict, the corroborating data settles the conflict.
+- Verify that every claim has at least two supporting evidence sets and that no supporting set contains another. Each authored set must be retrievable at the mission's clearance. The tests accept complete sets with extra citations and reject incomplete sets or facts from unrelated leads unless the cited facts form another complete set.
+- Verify that each authored refutation is retrievable at the mission's clearance and refutes the named claim for that lead. A field check must be reachable with a supported claim and an unverified claim, must charge the quoted cost, and must leave the stage open. A viable lead stays open after its field check.
 - **Solvability:** The reference solution executes without error and yields the required evidence. The time it spends sets the mission's budget (Section 3.3).
 - **Curriculum order:** A mission requires only concepts taught at or below its clearance, and its reference solution uses the concept it claims to teach.
 - **Course shape:** The rules of Section 3.7 hold. Every taught concept is practised later, every clearance level ends with an assessment mission, and every mission file in the content directory is part of the course.
@@ -648,7 +787,8 @@ Every check is an error that fails the build. A check that only prints a warning
 Validation cannot catch everything, so mission authors also follow these rules.
 
 - **State the objective, not the method.** An objective says what to find. It never says which query to write or which GraphQL feature to use. Technique belongs in the hints, where the player chooses to see it.
-- **Make wrong leads plausible.** A plausible wrong lead fits at least one clue. Give players a way to disqualify it from query results before traveling, and explain the mistake in its dead-end scene.
+- **Make wrong leads plausible.** A plausible wrong lead fits at least one clue. Give players a way to disqualify it from query results before traveling. Where the player can rule out the lead, use a short dispatch to acknowledge the deduction. Where a field check is available, write a dispatch that points the player toward the record that resolves the uncertainty.
+- **Change the question as the case develops.** In a multi-stage teaching mission, have the next stage reveal something that calls for a new deduction with the same GraphQL concept. Name what will happen at the deadline in the briefing and in the clock.
 - **Give every claim two routes.** The two evidence sets should pass through different records, so that a player who misses one field can still make the case.
 - **Write a fresh assessment case.** Change the evidence or relationships enough that a player has to decide which fields to retrieve. Keep the goal clear and leave the editor blank.
 - **Run the queries before writing the text.** Briefings, clues, hints, and dead ends must describe what the engine actually returns. Text written from expectation is the most common source of broken missions.
@@ -678,12 +818,14 @@ Actions:
 
 - Transmit a query. This spends time while the clock is active and adds facts to the evidence ledger.
 - Pin or unpin evidence.
+- Add or remove a citation in the draft for a particular lead.
+- Rule out a lead by citing its refutation. This is free.
 - Examine a dossier, report, or the schema documentation. This is free.
 - Request a hint.
 - View the stage's solution.
-- Travel to a destination, citing pinned evidence for the lead.
-- Submit a deduction, citing pinned evidence.
-- Apply for a warrant, citing pinned evidence.
+- Travel to a destination with fully supported claims, or order a field check where the mission offers one.
+- Submit a deduction with citations.
+- Apply for a warrant with citations.
 - Let the deadline pass, or restart the investigation.
 
 Travel and deductions are available as controls in the interface from the first mission, and warrants from the first mission that ends in an arrest. Once the player reaches the clearance level that teaches mutations, the same actions can also be performed through the terminal, and missions at that level ask for the paperwork to be filed that way. Both routes call the same engine actions.
@@ -696,7 +838,7 @@ Missions evaluate the player's conclusion and the evidence cited for it. They ne
 
 ### 7.1 Investigation Engine
 
-Responsible for mission progression, the evidence ledger, the mission clock, travel decisions, evaluating deductions and warrants, and success or failure conditions.
+Responsible for mission progression, the evidence ledger, the mission clock, travel and field checks, evaluating refutations, deductions, and warrants, and success or failure conditions.
 
 Each mission may be modeled as a small state machine whose transitions depend on player decisions.
 
@@ -712,13 +854,13 @@ Potential considerations include query complexity limits, execution timeouts, an
 
 ### 7.3 Content System
 
-Responsible for loading declarative missions, briefings, dialogue, hints, dead ends, and other narrative material, along with each mission's curriculum metadata and any variant pool.
+Responsible for loading declarative missions, briefings, deadline copy, dialogue, hints, and lead outcomes, along with each mission's curriculum metadata and any variant pool.
 
 The system should make it practical to add new missions without implementing new application logic.
 
 ### 7.4 Progress System
 
-Responsible for recording completed missions, the help used, and whether completion was after the deadline. For investigations in progress, it records deadline state, the evidence ledger and pins, their source transmissions, and the editor's contents for each stage. It also stores the player's preferences.
+Responsible for recording completed missions, the help used, and whether completion was after the deadline. For investigations in progress, it records deadline state, the evidence ledger and pins, source transmissions, and each stage's editor draft, citation drafts, and ruled-out leads. It also stores the player's preferences.
 
 Persistence should work without registration or a network connection. The following rules keep saved progress trustworthy as the game changes:
 
@@ -741,27 +883,14 @@ Responsible for everything the game says about the player's GraphQL:
 
 ### 8.1 Visual Direction
 
-The interface should evoke a mid-century intelligence headquarters adapted to a modern browser.
+Set a dark navy terminal into a mid-century paper case file. Briefings, query findings, and drafts sit on warm paper with fine rule lines. Use an editorial serif for case titles, a legible sans serif for reading and controls, and a crisp monospace for code and short clerk annotations.
 
-Potential visual elements include:
+Give each case one motif drawn from its subject. A strip of cobalt tilework marks the Azulejos briefing and returns on the debrief. Reserve rust-red ink for decision stamps. Stamp the Azulejos debrief **HOLD ISSUED** when the player secures the crate and **COLLECTED** when the buyer gets there first. Maps and dossier material can use period cartography and printing styles while showing the present-day geography.
 
-- Classified document folders and stamped case files.
-- Vintage maps, travel posters, and geographical illustrations.
-- Typewriter-inspired typography for narrative elements.
-- Monochrome or restrained-color intelligence terminals.
-- Passport stamps, dossier photographs, and agency insignia.
-
-The actual GraphQL editor should prioritize modern usability, readability, and accessibility over strict historical authenticity.
-
-Visual embellishments should support immersion without obstructing query composition or investigation. In practice:
-
-- The interface is mostly a working tool and partly atmosphere. The editor and results take precedence over decoration, and query text is never smaller or fainter than the prose around it.
-- Display typefaces are for headings and short labels. Body text and code use plain, legible faces.
-- Hints, the manual, and other help open beside the editor and results and never cover them.
-- Status is never shown by color alone, and each color has one meaning.
-- No information needed to solve a mission exists only on the map or in decoration.
-- The whole game can be played from the keyboard, and motion respects the reduced-motion preference.
-- The layout remains usable in a window 1024 pixels wide.
+- Query text is at least as legible as the surrounding prose. Keep the editor's modern input, focus, and error behavior.
+- Put hints, the manual, and other help alongside the working area. At narrower widths the layout reflows without covering the editor or its results.
+- Pair status color with a text label. Make clues and travel information available as text.
+- Support keyboard play throughout, honor reduced-motion preferences, and keep the working layout usable at a window width of 1024 pixels.
 
 ### 8.2 Primary Screens
 
@@ -773,9 +902,9 @@ The screens support the gameplay loop described in Section 3.1.
 
 **Mission Briefing:** Classified narrative introduction, objectives, and initial intelligence.
 
-**Intelligence Terminal:** GraphQL editor, schema documentation for the clearance in force, query results with pin controls, error annotations, hints, and current location. The clock shows remaining hours or that the investigation is continuing untimed.
+The **Intelligence Terminal** shows the editor and the latest results side by side, with the objective, current location, and deadline event in view. Players can switch between leads, inspect the response, and attach a finding to the open draft. Keep raw GraphQL results, schema documentation for the clearance in force, error annotations, and hints available. After expiry, the clock shows what happened and whether the investigation is continuing untimed.
 
-**Evidence Board:** The evidence ledger and pinned facts, with links back to their query results. Deduction and warrant forms show the claims and their citations. Travel uses the same evidence form.
+The **Evidence Board** holds the evidence ledger and pinned facts, with links back to their query results. The travel, deduction, and warrant drafts show plain-language claims and their citations. Keep the active draft beside the terminal results, and keep each lead's citations separate when switching between leads. Ruled-out leads remain available for review.
 
 **World Map:** Visualizes geographical locations and supports travel decisions, showing the time each journey would cost.
 
@@ -806,12 +935,12 @@ Testing should prioritize deterministic game behavior and content correctness.
 
 Suggested coverage:
 
-- **Unit tests:** GraphQL resolvers, mission transitions, evidence recording and source links, and claim evaluation. Verify that missing citations cost no time, committed dead ends spend the quoted cost, a final-hour action resolves before expiry, and a solution reveal is free after expiry. Verify that clearance is derived correctly from a record of completions, including placement with and without the solution reveal.
+- **Unit tests** cover GraphQL resolvers, mission transitions, evidence recording and source links, and claim evaluation. Verify that a grouped citation attaches only retrieved facts with their source paths. Check that reviewing a draft or ruling out a lead costs no time, that list refutations require complete results, and that a confirmed field check spends the quoted cost without advancing the stage. Verify that a final-hour action resolves before expiry, a solution reveal is free after expiry, and clearance is derived correctly from completions, including placement with and without the solution reveal.
 - **Schema tests:** Each clearance level exposes exactly its intended types and fields, including through introspection. Classified records return partial data with errors. A placement attempt runs against the schema of the mission's level.
 - **Content tests:** The validation checks of Section 5.5, run against every mission. These recompute what a mission asserts from the data and do not trust the authored answer.
 - **Integration tests:** Execute representative GraphQL operations against actual game data.
 - **Persistence tests:** Saved data from an older format version, a changed mission, and unavailable storage are each handled as Section 7.4 describes.
-- **End-to-end tests:** In the Azulejos case, commit to a wrong lead, read the feedback, correct the deduction, complete the mission, and reload to confirm that progress survived. In a separate run, let the deadline pass, reload, and check that the retained evidence and draft support a successful late completion with its own debrief.
+- **End-to-end tests** play the Azulejos case with the editor, results, and draft accessible by keyboard at 1024 pixels. Cite findings directly from a response and switch leads. Verify that drafts stay attached to the right shipments and that each cited fact links to its source. Rule out one wrong lead for free, confirm a field check on a different lead with an unverified claim, then reach Luanda with a complete travel order. Reload and confirm that the drafts and lead history survived. Use the replacement label to identify the signer and hold the crate. In a separate run, let the buyer collect the crate, reload, and use the retained evidence and drafts to finish with the late debrief.
 
 Every authored mission must include a reference solution. Continuous integration plays each mission using its reference solution, computes the mission's budget from the time spent, and fails if the mission cannot be completed.
 
@@ -826,7 +955,7 @@ Use automated tests to check solvability and browser-agent reviews to check what
 
 The agents are given a self-contained prompt and no knowledge of how the game is built. A reviewer who knows the answer is not a fair test of what the game teaches.
 
-Once the first mission is playable, observe a few people who know JSON and are new to GraphQL before expanding the campaign. Record by hand where they get stuck, whether they can explain how the two clues support their destination, and which moments they remember. Ask whether they would choose to play another case and why. Give each player a short follow-up case with different data and a blank editor. Observe whether they can write a nested selection and explain how its result supports the new deduction. Use these sessions to tune the clock's costs and factors, citation feedback, and starter query before authoring the remaining clearance levels.
+Once the first mission is playable, observe a few people who know JSON and are new to GraphQL before expanding the campaign. Watch whether they can attach evidence while comparing shipments and explain both why a wrong lead looked plausible and what ruled it out. When they reach Luanda, see whether the replacement label makes them want to send another query and whether they can explain how they identified the signer. Ask which moments they remember and whether they would choose to play another case. Give each player a short follow-up case with different data and a blank editor. Observe whether they can write a nested selection and explain how its result supports the new deduction. Use these sessions to tune the clock's costs and factors, citation feedback, and starter queries before authoring the remaining clearance levels.
 
 ## 11. Development Milestones
 
@@ -844,17 +973,17 @@ Once the first mission is playable, observe a few people who know JSON and are n
 
 - Implement the mission definition format.
 - Add a small intelligence dataset linked to the geographical data.
-- Load *The Vanishing Azulejos* with several stages and a plausible wrong lead in the opening.
-- Let players pin evidence from query results, trace it back to the source, and cite it against plain-language claims.
-- Implement the mission clock with a budget computed from the reference solution, evidence feedback, destination selection, and dead ends. Support an untimed continuation and a free solution reveal after the deadline.
-- Validate that the two clues together identify one shipment and that each clue alone leaves more than one. Validate that each claim can be supported by two evidence sets. Run the mission's reference solution in tests.
-- Introduce an intelligence briefing and basic dossier interface.
-- Add the guided starter query and a basic debrief that explains the query and shows the on-time or late outcome.
-- Persist progress, source transmissions, and editor drafts in versioned saves.
-- Run end-to-end tests for recovering from a wrong deduction and finishing after the deadline.
+- Load both stages of *The Vanishing Azulejos*. Compare plausible shipments in Lisbon, then identify who signed the transfer order that matches the replacement label in Luanda.
+- Build the first case file with the navy editor beside paper results and the active draft. Use the tilework motif in the briefing and debrief, and stamp the outcome.
+- Let players cite a finding directly into the active draft or pin it for later. Make grouped citations inspectable and keep links to the individual source facts.
+- Implement the mission clock with a budget computed from the reference solution and a countdown to the buyer's pickup. Support free lead eliminations, quoted field checks on provisional leads, supported travel, and an untimed continuation with a free solution reveal after expiry.
+- Validate that the opening clues together identify one shipment and that each clue alone leaves more than one. Verify that the replacement label matches one transfer order, that each claim has two supporting evidence sets, and that every authored refutation is retrievable. Run the full reference solution in tests.
+- Add a basic dossier interface, the guided Lisbon query, the partial Luanda query, and a debrief that explains the query and shows the on-time or late outcome.
+- Persist progress, source transmissions, ruled-out leads, and citation and editor drafts in versioned saves.
+- Run end-to-end tests for ruling out leads, recovering from a field check, identifying the signer, and finishing after the deadline.
 - Observe beginners playing the mission and a short follow-up case with a blank editor, using the findings to refine the first mission.
 
-**Success criterion:** A player can use GraphQL to compare plausible leads and solve a complete international mystery, including after the first mission's deadline. Beginner playtests show whether players can explain their deductions and use nested selections in a fresh case.
+To complete this milestone, a player must be able to compare and cite query findings from the same screen, rule out a plausible lead, and solve the Luanda deduction on time or after the buyer collects the crate. Beginner playtests show whether players can explain the clues they used, whether the Luanda twist prompts another query, and whether they can use nested selections in a fresh case.
 
 ### Milestone 3 — Educational MVP
 
@@ -863,7 +992,7 @@ Once the first mission is playable, observe a few people who know JSON and are n
 - Expand the world data to every country.
 - Add schema documentation, scaffolding throughout the course, the hint ladder, and error annotations. Make the solution reveal available in every mission.
 - Add the orientation and the tradecraft manual with its glossary. Extend the debrief to compare the player's approach with the reference solution and point to a follow-up case.
-- Incorporate a world map and Cold War–inspired visual design.
+- Incorporate a world map and extend the case file design across the curriculum.
 - Introduce the recurring cast and a simple campaign.
 - Run the full set of content validation checks automatically, including course shape.
 - Run the clean-room solve and the novice walkthrough on every mission, and act on what they find.
@@ -899,7 +1028,7 @@ Once the first mission is playable, observe a few people who know JSON and are n
 
 **Transmission:** One executed GraphQL operation. A transmission spends time while the mission clock is active.
 
-**Mission Clock:** The budget of hours a mission allows, computed from its reference solution and spent by transmissions, travel, hints, and mistakes.
+The **Mission Clock** counts the game hours until the deadline event. Its budget comes from the reference solution, and transmissions, travel, field checks, and other paid actions spend it.
 
 **Evidence:** A fact that has appeared in one of the player's query results.
 
@@ -907,7 +1036,13 @@ Once the first mission is playable, observe a few people who know JSON and are n
 
 **Evidence Set:** A group of facts that together support a claim. Every claim has at least two.
 
-**Deduction:** A conclusion the player submits, citing pinned evidence.
+**Citation** links one or more retrieved facts to a claim in a draft.
+
+**Refutation** is a set of retrieved facts that disprove a claim for a particular lead.
+
+**Field Check** is a paid investigation of a provisional lead that returns a dispatch while the stage stays open.
+
+A **Deduction** is a conclusion the player submits with citations.
 
 **Warrant:** An application to arrest a named operative, supported by cited evidence.
 
