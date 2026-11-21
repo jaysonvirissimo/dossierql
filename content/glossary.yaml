@@ -6,7 +6,8 @@
   matches: [queries]
   definition: >
     A request that reads data. You write the shape of the answer you want,
-    and the archive fills it in.
+    and the archive fills it in. It begins with the word `query` and a pair
+    of braces, and may ask for more than one thing at the top level.
 - id: transmission
   term: transmission
   clearance: 1
@@ -74,30 +75,37 @@
   matches: [arguments]
   definition: >
     A value passed to a field in parentheses, such as
-    `operative(codename: "NIGHTJAR")`. It tells the field which record, or
-    which part of a list, you want.
+    `operative(codename: "NIGHTJAR")`. It tells the field which record you
+    want. Text and identifiers go in double quotes. The documentation lists
+    the arguments each field accepts.
 - id: alias
   term: alias
   clearance: 3
   matches: [aliases]
   definition: >
     A name of your own for a field's result, written before the field and
-    a colon. Aliases let one query ask the same field twice with different
-    arguments.
+    a colon, as in `first: operative(codename: "NIGHTJAR")`. Aliases let
+    one query ask the same field twice with different arguments, and the
+    results come back under the names you chose.
 - id: fragment
   term: fragment
   clearance: 4
   matches: [fragments, fragment spread]
   definition: >
-    A named selection written once and reused with `...Name` wherever a
-    record of its type appears.
+    A named selection, written once beside the query and reused. It is
+    defined as `fragment Name on Type { fields }`, where the type is the
+    kind of record the fields belong to, and it is used by writing
+    `...Name` wherever a record of that type appears.
 - id: variable
   term: variable
   clearance: 5
   matches: [variables]
   definition: >
-    A named input, written with a `$`, whose value is supplied beside the
-    query. The query stays the same while the value changes.
+    A named input, written with a `$`. It is declared with its type after
+    the operation's name, as in `query Departures($city: String!)`, and
+    used where the value would go, as in `city(name: $city)`. The value is
+    supplied in the variables panel as JSON, such as `{ "city": "Lisbon" }`.
+    The query stays the same while the value changes.
 - id: operation
   term: operation
   clearance: 5

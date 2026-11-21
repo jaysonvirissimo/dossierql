@@ -50,6 +50,11 @@ describe("annotate", () => {
       `{ cities { name } } fragment Port on City { name }`,
       /never spread/,
     ],
+    [
+      "a fragment with no type",
+      `{ cities { ...Port } } fragment Port { name }`,
+      /which type of record/,
+    ],
     ["an unclosed brace", `{ cities { name }`, /braces and parentheses/],
     ["a mutation", `mutation { x }`, /read from|documentation panel/],
   ];

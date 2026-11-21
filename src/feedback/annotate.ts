@@ -28,6 +28,16 @@ const RULES: Rule[] = [
     note: (_m, e) => `A quotation mark${near(e)} was opened and never closed.`,
   },
   {
+    test: /^Syntax Error: Expected "on"/,
+    note: (_m, e) =>
+      `A fragment${near(e)} has to say which type of record it is written for, between its name and its braces. The glossary entry shows the form.`,
+  },
+  {
+    test: /^Syntax Error: Unexpected Name/,
+    note: (_m, e) =>
+      `The clerk does not know what to make of the word${near(e)}. A request opens with a keyword the archive knows, and anything defined beside it is introduced by a keyword too. The glossary shows the forms.`,
+  },
+  {
     test: /^Syntax Error:/,
     note: (_m, e) =>
       `The clerk could not read the request${near(e)}. It may help to count the braces and parentheses and see that each one opened is closed.`,

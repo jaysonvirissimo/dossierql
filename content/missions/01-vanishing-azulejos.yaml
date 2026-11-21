@@ -69,7 +69,9 @@ stages:
             departingShipments {
               id
               manifest
-              # Where is each shipment going?
+              # This request is not finished.
+              # Before you transmit, add what you need
+              # about where each shipment is going.
             }
           }
         }

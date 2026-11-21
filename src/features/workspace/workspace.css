@@ -638,3 +638,15 @@
   list-style: disc;
   padding-left: var(--space-4);
 }
+
+.findings__legend,
+.draft__claims-intro {
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+  margin-bottom: var(--space-2);
+}
+
+.claims--preview {
+  list-style: disc;
+  padding-left: var(--space-4);
+}

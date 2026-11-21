@@ -151,6 +151,14 @@ function DocsPanel() {
         The archive at clearance {env.clearance}, as it describes itself.
         Reading this is free.
       </p>
+      <p className="tool__lede">
+        How to read an entry: <code>name: Type</code> is a field and what it
+        returns. <code>[Type]</code> is a list. <code>!</code> means the value
+        is always there, or, on something in parentheses, that it must be given.
+        Text and identifiers you pass go in double quotes. A field that returns
+        a record needs a selection: braces after it, naming the fields you want
+        from that record.
+      </p>
       {types.map((type, index) => (
         <details key={type.name} className="doc" open={index === 0}>
           <summary>
@@ -174,8 +182,10 @@ function DocsPanel() {
                 <dd>
                   {field.description ??
                     (isObjectType(getNamedType(field.type))
-                      ? `Returns ${String(getNamedType(field.type))} records, which need a selection.`
+                      ? ""
                       : "A plain value.")}
+                  {isObjectType(getNamedType(field.type)) &&
+                    ` Returns ${String(getNamedType(field.type))}: needs a selection.`}
                 </dd>
               </div>
             ))}
@@ -440,7 +450,10 @@ export function Tools() {
         tabIndex={0}
       >
         {tab === "case" && <CasePanel />}
-        {tab === "docs" && <DocsPanel />}
+        {/* Kept mounted so the sections a player opened stay open. */}
+        <div hidden={tab !== "docs"}>
+          <DocsPanel />
+        </div>
         {tab === "hints" && <HintsPanel />}
         {tab === "evidence" && <EvidencePanel />}
         {tab === "dossiers" && <DossierPanel />}

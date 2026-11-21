@@ -26,10 +26,10 @@ debrief:
   stampOnTime: TILES RECOVERED
   comparison: >
     The reference solution is one operation with a variable for the city.
-    It is sent from Porto and again from Southampton, and nothing but the
-    variable's value changes between them.
+    It is sent from Porto and again from Southampton. The variable's value
+    changes between them, and one field is added for the director.
   geography: >
-    The United Kingdom keeps the pound sterling and Iceland the króna.
+    The United Kingdom keeps the British pound and Iceland the króna.
     The Netherlands and Norway are a short sail away and use the euro and
     the Norwegian krone.
 
@@ -42,7 +42,7 @@ stages:
       The azulejos reached Porto inside a crate of machine parts
       and left again the same day. Several shipments have sailed
       from Porto since. The buyer has been heard asking the price
-      in pounds sterling.
+      in British pounds.
 
     clues:
       - text: >
@@ -54,7 +54,7 @@ stages:
         constraint:
           $shipment.inspection.finding: Glazed ceramic tiles, blue, 14 cm
       - text: >
-          The buyer pays in pounds sterling, the currency of the
+          The buyer pays in British pounds, the currency of the
           country where the crate lands.
         constraint:
           $shipment.destination.country.currency: Currency:GBP
@@ -102,7 +102,7 @@ stages:
                 field: finding
                 equals: Glazed ceramic tiles, blue, 14 cm
       - id: currency
-        prompt: The destination country uses the pound sterling.
+        prompt: The destination country uses the British pound.
         evidenceSets:
           - facts:
               - entity: Shipment:$shipment

@@ -2,13 +2,20 @@ import { useState, type ReactNode } from "react";
 import type { ResultError, TransmissionRecord } from "../../engine/mission.ts";
 import { annotate } from "../../feedback/annotate.ts";
 import { useWorkspace } from "./context.ts";
-import { findingAt, pathKey, typeWords, words } from "./describe.ts";
+import { bindingTypes, leadBinding } from "../../content/types.ts";
+import { refOf } from "../../graphql/store.ts";
+import { findingAt, labelOf, pathKey, typeWords, words } from "./describe.ts";
 
 function Errors({ errors }: { errors: readonly ResultError[] }) {
   if (errors.length === 0) return null;
+  // The same complaint about three fields is worth saying once.
+  const unique = errors.filter(
+    (error, index) =>
+      errors.findIndex((other) => other.message === error.message) === index,
+  );
   return (
     <ul className="errors" aria-label="Errors">
-      {errors.map((error, index) => (
+      {unique.map((error, index) => (
         <li key={index} className="error">
           <pre className="error__message">{error.message}</pre>
           {(error.line !== undefined || error.path) && (
@@ -44,6 +51,7 @@ function Findings({ record }: { record: TransmissionRecord }) {
   const { state, stage, stageState, dispatch } = useWorkspace();
   const [said, setSaid] = useState("");
   const factAt = new Map(record.facts.map((f) => [pathKey(f.path), f.key]));
+  const leadType = bindingTypes(stage)[leadBinding(stage)] ?? "";
 
   const actions = (path: (string | number)[], name: string): ReactNode => {
     const key = factAt.get(pathKey(path));
@@ -52,6 +60,9 @@ function Findings({ record }: { record: TransmissionRecord }) {
     const pinned = state.pins.includes(key);
     const leadId = finding?.leadId ?? stageState.activeLead;
     const draft = leadId ? stageState.drafts[leadId] : undefined;
+    const leadName = leadId
+      ? labelOf(refOf(leadType, leadId), state.ledger)
+      : "";
     const cited =
       finding !== null &&
       draft?.citations.some(
@@ -64,7 +75,7 @@ function Findings({ record }: { record: TransmissionRecord }) {
           type="button"
           className="button button--small"
           disabled={closed || cited}
-          aria-label={`Cite ${finding?.label ?? name}${leadId ? `, into the draft for ${leadId}` : ""}`}
+          aria-label={`Cite ${finding?.label ?? name}${leadId ? `, into the draft for ${leadName}` : ""}`}
           onClick={() => {
             if (!finding) return;
             if (!leadId) {
@@ -79,7 +90,7 @@ function Findings({ record }: { record: TransmissionRecord }) {
               label: finding.label,
               factKeys: finding.factKeys,
             });
-            setSaid(`Cited ${finding.label} in the draft for ${leadId}.`);
+            setSaid(`Cited ${finding.label} in the draft for ${leadName}.`);
           }}
         >
           {cited ? "Cited" : "Cite"}
@@ -121,7 +132,7 @@ function Findings({ record }: { record: TransmissionRecord }) {
             const plain = child.every(
               (item) =>
                 !isRecord(item) ||
-                (Object.keys(item).length <= 2 &&
+                (Object.keys(item).length <= 1 &&
                   Object.values(item).every(
                     (v) => v === null || typeof v !== "object",
                   )),
@@ -172,7 +183,7 @@ function Findings({ record }: { record: TransmissionRecord }) {
                   <span className="finding__name">{name}</span>
                   <span className="finding__value">
                     {headingOf(child, 0).startsWith("Entry ")
-                      ? typeAt(childPath)
+                      ? "on file"
                       : headingOf(child, 0)}
                   </span>
                   {actions(childPath, name)}
@@ -204,6 +215,10 @@ function Findings({ record }: { record: TransmissionRecord }) {
   }
   return (
     <div className="findings">
+      <p className="findings__legend">
+        Each row is one fact. Citing a row attaches it together with the links
+        that lead to it, so a row deep in a record carries its whole chain.
+      </p>
       <p className="visually-hidden" role="status">
         {said.startsWith("Open a lead") ? "" : said}
       </p>
@@ -326,7 +341,10 @@ export function Results() {
           >
             <Errors errors={record.errors} />
             {tab === "findings" ? (
-              <Findings key={record.n} record={record} />
+              <Findings
+                key={`${state.stageId}:${String(record.n)}`}
+                record={record}
+              />
             ) : (
               <pre className="raw" data-testid="raw-response">
                 {JSON.stringify(

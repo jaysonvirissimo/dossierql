@@ -335,7 +335,8 @@ export default function Workspace({ mission }: { mission: Mission }) {
           </section>
 
           <Results />
-          <Tools />
+          {/* A new stage opens on its own briefing and clues. */}
+          <Tools key={state.stageId} />
           <DraftPanel />
         </div>
       </main>

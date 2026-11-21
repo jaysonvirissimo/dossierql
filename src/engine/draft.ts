@@ -31,6 +31,8 @@ export interface ClaimReview {
   status: ClaimStatus;
   /** Solution bindings the claim needs that the draft has not named. */
   unnamed: string[];
+  /** Some cited fact bears on the claim, though no evidence set is complete. */
+  partial: boolean;
 }
 
 export interface DraftReview {
@@ -107,6 +109,7 @@ export function reviewDraft(
         prompt: claim.prompt,
         status: "refuted",
         unnamed: [],
+        partial: false,
       };
     }
     let unnamed: string[] = [];
@@ -129,6 +132,13 @@ export function reviewDraft(
       prompt: claim.prompt,
       status: supported ? "supported" : "open",
       unnamed: supported ? [] : unnamed,
+      partial:
+        !supported &&
+        claim.evidenceSets.some((set) =>
+          set.facts.some((pattern) =>
+            facts.some((fact) => couldMatch(pattern, fact, leadOnly)),
+          ),
+        ),
     };
   });
 

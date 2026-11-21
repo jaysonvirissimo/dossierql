@@ -1,5 +1,5 @@
 import { useGame } from "../app/GameProvider.tsx";
-import { referenceOperations } from "../content/types.ts";
+import { referenceOperations, type Concept } from "../content/types.ts";
 import { availability } from "../engine/clearance.ts";
 import { ConceptCardView } from "../features/ConceptCardView.tsx";
 import { Prose } from "../features/Prose.tsx";
@@ -10,6 +10,30 @@ const MODE_TEXT = {
   hinted: "with hints",
   "solution-revealed": "with the solution revealed",
 } as const;
+
+/**
+ * How to tell, from the text a player sent, that a taught concept was used,
+ * and what to say in the debrief when it was not. This never affects
+ * whether a case is solved: any query that yields the evidence is accepted.
+ */
+const CONCEPT_USE: Partial<Record<Concept, { test: RegExp; unused: string }>> =
+  {
+    aliases: {
+      test: /[A-Za-z_]\w*\s*:\s*[A-Za-z_]\w*\s*\(/,
+      unused:
+        "Your transmissions asked for one file at a time. With an alias in front of each, the same files come back together in a single transmission.",
+    },
+    fragments: {
+      test: /\bfragment\s+\w+\s+on\s+\w+/,
+      unused:
+        "Your transmissions repeated the same fields wherever they were wanted, which works. A fragment holds those fields once, so a change is made in one place and every use stays in step. The reference beside yours shows the form.",
+    },
+    variables: {
+      test: /\$\w+/,
+      unused:
+        "Your transmissions wrote the city into the query each time. With a variable the query is left alone and only the value in the variables panel changes.",
+    },
+  };
 
 function plural(n: number, word: string): string {
   return n === 1 ? `1 ${word}` : `${String(n)} ${word}s`;
@@ -60,6 +84,14 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
         availability(m, standing) === "available" &&
         !standing.completions[m.id],
     );
+  // What the concept would have changed in the player's own transmissions.
+  const sent = state.transmissions.map((t) => t.operation).join("\n");
+  const usedNote =
+    mission.teaches && CONCEPT_USE[mission.teaches]
+      ? CONCEPT_USE[mission.teaches]?.test.test(sent)
+        ? null
+        : (CONCEPT_USE[mission.teaches]?.unused ?? null)
+      : null;
   const promoted = mission.kind === "assessment" && completion?.passed === true;
 
   return (
@@ -102,6 +134,9 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
                 {completion.placement
                   ? `Placement passed. You now hold clearance ${String(standing.clearance)}, with the concept cards for the levels you skipped.`
                   : `Assessment passed. You now hold clearance ${String(standing.clearance)}.`}
+                {!course.missions.some(
+                  (m) => m.clearance >= standing.clearance,
+                ) && " No cases are filed above this level yet."}
               </p>
             )}
             {mission.kind === "assessment" &&
@@ -122,6 +157,7 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
               reference solution sends {reference.length}.
             </p>
             <Prose text={mission.debrief.comparison} />
+            {usedNote && <p className="note">{usedNote}</p>}
             <div className="compare">
               <div>
                 <h3>Yours</h3>

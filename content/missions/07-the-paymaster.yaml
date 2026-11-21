@@ -65,8 +65,9 @@ stages:
             lastKnownLocation { name country { name currency { name } } }
             knownAssociates {
               codename
-              # The same dossier fields are wanted here,
-              # and again for each associate's own associates.
+              # The same dossier fields are wanted here, and again for
+              # each associate's own associates. A fragment lets you
+              # write them once: the glossary shows the form.
             }
           }
         }

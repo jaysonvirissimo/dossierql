@@ -166,6 +166,27 @@ describe("citations and drafts", () => {
     );
   });
 
+  it("says when a claim's evidence is cited only in part", () => {
+    const state = run(
+      afterReference(lisbon, begun()),
+      cite("LIS-0417", "destination", "Shipment:LIS-0417.destination"),
+      { type: "name", leadId: "LIS-0417", binding: "country", value: "AO" },
+    );
+    const review = reviewDraft(
+      lisbon,
+      state.stages.lisbon!.drafts["LIS-0417"]!,
+      state.ledger,
+    );
+    expect(review.claims.find((c) => c.id === "route")).toMatchObject({
+      status: "open",
+      partial: true,
+    });
+    expect(review.claims.find((c) => c.id === "manifest")).toMatchObject({
+      status: "open",
+      partial: false,
+    });
+  });
+
   it("flags a citation that bears on no claim", () => {
     const state = run(
       afterReference(lisbon, begun()),

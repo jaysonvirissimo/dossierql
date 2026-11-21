@@ -36,7 +36,27 @@ export function DraftPanel() {
     knownRecords(state, type)
       .map((id) => ({ id, label: labelOf(refOf(type, id), state.ledger) }))
       .sort((a, b) => a.label.localeCompare(b.label));
-  const known = byLabel(leadType);
+  // Leads are offered from what this stage's transmissions turned up.
+  const here = new Set<string>();
+  for (const sent of state.transmissions) {
+    if (sent.stageId !== state.stageId) continue;
+    for (const { key } of sent.facts) {
+      const fact = state.ledger[key]?.fact;
+      if (!fact) continue;
+      const refs = [
+        fact.entity,
+        ...(fact.value.kind === "ref" && fact.value.ref
+          ? [fact.value.ref]
+          : []),
+        ...(fact.value.kind === "list" ? fact.value.refs : []),
+      ];
+      for (const ref of refs) here.add(ref);
+    }
+  }
+  const known = byLabel(leadType).filter(({ id }) =>
+    here.has(refOf(leadType, id)),
+  );
+  const article = /^[aeiou]/.test(words(leadType)) ? "an" : "a";
   const opened = Object.keys(stageState.drafts);
   const active = stageState.activeLead;
   const draft = active
@@ -74,7 +94,7 @@ export function DraftPanel() {
             <option value="">
               {known.length === 0
                 ? `No ${words(leadType)} retrieved yet`
-                : `Choose a ${words(leadType)}`}
+                : `Choose ${article} ${words(leadType)}`}
             </option>
             {known.map(({ id, label }) => (
               <option key={id} value={id}>
@@ -112,11 +132,22 @@ export function DraftPanel() {
       )}
 
       {!draft || !review ? (
-        <p className="draft__empty">
-          A draft holds the claims you must support for one lead, and the
-          findings you cite for them. Transmit a query, then open a lead here or
-          cite a finding from the results.
-        </p>
+        <div className="draft__empty">
+          <p>
+            A draft holds the claims you must support for one lead, and the
+            findings you cite for them. Transmit a query, then open a lead here
+            or cite a finding from the results.
+          </p>
+          <p className="draft__claims-intro">
+            For this {formName.toLowerCase()}, the lead you choose must bear out
+            each of these claims:
+          </p>
+          <ul className="claims claims--preview">
+            {stage.claims.map((claim) => (
+              <li key={claim.id}>{claim.prompt}</li>
+            ))}
+          </ul>
+        </div>
       ) : (
         <div
           id="draft-body"
@@ -177,6 +208,14 @@ export function DraftPanel() {
                   {STATUS[claim.status].text}
                 </span>
                 <span className="claim__prompt">{claim.prompt}</span>
+                {claim.status === "open" &&
+                  claim.unnamed.length === 0 &&
+                  claim.partial && (
+                    <span className="claim__hint">
+                      Part of the evidence is cited. Something that completes or
+                      connects it is still missing.
+                    </span>
+                  )}
                 {claim.status === "open" && claim.unnamed.length > 0 && (
                   <span className="claim__hint">
                     Name the{" "}
