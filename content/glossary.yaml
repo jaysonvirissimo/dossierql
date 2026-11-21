@@ -92,10 +92,11 @@
   clearance: 4
   matches: [fragments, fragment spread]
   definition: >
-    A named selection, written once beside the query and reused. It is
-    defined as `fragment Name on Type { fields }`, where the type is the
-    kind of record the fields belong to, and it is used by writing
-    `...Name` wherever a record of that type appears.
+    A named selection, written once and reused. It is defined after the
+    query's closing brace as `fragment Name on Type { fields }`, where the
+    type is the kind of record the fields belong to. It is used, or
+    spread, by writing three dots and its name, `...Name`, wherever a
+    record of that type appears. A fragment may spread another fragment.
 - id: variable
   term: variable
   clearance: 5

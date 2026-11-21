@@ -1,5 +1,5 @@
 import { getNamedType, isObjectType, type GraphQLObjectType } from "graphql";
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useGame } from "../../app/GameProvider.tsx";
 import { referenceOperations } from "../../content/types.ts";
 import { COSTS, HINT_LADDER_COST } from "../../engine/clock.ts";
@@ -424,6 +424,11 @@ function GlossaryPanel() {
 
 export function Tools() {
   const [tab, setTab] = useState<TabId>("case");
+  const { state } = useWorkspace();
+  // A new stage opens on its own briefing and clues.
+  useEffect(() => {
+    setTab("case");
+  }, [state.stageId]);
   return (
     <section className="tools paper paper--plain" aria-label="Case tools">
       <div className="tabs" role="tablist" aria-label="Case tools">

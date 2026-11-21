@@ -218,9 +218,9 @@ export function DraftPanel() {
                   )}
                 {claim.status === "open" && claim.unnamed.length > 0 && (
                   <span className="claim__hint">
-                    Name the{" "}
+                    Choose{" "}
                     {claim.unnamed
-                      .map((n) => (stage.labels?.[n] ?? words(n)).toLowerCase())
+                      .map((n) => `“${stage.labels?.[n] ?? words(n)}”`)
                       .join(" and ")}{" "}
                     above first.
                   </span>

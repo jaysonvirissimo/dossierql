@@ -382,7 +382,10 @@ function doProceed(env: Env, state: MissionState, leadId: string): Outcome {
     stage.solution.type === "destination" ? "travel order" : "deduction";
   if (draft.ruledOut) return refuse(state, "This lead is ruled out.");
   if (review.unnamed.length > 0) {
-    return refuse(state, `The ${order} is incomplete: a name is still blank.`);
+    return refuse(
+      state,
+      `The ${order} is incomplete: a choice on the form is still blank.`,
+    );
   }
   if (!review.allSupported) {
     return refuse(

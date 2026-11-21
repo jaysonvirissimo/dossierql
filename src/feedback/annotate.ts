@@ -43,9 +43,14 @@ const RULES: Rule[] = [
       `The clerk could not read the request${near(e)}. It may help to count the braces and parentheses and see that each one opened is closed.`,
   },
   {
+    test: /^Cannot query field "fragment" on type/,
+    note: () =>
+      "A fragment is not a field. It is written outside the query's braces, after the closing brace, and used inside them.",
+  },
+  {
     test: /^Cannot query field "(\w+)" on type "(\w+)"/,
     note: (m) =>
-      `The archive keeps no "${String(m[1])}" on a ${String(m[2])}. The documentation panel lists what a ${String(m[2])} does have.`,
+      `The archive keeps no "${String(m[1])}" on ${String(m[2])}. The documentation panel lists what ${String(m[2])} does have.`,
   },
   {
     test: /^Field "(\w+)" of type "([^"]+)" must have a selection of subfields/,
@@ -115,7 +120,7 @@ const RULES: Rule[] = [
   {
     test: /^Fragment "(\w+)" cannot be spread here as objects of type "(\w+)" can never be of type "(\w+)"/,
     note: (m) =>
-      `"${String(m[1])}" is written for a ${String(m[3])}, and this place holds a ${String(m[2])}.`,
+      `"${String(m[1])}" is written for ${String(m[3])}, and this place holds ${String(m[2])}.`,
   },
   {
     test: /^Unknown type "(\w+)"/,
