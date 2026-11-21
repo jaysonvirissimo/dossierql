@@ -205,10 +205,12 @@ function Findings({ record }: { record: TransmissionRecord }) {
   return (
     <div className="findings">
       <p className="visually-hidden" role="status">
-        {said}
+        {said.startsWith("Open a lead") ? "" : said}
       </p>
       {said.startsWith("Open a lead") && (
-        <p className="note note--warn">{said}</p>
+        <p className="note note--warn" role="alert">
+          {said}
+        </p>
       )}
       {Object.entries(record.data).map(([key, value]) => (
         <section key={key} className="findings__root">

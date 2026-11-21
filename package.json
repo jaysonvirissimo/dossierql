@@ -13,10 +13,10 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "world:build": "node scripts/build-world.ts && node scripts/build-map.ts",
-    "content:validate": "node scripts/validate-content.ts",
-    "check:bundle": "node scripts/check-bundle.ts",
-    "check:origins": "node scripts/check-origins.ts",
+    "world:build": "node --disable-warning=ExperimentalWarning scripts/build-world.ts && node --disable-warning=ExperimentalWarning scripts/build-map.ts",
+    "content:validate": "node --disable-warning=ExperimentalWarning scripts/validate-content.ts",
+    "check:bundle": "node --disable-warning=ExperimentalWarning scripts/check-bundle.ts",
+    "check:origins": "node --disable-warning=ExperimentalWarning scripts/check-origins.ts",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run content:validate && npm run build && npm run check:bundle && npm run check:origins"
   },
   "dependencies": {

@@ -30,8 +30,9 @@ const TABS = [
 type TabId = (typeof TABS)[number][0];
 
 function CasePanel() {
-  const { env, state, stage, restart } = useWorkspace();
+  const { env, state, stage, restart, dispatch } = useWorkspace();
   const [confirming, setConfirming] = useState(false);
+  const [passing, setPassing] = useState(false);
   const here = state.dispatches.filter((d) => d.stageId === state.stageId);
   const earlier = state.dispatches.filter((d) => d.stageId !== state.stageId);
   return (
@@ -95,6 +96,39 @@ function CasePanel() {
           Restart the investigation…
         </button>
       )}
+      {state.clock === "active" &&
+        (passing ? (
+          <p className="note note--warn">
+            {env.mission.clock.onExpiry === "continue"
+              ? "The deadline event will happen now. You keep your evidence and drafts and carry on untimed."
+              : "The deadline event will happen now and this attempt will end."}{" "}
+            <button
+              type="button"
+              className="button button--small button--danger"
+              onClick={() => {
+                setPassing(false);
+                dispatch({ type: "let-deadline-pass" });
+              }}
+            >
+              Let the deadline pass
+            </button>{" "}
+            <button
+              type="button"
+              className="button button--small"
+              onClick={() => setPassing(false)}
+            >
+              Keep the clock
+            </button>
+          </p>
+        ) : (
+          <button
+            type="button"
+            className="button button--small"
+            onClick={() => setPassing(true)}
+          >
+            Let the deadline pass…
+          </button>
+        ))}
     </div>
   );
 }
