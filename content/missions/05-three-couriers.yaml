@@ -1,0 +1,345 @@
+id: three-couriers
+title: Three Couriers
+campaign: shadow-network
+order: 5
+clearance: 3
+kind: teaching
+teaches: aliases
+practises: [nested-selections, arguments]
+requires: [nested-selections, arguments]
+summary: >
+  Three couriers left Zanzibar City on the same night. One of them is
+  carrying the payment for the tiles.
+motif: courier
+clock:
+  countdown: The payment clears in {remaining}
+  expired: The payment has cleared
+  onExpiry: end
+startingStage: zanzibar
+
+debrief:
+  onTime: |
+    The bank in Lusaka stops the payment to Kafue Ceramics Trust.
+    A note arrives at the registry, unsigned except for the
+    letter M: "You read quickly. Read further."
+  stampOnTime: PAYMENT STOPPED
+  comparison: >
+    The reference solution asks `operative` three times in one request and
+    gives each use an alias. The three files come back side by side under
+    the names you chose, for one hour where three separate requests would
+    have cost three.
+  geography: >
+    Zambia shares a border with Tanzania at the southern end of Lake
+    Tanganyika. The Comoros are islands in the Mozambique Channel and
+    border no one.
+
+stages:
+  zanzibar:
+    location: TZ
+    objective: Identify the courier carrying the payment and the country the courier went to.
+
+    briefing: |
+      MARBLE_HERON handed the payment to a courier in Zanzibar
+      City. Three couriers left that night: GREY_PETREL,
+      SABLE_IBIS, and TIN_FALCON. The registry has a file on each.
+      The clerk would be grateful to fetch them in one trip.
+
+    clues:
+      - text: >
+          The payment stays inside the Parallax Circle. The courier is
+          one of its members.
+        constraint:
+          $operative.organization: Organization:parallax-circle
+      - text: >
+          The courier crossed a land border out of Tanzania and was
+          last seen in the country on the other side.
+        constraint:
+          $operative.lastKnownLocation.country.borders: Country:TZ
+          $operative.lastKnownLocation.country: $country
+
+    scaffold:
+      level: guided
+      starterQuery: |
+        query {
+          operative(codename: "SABLE_IBIS") {
+            codename
+            organization { name }
+            lastKnownLocation { name country { name borders { name } } }
+          }
+          # Ask for GREY_PETREL and TIN_FALCON in this same transmission.
+        }
+
+    hints:
+      nudge: >
+        One courier belongs to the Parallax Circle and was last seen in
+        a country that borders Tanzania. Each of the others fails one test.
+      concept: >
+        A result cannot hold two fields with the same name. Give each
+        use of the field an alias: a name of your own, then a colon,
+        before the field.
+      schema: >
+        Look at Operative.organization, Operative.lastKnownLocation,
+        City.country, and Country.borders.
+      skeleton: |
+        first: operative(codename: "SABLE_IBIS") { codename }
+        second: operative(codename: "GREY_PETREL") { codename }
+
+    solution:
+      type: destination
+      operative: GREY_PETREL
+      country: ZM
+    labels:
+      operative: Courier
+      country: Country last seen in
+
+    claims:
+      - id: member
+        prompt: The courier is a member of the Parallax Circle.
+        evidenceSets:
+          - facts:
+              - entity: Operative:$operative
+                field: organization
+                equals: Organization:parallax-circle
+          - facts:
+              - entity: Organization:parallax-circle
+                field: members
+                includes: Operative:$operative
+      - id: border
+        prompt: The courier was last seen in a country that borders Tanzania.
+        evidenceSets:
+          - facts:
+              - entity: Operative:$operative
+                field: lastKnownLocation
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: borders
+                includes: Country:TZ
+          - facts:
+              - entity: Operative:$operative
+                field: lastKnownLocation
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:TZ
+                field: borders
+                includes: Country:$country
+
+    leadOutcomes:
+      SABLE_IBIS:
+        location: KM
+        refutation:
+          claim: border
+          facts:
+            - entity: Operative:$operative
+              field: lastKnownLocation
+              equals: City:$city
+            - entity: City:$city
+              field: country
+              equals: Country:$country
+            - entity: Country:$country
+              field: borders
+              excludes: Country:TZ
+        ruledOut: |
+          SABLE_IBIS is in Moroni. The Comoros desk points out that
+          the only way across its border is by boat.
+        fieldCheck: |
+          Moroni confirms SABLE_IBIS is a member in good standing.
+          The harbour office asks which land border was crossed.
+      TIN_FALCON:
+        location: KE
+        refutation:
+          claim: member
+          facts:
+            - entity: Operative:$operative
+              field: organization
+              equals: Organization:baltic-exchange
+        ruledOut: |
+          TIN_FALCON crossed into Kenya and reports to the Baltic
+          Exchange Bureau, which pays its own couriers.
+        fieldCheck: |
+          Nairobi confirms the border crossing. The station chief
+          asks whose payroll TIN_FALCON is on.
+      GREY_PETREL:
+        location: ZM
+        fieldCheck: |
+          Lusaka has a visitor of that description. The station
+          asks for a travel order with every claim cited.
+
+    resolved: |
+      Travel order approved. One line of GREY_PETREL's file, the
+      handler, is classified above your clearance. The clerk
+      suggests asking again after a promotion or two.
+
+    referenceSolution: |
+      query {
+        petrel: operative(codename: "GREY_PETREL") {
+          codename
+          organization { name }
+          lastKnownLocation { name country { name borders { name } } }
+        }
+        ibis: operative(codename: "SABLE_IBIS") {
+          codename
+          organization { name }
+          lastKnownLocation { name country { name borders { name } } }
+        }
+        falcon: operative(codename: "TIN_FALCON") {
+          codename
+          organization { name }
+          lastKnownLocation { name country { name borders { name } } }
+        }
+      }
+
+    next: lusaka
+
+  lusaka:
+    location: ZM
+    objective: Identify the company the payment for the tiles is going to.
+
+    briefing: |
+      GREY_PETREL has lodged three payments at a Lusaka bank. The
+      payees are Kafue Ceramics Trust, Copperbelt Clay Works, and
+      Beira Tile Agency. One payment is for the tiles. The bank
+      will stop one payment and only one.
+
+    clues:
+      - text: >
+          The tiles came from Lisbon, and the seller insists on a payee
+          registered in a country where Portuguese is spoken.
+        constraint:
+          $company.registeredIn.languages: Language:portuguese
+      - text: >
+          The Parallax Circle pays its own. The payee's director is a
+          member.
+        constraint:
+          $company.director.organization: Organization:parallax-circle
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          first: company(name: "Copperbelt Clay Works") {
+            name
+          }
+          # Compare the other two payees in this same transmission.
+        }
+
+    hints:
+      nudge: >
+        Lay the three payees side by side: where each is registered,
+        and who directs it.
+      concept: >
+        Give each use of the company field its own alias, and select
+        the same fields inside each.
+      schema: >
+        Look at Company.registeredIn, Country.languages,
+        Company.director, and Operative.organization.
+      skeleton: |
+        first: company(name: "Copperbelt Clay Works") {
+          name registeredIn { name languages { name } } director { codename organization { name } }
+        }
+
+    solution:
+      type: deduction
+      company: MZ-KAFUE
+    labels:
+      company: Payee
+
+    claims:
+      - id: registered
+        prompt: The payee is registered in a country where Portuguese is spoken.
+        evidenceSets:
+          - facts:
+              - entity: Company:$company
+                field: registeredIn
+                equals: Country:$registered
+              - entity: Country:$registered
+                field: languages
+                includes: Language:portuguese
+          - facts:
+              - entity: Company:$company
+                field: registeredIn
+                equals: Country:$registered
+              - entity: Language:portuguese
+                field: countries
+                includes: Country:$registered
+      - id: director
+        prompt: The payee's director is a member of the Parallax Circle.
+        evidenceSets:
+          - facts:
+              - entity: Company:$company
+                field: director
+                equals: Operative:$director
+              - entity: Operative:$director
+                field: organization
+                equals: Organization:parallax-circle
+          - facts:
+              - entity: Company:$company
+                field: director
+                equals: Operative:$director
+              - entity: Organization:parallax-circle
+                field: members
+                includes: Operative:$director
+
+    leadOutcomes:
+      ZM-COPPERBELT:
+        location: ZM
+        refutation:
+          claim: registered
+          facts:
+            - entity: Company:$company
+              field: registeredIn
+              equals: Country:$registered
+            - entity: Country:$registered
+              field: languages
+              excludes: Language:portuguese
+        ruledOut: |
+          Copperbelt Clay Works is registered in Zambia. The bank
+          manager lists the country's languages and Portuguese is
+          not among them.
+        fieldCheck: |
+          The bank confirms who directs Copperbelt Clay Works. The
+          manager asks where the company is registered.
+      MZ-BEIRA:
+        location: MZ
+        refutation:
+          claim: director
+          facts:
+            - entity: Company:$company
+              field: director
+              equals: Operative:$director
+            - entity: Operative:$director
+              field: organization
+              equals: Organization:baltic-exchange
+        ruledOut: |
+          Beira Tile Agency is registered in Mozambique and directed
+          by TIN_FALCON, whose loyalties lie further north.
+        fieldCheck: |
+          Beira confirms the registration. The agent asks which
+          organization the director answers to.
+
+    resolved: |
+      Deduction accepted. The bank stops the payment to Kafue
+      Ceramics Trust.
+
+    referenceSolution: |
+      query {
+        kafue: company(name: "Kafue Ceramics Trust") {
+          name
+          registeredIn { name languages { name } }
+          director { codename organization { name } }
+        }
+        copperbelt: company(name: "Copperbelt Clay Works") {
+          name
+          registeredIn { name languages { name } }
+          director { codename organization { name } }
+        }
+        beira: company(name: "Beira Tile Agency") {
+          name
+          registeredIn { name languages { name } }
+          director { codename organization { name } }
+        }
+      }

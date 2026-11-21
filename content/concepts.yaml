@@ -1,0 +1,75 @@
+- id: nested-selections
+  title: Fields and nested selections
+  clearance: 1
+  summary: >
+    Ask for the fields you want. Where a field returns another record,
+    open braces and ask for that record's fields too.
+  example: |
+    query {
+      city(name: "Lisbon") {
+        departingShipments {
+          manifest
+          destination { name country { name } }
+        }
+      }
+    }
+  payoff: >
+    One nested query follows every link in a single transmission.
+- id: arguments
+  title: Arguments
+  clearance: 2
+  summary: >
+    Pass a value in parentheses to say which record a field should return.
+  example: |
+    query {
+      operative(codename: "NIGHTJAR") {
+        coverNames { name }
+      }
+    }
+  payoff: >
+    You pull one file, and read one file, where the registry holds dozens.
+- id: aliases
+  title: Aliases
+  clearance: 3
+  summary: >
+    Name a field's result yourself. Two uses of the same field with
+    different arguments need two aliases.
+  example: |
+    query {
+      first: operative(codename: "GREY_PETREL") { codename }
+      second: operative(codename: "SABLE_IBIS") { codename }
+    }
+  payoff: >
+    Several files come back side by side in one transmission.
+- id: fragments
+  title: Fragments
+  clearance: 4
+  summary: >
+    Write a selection once, name it, and spread it wherever a record of
+    that type appears.
+  example: |
+    query {
+      operative(codename: "GREY_PETREL") {
+        ...Dossier
+        knownAssociates { ...Dossier }
+      }
+    }
+    fragment Dossier on Operative {
+      codename
+      organization { name }
+    }
+  payoff: >
+    Every dossier has the same fields, and a change is made in one place.
+- id: variables
+  title: Variables
+  clearance: 5
+  summary: >
+    Declare an input on the operation and supply its value separately.
+  example: |
+    query Departures($city: String!) {
+      city(name: $city) {
+        departingShipments { id manifest }
+      }
+    }
+  payoff: >
+    The same operation serves the next city. Only the value changes.

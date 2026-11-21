@@ -1,0 +1,379 @@
+id: registrars-return
+title: The Registrar's Return
+campaign: shadow-network
+order: 10
+clearance: 5
+kind: assessment
+teaches: null
+practises: [nested-selections, arguments, variables]
+requires: [nested-selections, arguments, variables]
+summary: >
+  The crate from Istanbul was opened in Porto and found to hold blue tiles,
+  fourteen centimetres across. They are moving again.
+motif: tilework
+clock:
+  countdown: The buyer takes delivery in {remaining}
+  expired: The buyer has taken delivery
+  onExpiry: end
+startingStage: porto
+
+debrief:
+  onTime: |
+    Reykjavik holds the crate. The azulejos go home to Lisbon,
+    where the museum registrar counts them twice. GILT_MAGPIE is
+    not at the quay. A last note is: "Keep the tiles. I have the
+    receipt. M."
+  stampOnTime: TILES RECOVERED
+  comparison: >
+    The reference solution is one operation with a variable for the city.
+    It is sent from Porto and again from Southampton, and nothing but the
+    variable's value changes between them.
+  geography: >
+    The United Kingdom keeps the pound sterling and Iceland the króna.
+    The Netherlands and Norway are a short sail away and use the euro and
+    the Norwegian krone.
+
+stages:
+  porto:
+    location: PT
+    objective: Identify the shipment carrying the tiles out of Porto and the country receiving it.
+
+    briefing: |
+      The azulejos reached Porto inside a crate of machine parts
+      and left again the same day. Several shipments have sailed
+      from Porto since. The buyer has been heard asking the price
+      in pounds sterling.
+
+    clues:
+      - text: >
+          The shipment left Porto.
+        constraint:
+          $shipment.origin: City:porto
+      - text: >
+          Customs describes glazed ceramic tiles, blue, 14 centimetres.
+        constraint:
+          $shipment.inspection.finding: Glazed ceramic tiles, blue, 14 cm
+      - text: >
+          The buyer pays in pounds sterling, the currency of the
+          country where the crate lands.
+        constraint:
+          $shipment.destination.country.currency: Currency:GBP
+          $shipment.destination.country: $country
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        Two crates hold the right tiles. Which of them lands where
+        the pound is used?
+      concept: >
+        This question will be asked again in the next port. Declare
+        a variable for the city so the operation can be reused.
+      schema: >
+        Look at City.departingShipments, Shipment.inspection,
+        Shipment.destination, City.country, and Country.currency.
+      skeleton: |
+        query Departures($city: String!) {
+          city(name: $city) { departingShipments { id manifest inspection { finding } } }
+        }
+
+    solution:
+      type: destination
+      shipment: OPO-0811
+      country: GB
+    labels:
+      shipment: Shipment
+      country: Destination country
+
+    claims:
+      - id: tiles
+        prompt: The shipment holds the glazed blue tiles.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: manifest
+                equals: Glazed tiles, blue (14 cm)
+          - facts:
+              - entity: Shipment:$shipment
+                field: inspection
+                equals: Inspection:$inspection
+              - entity: Inspection:$inspection
+                field: finding
+                equals: Glazed ceramic tiles, blue, 14 cm
+      - id: currency
+        prompt: The destination country uses the pound sterling.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: currency
+                equals: Currency:GBP
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Currency:GBP
+                field: countries
+                includes: Country:$country
+
+    leadOutcomes:
+      OPO-0823:
+        location: NL
+        refutation:
+          claim: currency
+          facts:
+            - entity: Shipment:$shipment
+              field: destination
+              equals: City:$city
+            - entity: City:$city
+              field: country
+              equals: Country:$country
+            - entity: Country:$country
+              field: currency
+              equals: Currency:EUR
+        ruledOut: |
+          Rotterdam has blue glazed tiles of the right size, bought
+          and paid for in euros by a man who wanted a bathroom.
+        fieldCheck: |
+          Rotterdam confirms the tiles. The importer asks which
+          currency the buyer was heard to mention.
+      OPO-0830:
+        location: GB
+        refutation:
+          claim: tiles
+          facts:
+            - entity: Shipment:$shipment
+              field: manifest
+              equals: Slate tiles (14 cm)
+        ruledOut: |
+          Southampton takes pounds. This crate is slate, and the
+          harbourmaster remarks that he has heard of you from Cape Town.
+        fieldCheck: |
+          Southampton confirms the currency. The harbourmaster
+          suggests consulting the manifest's description of the goods.
+
+    resolved: |
+      Travel order approved. Southampton has already relabelled
+      the crate.
+
+    referenceSolution: |
+      query Departures($city: String!) {
+        city(name: $city) {
+          departingShipments {
+            id
+            manifest
+            inspection {
+              finding
+            }
+            consignee {
+              name
+              director {
+                codename
+              }
+            }
+            destination {
+              name
+              country {
+                name
+                currency {
+                  code
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    referenceVariables:
+      city: Porto
+
+    next: southampton
+
+  southampton:
+    location: GB
+    objective: Identify the shipment carrying the tiles out of Southampton and the operative behind the company receiving it.
+
+    briefing: |
+      The tiles left Southampton under a new label within the
+      hour. The buyer has stopped asking about pounds and started
+      asking about Icelandic krónur. Name the crate, and name
+      whoever directs the company it is going to.
+
+    clues:
+      - text: >
+          The shipment left Southampton.
+        constraint:
+          $shipment.origin: City:southampton
+      - text: >
+          Customs again describes glazed ceramic tiles, blue, 14
+          centimetres.
+        constraint:
+          $shipment.inspection.finding: Glazed ceramic tiles, blue, 14 cm
+      - text: >
+          The crate lands in the country that uses the Icelandic króna.
+        constraint:
+          $shipment.destination.country.currency: Currency:ISK
+      - text: >
+          The person to name directs the company receiving the crate.
+        constraint:
+          $shipment.consignee.director: $operative
+
+    scaffold:
+      level: none
+      carryOver: true
+
+    hints:
+      nudge: >
+        Ask Southampton what you asked Porto. Then follow the right
+        crate to its consignee and the consignee's director.
+      concept: >
+        Change the variable's value and send the operation again. Add
+        any fields the new question needs.
+      schema: >
+        Look at Shipment.consignee, Company.director,
+        Shipment.destination, and Country.currency.
+      skeleton: |
+        consignee { name director { codename } }
+
+    solution:
+      type: deduction
+      shipment: SOU-0907
+      operative: GILT_MAGPIE
+    labels:
+      shipment: Shipment
+      operative: Director of the consignee
+
+    claims:
+      - id: tiles
+        prompt: The shipment holds the glazed blue tiles.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: manifest
+                equals: Glazed tiles, blue (14 cm)
+          - facts:
+              - entity: Shipment:$shipment
+                field: inspection
+                equals: Inspection:$inspection
+              - entity: Inspection:$inspection
+                field: finding
+                equals: Glazed ceramic tiles, blue, 14 cm
+      - id: currency
+        prompt: The destination country uses the Icelandic króna.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: currency
+                equals: Currency:ISK
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Currency:ISK
+                field: countries
+                includes: Country:$country
+      - id: director
+        prompt: This operative directs the company receiving the shipment.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: consignee
+                equals: Company:$company
+              - entity: Company:$company
+                field: director
+                equals: Operative:$operative
+          - facts:
+              - entity: Shipment:$shipment
+                field: consignee
+                equals: Company:$company
+              - entity: Operative:$operative
+                field: directorships
+                includes: Company:$company
+
+    leadOutcomes:
+      SOU-0915:
+        location: "NO"
+        refutation:
+          claim: currency
+          facts:
+            - entity: Shipment:$shipment
+              field: destination
+              equals: City:$city
+            - entity: City:$city
+              field: country
+              equals: Country:$country
+            - entity: Country:$country
+              field: currency
+              equals: Currency:NOK
+        ruledOut: |
+          Oslo has blue tiles and a dealer who prices them in
+          Norwegian kroner, which is one letter and a sea away.
+        fieldCheck: |
+          Oslo confirms the tiles. The dealer asks which country's
+          currency the buyer named.
+      SOU-0921:
+        location: IS
+        refutation:
+          claim: tiles
+          facts:
+            - entity: Shipment:$shipment
+              field: manifest
+              equals: Slate tiles (14 cm)
+        ruledOut: |
+          Reykjavik expects a crate of slate as well. The stone
+          yard would like it known that slate is a perfectly good tile.
+        fieldCheck: |
+          Reykjavik confirms the currency. The stone yard suggests
+          consulting the manifest's description of the goods.
+
+    resolved: |
+      Deduction accepted. Reykjavik holds the crate at the quay.
+
+    referenceSolution: |
+      query Departures($city: String!) {
+        city(name: $city) {
+          departingShipments {
+            id
+            manifest
+            inspection {
+              finding
+            }
+            consignee {
+              name
+              director {
+                codename
+              }
+            }
+            destination {
+              name
+              country {
+                name
+                currency {
+                  code
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+    referenceVariables:
+      city: Southampton

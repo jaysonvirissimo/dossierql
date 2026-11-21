@@ -1,0 +1,138 @@
+id: quiet-consignee
+title: The Quiet Consignee
+campaign: shadow-network
+order: 4
+clearance: 2
+kind: assessment
+teaches: null
+practises: [nested-selections, arguments]
+requires: [nested-selections, arguments]
+summary: >
+  Customs in Callao is holding six cases of printing plates. Two companies
+  with nearly the same name have an interest.
+motif: plate
+clock:
+  countdown: Customs releases the cases in {remaining}
+  expired: Customs has released the cases
+  onExpiry: end
+startingStage: callao
+
+debrief:
+  onTime: |
+    Callao customs keeps the plates and sends for PEWTER_SWIFT,
+    who arrives with a receipt for something else entirely.
+  stampOnTime: HELD
+  comparison: >
+    The reference solution asks for one shipment by its identifier and
+    follows it to both companies and their directors. One argument, three
+    levels of selection, one transmission.
+  geography: >
+    Callao is the port of Lima, on Peru's Pacific coast. Valparaíso,
+    where the cases were loaded, is Chile's main port on the same coast.
+
+stages:
+  callao:
+    location: PE
+    objective: Identify the company named to receive VAL-0733 and the operative who directs it.
+
+    briefing: |
+      Customs in Callao has held shipment VAL-0733. Two companies
+      called Meridian appear on its papers, one at each end of the
+      voyage. The bureaucracy wants the receiving company and its
+      director, and has asked not to be given the sender by mistake.
+
+    clues:
+      - text: >
+          Customs wants the party named to receive VAL-0733, not the
+          party that sent it.
+        constraint:
+          $company.shipments: Shipment:VAL-0733
+      - text: >
+          The company's director is the person to name.
+        constraint:
+          $company.director: $operative
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        The shipment's papers name a shipper and a consignee. Only one
+        of them is receiving the cases.
+      concept: >
+        Ask for the one shipment by passing its identifier as an
+        argument, then select the companies and their directors inside it.
+      schema: >
+        Look at Shipment.shipper, Shipment.consignee, and
+        Company.director.
+      skeleton: |
+        shipment(id: "VAL-0733") { shipper { name } consignee { name director { codename } } }
+
+    solution:
+      type: deduction
+      company: PE-MERIDIAN-FRT
+      operative: PEWTER_SWIFT
+    labels:
+      company: Receiving company
+      operative: Director
+
+    claims:
+      - id: consignee
+        prompt: This company is named to receive VAL-0733.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:VAL-0733
+                field: consignee
+                equals: Company:$company
+          - facts:
+              - entity: Company:$company
+                field: shipments
+                includes: Shipment:VAL-0733
+      - id: director
+        prompt: This operative directs the company.
+        evidenceSets:
+          - facts:
+              - entity: Company:$company
+                field: director
+                equals: Operative:$operative
+          - facts:
+              - entity: Operative:$operative
+                field: directorships
+                includes: Company:$company
+
+    leadOutcomes:
+      CL-MERIDIAN-FWD:
+        location: CL
+        refutation:
+          claim: consignee
+          facts:
+            - entity: Shipment:VAL-0733
+              field: shipper
+              equals: Company:$company
+        ruledOut: |
+          Meridian Forwarding sent the cases. Valparaíso observes
+          that a company seldom posts things to itself.
+        fieldCheck: |
+          Valparaíso confirms who directs Meridian Forwarding. The
+          shipping clerk asks which end of the voyage customs meant.
+
+    resolved: |
+      Deduction accepted. Customs keeps the cases.
+
+    referenceSolution: |
+      query {
+        shipment(id: "VAL-0733") {
+          shipper {
+            name
+            director {
+              codename
+            }
+          }
+          consignee {
+            name
+            director {
+              codename
+            }
+          }
+        }
+      }

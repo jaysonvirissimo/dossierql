@@ -1,0 +1,185 @@
+id: borrowed-chronometer
+title: The Borrowed Chronometer
+campaign: shadow-network
+order: 2
+clearance: 1
+kind: assessment
+teaches: null
+practises: [nested-selections]
+requires: [nested-selections]
+summary: >
+  An observatory's chronometer left Genoa among four crates. The buyer is
+  particular about the currency.
+motif: dial
+clock:
+  countdown: Buyer's steamer sails in {remaining}
+  expired: The buyer's steamer has sailed
+  onExpiry: end
+startingStage: genoa
+
+debrief:
+  onTime: |
+    Dakar customs opens the crate and finds the chronometer still
+    ticking. The observatory sends its thanks and a bill for winding.
+  stampOnTime: RECOVERED
+  comparison: >
+    The reference solution follows each shipment to its destination, that
+    city's country, and that country's currency in one request. Nothing in
+    it was supplied for you this time.
+  geography: >
+    Senegal and Côte d'Ivoire use the West African CFA franc. Cameroon
+    uses the Central African CFA franc, a separate currency with its own
+    code.
+
+stages:
+  genoa:
+    location: IT
+    objective: Identify the shipment carrying the chronometer and the country receiving it.
+
+    briefing: |
+      A marine chronometer on loan to a Genoa observatory was not
+      returned. Four shipments left Genoa under the same broker's
+      seal. The buyer has cabled instructions about payment, and
+      the bureaucracy would like the crate named before the
+      steamer sails.
+
+    clues:
+      - text: >
+          All four shipments left Genoa.
+        constraint:
+          $shipment.origin: City:genoa
+      - text: >
+          The observatory lists a marine chronometer, brass, gimballed.
+        constraint:
+          $shipment.manifest: Marine chronometer, brass, gimballed
+      - text: >
+          The buyer's cable insists on payment in the currency of the
+          country where the crate lands: the West African CFA franc.
+        constraint:
+          $shipment.destination.country.currency: Currency:XOF
+          $shipment.destination.country: $country
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        Two crates fit the observatory's description. Which of them
+        lands where the buyer's currency is used?
+      concept: >
+        Start from the city the shipments left. A field that returns a
+        record needs its own selection in braces, as deep as the links go.
+      schema: >
+        Look at City.departingShipments, Shipment.destination,
+        City.country, and Country.currency.
+      skeleton: |
+        city(name: "Genoa") {
+          departingShipments { id manifest destination { name country { name currency { name } } } }
+        }
+
+    solution:
+      type: deduction
+      shipment: GEN-0211
+      country: SN
+    labels:
+      shipment: Shipment
+      country: Receiving country
+
+    claims:
+      - id: contents
+        prompt: The shipment matches the observatory's description.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: manifest
+                equals: Marine chronometer, brass, gimballed
+          - facts:
+              - entity: Shipment:$shipment
+                field: inspection
+                equals: Inspection:$inspection
+              - entity: Inspection:$inspection
+                field: finding
+                equals: Brass timekeeper in a gimbal mount
+      - id: currency
+        prompt: The receiving country uses the West African CFA franc.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: currency
+                equals: Currency:XOF
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Currency:XOF
+                field: countries
+                includes: Country:$country
+
+    leadOutcomes:
+      GEN-0236:
+        location: CM
+        refutation:
+          claim: currency
+          facts:
+            - entity: Shipment:$shipment
+              field: destination
+              equals: City:$city
+            - entity: City:$city
+              field: country
+              equals: Country:$country
+            - entity: Country:$country
+              field: currency
+              equals: Currency:XAF
+        ruledOut: |
+          Douala has a chronometer of the right description. The
+          port cashier notes that his francs are the Central African
+          kind and that the buyer asked for the other.
+        fieldCheck: |
+          Douala confirms a brass chronometer on gimbals. The port
+          cashier asks which franc the buyer's cable named.
+      GEN-0240:
+        location: CI
+        refutation:
+          claim: contents
+          facts:
+            - entity: Shipment:$shipment
+              field: manifest
+              equals: Ship's barometer, brass, gimballed
+        ruledOut: |
+          Abidjan pays in the right francs. The crate holds a
+          barometer, which the harbourmaster reports is falling.
+        fieldCheck: |
+          Abidjan confirms the currency. The harbourmaster suggests
+          reading what the manifest says the instrument measures.
+
+    resolved: |
+      Deduction accepted. Dakar customs has the crate on the bench.
+
+    referenceSolution: |
+      query {
+        city(name: "Genoa") {
+          departingShipments {
+            id
+            manifest
+            destination {
+              name
+              country {
+                name
+                currency {
+                  code
+                  name
+                }
+              }
+            }
+          }
+        }
+      }

@@ -1,0 +1,351 @@
+id: the-paymaster
+title: The Paymaster
+campaign: shadow-network
+order: 7
+clearance: 4
+kind: teaching
+teaches: fragments
+practises: [nested-selections, arguments, aliases]
+requires: [nested-selections, arguments, aliases]
+summary: >
+  The stopped payment was drawn on someone's account. GREY_PETREL's
+  associates, and theirs, all want the same look.
+motif: seal
+clock:
+  countdown: The paymaster closes the accounts in {remaining}
+  expired: The paymaster has closed the accounts
+  onExpiry: end
+startingStage: lusaka
+
+debrief:
+  onTime: |
+    Zurich freezes the accounts of Limmat Holdings. A second
+    note reaches the registry: "Two for you. I keep the third."
+    It is signed M.
+  stampOnTime: ACCOUNTS FROZEN
+  comparison: >
+    The reference solution writes the dossier's fields once, as a
+    fragment, and spreads it in three places. Without it the same lines
+    appear three times and must be changed three times to stay in step.
+  geography: >
+    Switzerland and Liechtenstein both use the Swiss franc. Austria,
+    which borders them both, uses the euro.
+
+stages:
+  lusaka:
+    location: ZM
+    objective: Identify the paymaster and the country the paymaster works from.
+
+    briefing: |
+      The payment was drawn on an account kept by one of
+      GREY_PETREL's known associates. The registry will show the
+      same dossier for GREY_PETREL, for each associate, and for
+      each associate's associates, provided someone asks for the
+      same fields each time.
+
+    clues:
+      - text: >
+          The paymaster is a known associate of GREY_PETREL, at first
+          hand.
+        constraint:
+          $operative.knownAssociates: Operative:GREY_PETREL
+      - text: >
+          The account is kept in Swiss francs, in a country that uses
+          them.
+        constraint:
+          $operative.lastKnownLocation.country.currency: Currency:CHF
+          $operative.lastKnownLocation.country: $country
+
+    scaffold:
+      level: guided
+      starterQuery: |
+        query {
+          operative(codename: "GREY_PETREL") {
+            codename
+            lastKnownLocation { name country { name currency { name } } }
+            knownAssociates {
+              codename
+              # The same dossier fields are wanted here,
+              # and again for each associate's own associates.
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        One of GREY_PETREL's own associates was last seen where the
+        Swiss franc is used. Another who fits the currency is an
+        associate at second hand only.
+      concept: >
+        A fragment is a selection with a name. Define it once on the
+        type, then spread it with three dots wherever that type appears.
+      schema: >
+        Look at Operative.knownAssociates, Operative.lastKnownLocation,
+        City.country, and Country.currency.
+      skeleton: |
+        fragment Dossier on Operative {
+          codename
+          lastKnownLocation { name country { name currency { name } } }
+        }
+
+    solution:
+      type: destination
+      operative: OPAL_WREN
+      country: CH
+    labels:
+      operative: Paymaster
+      country: Country last seen in
+
+    claims:
+      - id: associate
+        prompt: The paymaster is a known associate of GREY_PETREL.
+        evidenceSets:
+          - facts:
+              - entity: Operative:GREY_PETREL
+                field: knownAssociates
+                includes: Operative:$operative
+          - facts:
+              - entity: Operative:$operative
+                field: knownAssociates
+                includes: Operative:GREY_PETREL
+      - id: franc
+        prompt: The paymaster was last seen in a country that uses the Swiss franc.
+        evidenceSets:
+          - facts:
+              - entity: Operative:$operative
+                field: lastKnownLocation
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: currency
+                equals: Currency:CHF
+          - facts:
+              - entity: Operative:$operative
+                field: lastKnownLocation
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Currency:CHF
+                field: countries
+                includes: Country:$country
+
+    leadOutcomes:
+      IRON_FINCH:
+        location: AT
+        refutation:
+          claim: franc
+          facts:
+            - entity: Operative:$operative
+              field: lastKnownLocation
+              equals: City:$city
+            - entity: City:$city
+              field: country
+              equals: Country:$country
+            - entity: Country:$country
+              field: currency
+              equals: Currency:EUR
+        ruledOut: |
+          IRON_FINCH is in Vienna and knows GREY_PETREL well. The
+          Vienna desk settles its accounts in euros.
+        fieldCheck: |
+          Vienna confirms the acquaintance. The cashier asks which
+          currency the account is kept in.
+      BRASS_PIPIT:
+        location: LI
+        refutation:
+          claim: associate
+          facts:
+            - entity: Operative:GREY_PETREL
+              field: knownAssociates
+              excludes: Operative:$operative
+        ruledOut: |
+          BRASS_PIPIT banks in francs in Vaduz. GREY_PETREL's file
+          does not list the name. They share friends, nothing more.
+        fieldCheck: |
+          Vaduz confirms the francs. The desk asks whose list of
+          associates the name was read from.
+      OPAL_WREN:
+        location: CH
+        fieldCheck: |
+          Zurich knows the name. The bank asks for a travel order
+          with every claim cited before it opens a drawer.
+
+    resolved: |
+      Travel order approved. Zurich receives you with a ledger
+      and a list of three companies.
+
+    referenceSolution: |
+      query {
+        operative(codename: "GREY_PETREL") {
+          ...Dossier
+          knownAssociates {
+            ...Dossier
+            knownAssociates {
+              ...Dossier
+            }
+          }
+        }
+      }
+
+      fragment Dossier on Operative {
+        codename
+        organization { name }
+        lastKnownLocation { name country { name currency { code name } } }
+      }
+
+    next: zurich
+
+  zurich:
+    location: CH
+    objective: Identify the company that is wholly in the Parallax Circle's hands.
+
+    briefing: |
+      OPAL_WREN signs for three companies in Zurich: Limmat
+      Holdings, Uetliberg Trust, and Glarus Assay Office. Each has
+      a director and an auditor. The Parallax Circle trusts one of
+      them completely, which means it holds both posts.
+
+    clues:
+      - text: >
+          The company's director is a member of the Parallax Circle.
+        constraint:
+          $company.director.organization: Organization:parallax-circle
+      - text: >
+          So is its auditor. Nobody outside the Circle sees the books.
+        constraint:
+          $company.auditor.organization: Organization:parallax-circle
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          company(name: "Glarus Assay Office") {
+            name
+            director { codename }
+            # The auditor wants the same fields as the director,
+            # and so do the other two companies.
+          }
+        }
+
+    hints:
+      nudge: >
+        For each company, check the organization of the director and
+        of the auditor. One company has both in the Parallax Circle.
+      concept: >
+        The director and the auditor are both operatives, so one
+        fragment on that type serves both. A second fragment can hold
+        the company's fields.
+      schema: >
+        Look at Company.director, Company.auditor, and
+        Operative.organization.
+      skeleton: |
+        fragment Member on Operative { codename organization { name } }
+
+    solution:
+      type: deduction
+      company: CH-LIMMAT
+    labels:
+      company: Company
+
+    claims:
+      - id: director
+        prompt: The company's director is a member of the Parallax Circle.
+        evidenceSets:
+          - facts:
+              - entity: Company:$company
+                field: director
+                equals: Operative:$director
+              - entity: Operative:$director
+                field: organization
+                equals: Organization:parallax-circle
+          - facts:
+              - entity: Company:$company
+                field: director
+                equals: Operative:$director
+              - entity: Organization:parallax-circle
+                field: members
+                includes: Operative:$director
+      - id: auditor
+        prompt: The company's auditor is a member of the Parallax Circle.
+        evidenceSets:
+          - facts:
+              - entity: Company:$company
+                field: auditor
+                equals: Operative:$auditor
+              - entity: Operative:$auditor
+                field: organization
+                equals: Organization:parallax-circle
+          - facts:
+              - entity: Company:$company
+                field: auditor
+                equals: Operative:$auditor
+              - entity: Organization:parallax-circle
+                field: members
+                includes: Operative:$auditor
+
+    leadOutcomes:
+      CH-UETLIBERG:
+        location: CH
+        refutation:
+          claim: auditor
+          facts:
+            - entity: Company:$company
+              field: auditor
+              equals: Operative:$auditor
+            - entity: Operative:$auditor
+              field: organization
+              equals: Organization:baltic-exchange
+        ruledOut: |
+          Uetliberg Trust has the right director. Its books are
+          audited by IRON_FINCH, on behalf of quite another employer.
+        fieldCheck: |
+          The bank confirms the director's allegiance. The manager
+          asks who audits the books.
+      CH-GLARUS:
+        location: CH
+        refutation:
+          claim: director
+          facts:
+            - entity: Company:$company
+              field: director
+              equals: Operative:$director
+            - entity: Operative:$director
+              field: organization
+              equals: Organization:baltic-exchange
+        ruledOut: |
+          Glarus Assay Office has a Parallax auditor and a Baltic
+          director. The two are said not to speak.
+        fieldCheck: |
+          The bank confirms the auditor's allegiance. The manager
+          asks who sits in the director's chair.
+
+    resolved: |
+      Deduction accepted. Zurich freezes the accounts of Limmat
+      Holdings.
+
+    referenceSolution: |
+      query {
+        limmat: company(name: "Limmat Holdings") {
+          ...Books
+        }
+        uetliberg: company(name: "Uetliberg Trust") {
+          ...Books
+        }
+        glarus: company(name: "Glarus Assay Office") {
+          ...Books
+        }
+      }
+
+      fragment Books on Company {
+        name
+        director { ...Member }
+        auditor { ...Member }
+      }
+
+      fragment Member on Operative {
+        codename
+        organization { name }
+      }

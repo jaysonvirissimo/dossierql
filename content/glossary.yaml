@@ -1,0 +1,115 @@
+# Every term the game uses. `clearance` is the level at which mission text
+# may first use the term; `matches` lists other spellings to look for.
+- id: query
+  term: query
+  clearance: 1
+  matches: [queries]
+  definition: >
+    A request that reads data. You write the shape of the answer you want,
+    and the archive fills it in.
+- id: transmission
+  term: transmission
+  clearance: 1
+  matches: [transmissions]
+  definition: >
+    One query sent to the archive. A transmission costs one hour whatever
+    its size, so one that asks for everything at once is the cheapest.
+- id: field
+  term: field
+  clearance: 1
+  matches: [fields]
+  definition: >
+    One named piece of a record, such as a shipment's `manifest`. A query
+    lists the fields it wants.
+- id: selection
+  term: selection
+  clearance: 1
+  matches: [selections, selection set]
+  definition: >
+    The fields listed between a pair of braces. A field that returns a
+    record needs a selection of its own, saying which of that record's
+    fields to return.
+- id: nested-selection
+  term: nested selection
+  clearance: 1
+  matches: [nested selections, nesting, nested]
+  definition: >
+    A selection inside another. Nesting follows the links between records,
+    from a shipment to its destination to that city's country, in one query.
+- id: type
+  term: type
+  clearance: 1
+  matches: [types]
+  definition: >
+    A kind of record, such as `Shipment` or `Country`. A type says which
+    fields its records have.
+- id: schema
+  term: schema
+  clearance: 1
+  definition: >
+    The full list of types and fields the archive will answer for. The
+    documentation panel is the schema describing itself.
+- id: result
+  term: result
+  clearance: 1
+  matches: [results, response]
+  definition: >
+    What a query returns: data in the same shape as the query, and a list
+    of errors if any part could not be answered.
+- id: evidence
+  term: evidence
+  clearance: 1
+  definition: >
+    A fact that one of your queries returned. Only evidence can be cited.
+- id: citation
+  term: citation
+  clearance: 1
+  matches: [citations, cite]
+  definition: >
+    Retrieved facts attached to a claim in a draft, to show the claim is
+    true.
+- id: argument
+  term: argument
+  clearance: 2
+  matches: [arguments]
+  definition: >
+    A value passed to a field in parentheses, such as
+    `operative(codename: "NIGHTJAR")`. It tells the field which record, or
+    which part of a list, you want.
+- id: alias
+  term: alias
+  clearance: 3
+  matches: [aliases]
+  definition: >
+    A name of your own for a field's result, written before the field and
+    a colon. Aliases let one query ask the same field twice with different
+    arguments.
+- id: fragment
+  term: fragment
+  clearance: 4
+  matches: [fragments, fragment spread]
+  definition: >
+    A named selection written once and reused with `...Name` wherever a
+    record of its type appears.
+- id: variable
+  term: variable
+  clearance: 5
+  matches: [variables]
+  definition: >
+    A named input, written with a `$`, whose value is supplied beside the
+    query. The query stays the same while the value changes.
+- id: operation
+  term: operation
+  clearance: 5
+  matches: [operations, operation name]
+  definition: >
+    A whole request. An operation can be given a name and a list of the
+    variables it accepts.
+- id: partial-result
+  term: partial result
+  clearance: 3
+  matches: [partial results]
+  definition: >
+    A result with both data and errors. A field that could not be answered
+    comes back as `null` with an error, and the rest of the data is still
+    good.
