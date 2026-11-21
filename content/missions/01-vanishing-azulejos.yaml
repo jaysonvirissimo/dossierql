@@ -30,7 +30,9 @@ debrief:
     The reference solution asks for each shipment's destination, that
     city's country, and that country's borders inside one request. Each
     pair of braces follows a link to the next record, so the whole route
-    comes back in a single transmission and costs a single hour.
+    comes back in a single transmission and costs a single hour. In Luanda
+    the same nesting reads the depot's label and both transfer orders side
+    by side, down to the name on each signature.
   geography: >
     Angola borders Namibia along the Cunene and Okavango rivers. Cabo
     Verde is an archipelago in the Atlantic and has no land border at all.

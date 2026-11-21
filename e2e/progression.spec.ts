@@ -62,7 +62,7 @@ test("a player who knows GraphQL is promoted by placement", async ({
   await press(
     consignee
       .locator(":scope > .finding__row")
-      .getByRole("button", { name: /^Cite consignee/ }),
+      .getByRole("button", { name: /^Cite (.* → )?consignee(,|$)/ }),
   );
   // No lead is open yet, and the game says what to do about it.
   await expect(page.getByText("Open a lead in the draft first")).toBeVisible();
@@ -72,12 +72,12 @@ test("a player who knows GraphQL is promoted by placement", async ({
   await press(
     consignee
       .locator(":scope > .finding__row")
-      .getByRole("button", { name: /^Cite consignee/ }),
+      .getByRole("button", { name: /^Cite (.* → )?consignee(,|$)/ }),
   );
   await press(
     consignee
       .locator(".finding__nested")
-      .getByRole("button", { name: /^Cite director/ }),
+      .getByRole("button", { name: /^Cite (.* → )?director(,|$)/ }),
   );
   await draft(page)
     .getByRole("combobox", { name: "Director" })
@@ -126,12 +126,12 @@ test("a placement finished with the solution revealed does not promote", async (
   await press(
     consignee
       .locator(":scope > .finding__row")
-      .getByRole("button", { name: /^Cite consignee/ }),
+      .getByRole("button", { name: /^Cite (.* → )?consignee(,|$)/ }),
   );
   await press(
     consignee
       .locator(".finding__nested")
-      .getByRole("button", { name: /^Cite director/ }),
+      .getByRole("button", { name: /^Cite (.* → )?director(,|$)/ }),
   );
   await draft(page)
     .getByRole("combobox", { name: "Director" })
@@ -186,12 +186,12 @@ test("aliases bring three files back in one transmission", async ({ page }) => {
   await press(
     consignee
       .locator(":scope > .finding__row")
-      .getByRole("button", { name: /^Cite consignee/ }),
+      .getByRole("button", { name: /^Cite (.* → )?consignee(,|$)/ }),
   );
   await press(
     consignee
       .locator(".finding__nested")
-      .getByRole("button", { name: /^Cite director/ }),
+      .getByRole("button", { name: /^Cite (.* → )?director(,|$)/ }),
   );
   await draft(page)
     .getByRole("combobox", { name: "Director" })

@@ -64,7 +64,7 @@ function Findings({ record }: { record: TransmissionRecord }) {
           type="button"
           className="button button--small"
           disabled={closed || cited}
-          aria-label={`Cite ${name}${leadId ? ` for ${leadId}` : ""}`}
+          aria-label={`Cite ${finding?.label ?? name}${leadId ? `, into the draft for ${leadId}` : ""}`}
           onClick={() => {
             if (!finding) return;
             if (!leadId) {
@@ -88,7 +88,7 @@ function Findings({ record }: { record: TransmissionRecord }) {
           type="button"
           className="button button--small"
           aria-pressed={pinned}
-          aria-label={`${pinned ? "Unpin" : "Pin"} ${name}`}
+          aria-label={`${pinned ? "Unpin" : "Pin"} ${finding?.label ?? name}`}
           disabled={closed}
           onClick={() => dispatch({ type: pinned ? "unpin" : "pin", key })}
         >
@@ -326,7 +326,7 @@ export function Results() {
           >
             <Errors errors={record.errors} />
             {tab === "findings" ? (
-              <Findings record={record} />
+              <Findings key={record.n} record={record} />
             ) : (
               <pre className="raw" data-testid="raw-response">
                 {JSON.stringify(

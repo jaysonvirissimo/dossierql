@@ -27,7 +27,7 @@ test.afterEach(() => {
 async function cite(page: Page, shipment: string, row: string): Promise<void> {
   await press(
     record(page, shipment).getByRole("button", {
-      name: new RegExp(`^Cite ${row}`),
+      name: new RegExp(`^Cite (.* → )?${row},`),
     }),
   );
 }
@@ -43,15 +43,17 @@ async function solveLisbon(page: Page): Promise<void> {
 async function solveLuanda(page: Page): Promise<void> {
   await send(page, LUANDA);
   const order = record(page, "LUA-012");
-  await press(order.getByRole("button", { name: /^Cite consignee/ }));
-  await press(order.getByRole("button", { name: /^Cite authorized by/ }));
+  await press(order.getByRole("button", { name: /^Cite (.* → )?consignee,/ }));
+  await press(
+    order.getByRole("button", { name: /^Cite (.* → )?authorized by,/ }),
+  );
   // The label the depot logged, cited into the order's open draft.
   const intake = record(page, "LIS-0417")
     .locator(":scope > .finding__fields > .finding")
     .filter({ has: page.locator(".finding__name", { hasText: /^intake$/ }) });
   await press(
     intake.locator(".finding__nested").getByRole("button", {
-      name: /^Cite consignee/,
+      name: /^Cite (.* → )?consignee,/,
     }),
   );
   await draft(page)

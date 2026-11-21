@@ -47,17 +47,20 @@ export const SDL = /* GraphQL */ `
     cities: [City!]! @inverse(of: "country")
   }
 
+  "A continent, and the countries counted in it."
   type Continent {
     name: String!
     countries: [Country!]! @inverse(of: "continent")
   }
 
+  "A language, and the countries where it is spoken."
   type Language {
     name: String!
     "Countries where the language is spoken."
     countries: [Country!]! @inverse(of: "languages")
   }
 
+  "A currency, and the countries that use it."
   type Currency {
     "Three-letter currency code."
     code: ID!
@@ -66,6 +69,7 @@ export const SDL = /* GraphQL */ `
     countries: [Country!]! @inverse(of: "currency")
   }
 
+  "A city the archive holds a file on, with the shipments through it."
   type City {
     name: String!
     country: Country!
@@ -106,6 +110,7 @@ export const SDL = /* GraphQL */ `
     shipment: Shipment @inverse(of: "inspection")
   }
 
+  "A registered company that sends or receives shipments."
   type Company {
     name: String!
     registeredIn: Country
@@ -142,6 +147,7 @@ export const SDL = /* GraphQL */ `
     authorizationLog: AuthorizationLog
   }
 
+  "The registry's own record of who signed a transfer order."
   type AuthorizationLog {
     id: ID!
     signedBy: Operative
@@ -185,6 +191,7 @@ export const SDL = /* GraphQL */ `
     note: String
   }
 
+  "An organization, and the operatives who belong to it."
   type Organization @clearance(level: 3) {
     name: String!
     members: [Operative!]! @inverse(of: "organization")
