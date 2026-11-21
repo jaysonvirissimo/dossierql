@@ -1,0 +1,49 @@
+/* Design tokens. Components use these and never literal colours. */
+:root {
+  /* The terminal */
+  --navy-950: #0a1422;
+  --navy-900: #0f1b2d;
+  --navy-800: #16263d;
+  --navy-700: #213553;
+  --navy-line: #2f4668;
+  --terminal-ink: #e6edf7;
+  --terminal-dim: #9fb0c8;
+  --terminal-key: #8fc1ff;
+  --terminal-string: #f2d49b;
+  --terminal-comment: #8598b3;
+  --terminal-name: #b9e3c6;
+
+  /* The case file */
+  --paper: #f4ecd9;
+  --paper-raised: #faf5e8;
+  --paper-shade: #eadfc6;
+  --rule: #d8caa8;
+  --ink: #2a2218;
+  --ink-soft: #5a4e3c;
+
+  /* Accents */
+  --cobalt: #1d4a94;
+  --cobalt-soft: #dbe5f5;
+  --rust: #a13a24;
+  --rust-soft: #f3ddd4;
+  --moss: #2c6338;
+  --moss-soft: #dcebd9;
+  --ochre: #7a5200;
+  --ochre-soft: #f3e6c2;
+
+  --font-serif: "Libre Caslon Text", "Iowan Old Style", Georgia, serif;
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2.25rem;
+
+  --radius: 3px;
+  --focus: 2px solid var(--cobalt);
+  --fast: 120ms;
+  --shadow: 0 1px 0 rgb(0 0 0 / 6%), 0 6px 18px rgb(20 14 4 / 10%);
+}

@@ -1,5 +1,6 @@
 import { fullSchema } from "../graphql/schema.ts";
 import { Store } from "../graphql/store.ts";
+import { sortMissions } from "./order.ts";
 import { intelRecords, worldRecords, type IntelFile } from "./records.ts";
 import type {
   Campaign,
@@ -23,26 +24,17 @@ export interface Catalog extends RawContent {
   store: Store;
 }
 
-export function buildCatalog(raw: RawContent): Catalog {
-  const missions = [...raw.missions].sort(
-    (a, b) =>
-      a.clearance - b.clearance ||
-      (a.kind === b.kind ? a.order - b.order : a.kind === "teaching" ? -1 : 1),
-  );
-  const store = new Store(
-    [...worldRecords(raw.world), ...intelRecords(raw.intel)],
+export function buildStore(world: World, intel: readonly IntelFile[]): Store {
+  return new Store(
+    [...worldRecords(world), ...intelRecords(intel)],
     fullSchema(),
   );
-  return { ...raw, missions, store };
 }
 
-/** A short stable fingerprint of a mission, stored with saves (SDD 7.4). */
-export function contentVersion(mission: Mission): string {
-  const text = JSON.stringify(mission);
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < text.length; i++) {
-    hash ^= text.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return (hash >>> 0).toString(16);
+export function buildCatalog(raw: RawContent): Catalog {
+  return {
+    ...raw,
+    missions: sortMissions(raw.missions),
+    store: buildStore(raw.world, raw.intel),
+  };
 }

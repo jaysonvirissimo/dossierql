@@ -8,7 +8,7 @@ export default defineConfig({
   base: "./",
   plugins: [react(), yamlContent()],
   worker: { format: "es" },
-  build: { target: "es2022", chunkSizeWarningLimit: 700 },
+  build: { target: "es2022", chunkSizeWarningLimit: 800 },
   test: {
     environment: "node",
     include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.ts"],

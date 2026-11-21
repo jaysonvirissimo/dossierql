@@ -61,6 +61,22 @@ function depthLimit(context: ValidationContext): ASTVisitor {
   };
 }
 
+/** The engine accepts an empty pair of braces; the archive does not. */
+function noEmptySelections(context: ValidationContext): ASTVisitor {
+  return {
+    SelectionSet(node, _key, parent) {
+      if (node.selections.length > 0) return;
+      const owner =
+        parent && "kind" in parent && parent.kind === Kind.FIELD
+          ? `"${parent.name.value}"`
+          : "The request";
+      context.reportError(
+        new GraphQLError(`${owner} has an empty selection.`, { nodes: node }),
+      );
+    },
+  };
+}
+
 interface Context {
   store: Store;
   clearance: number;
@@ -189,6 +205,7 @@ export function check(
   const errors = validate(schema, parsed.document, [
     ...specifiedRules,
     depthLimit,
+    noEmptySelections,
   ]);
   if (errors.length > 0) return errors;
   const operations = parsed.document.definitions.filter(

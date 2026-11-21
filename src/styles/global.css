@@ -1,0 +1,306 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: var(--navy-950);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+p + p {
+  margin-top: var(--space-3);
+}
+
+a {
+  color: var(--cobalt);
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+}
+
+pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+:focus-visible {
+  outline: var(--focus);
+  outline-offset: 2px;
+}
+
+.terminal :focus-visible,
+.shell-bar :focus-visible {
+  outline-color: var(--terminal-key);
+}
+
+button,
+select,
+textarea,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------- controls */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--fast);
+}
+
+.button:hover:not(:disabled) {
+  background: var(--paper-shade);
+}
+
+.button:disabled {
+  border-color: var(--rule);
+  color: var(--ink-soft);
+  cursor: not-allowed;
+}
+
+.button--primary {
+  background: var(--cobalt);
+  border-color: var(--cobalt);
+  color: #fff;
+}
+
+.button--primary:hover:not(:disabled) {
+  background: #173b78;
+}
+
+.button--primary:disabled {
+  background: var(--paper-shade);
+}
+
+.button--danger {
+  border-color: var(--rust);
+  color: var(--rust);
+}
+
+.button--small {
+  padding: 0.1rem 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.button--quiet {
+  border-color: transparent;
+  background: transparent;
+  text-decoration: underline;
+  padding-inline: 0.25rem;
+}
+
+.chip {
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  border: 1px solid currentcolor;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chip--ok {
+  color: var(--moss);
+  background: var(--moss-soft);
+}
+
+.chip--open {
+  color: var(--ochre);
+  background: var(--ochre-soft);
+}
+
+.chip--bad {
+  color: var(--rust);
+  background: var(--rust-soft);
+}
+
+.chip--info {
+  color: var(--cobalt);
+  background: var(--cobalt-soft);
+}
+
+.label {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* ------------------------------------------------------------- paper */
+
+.paper {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 1.74rem,
+      rgb(120 96 48 / 9%) 1.74rem,
+      rgb(120 96 48 / 9%) 1.8rem
+    ),
+    var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.paper--plain {
+  background: var(--paper);
+}
+
+.prose {
+  max-width: 62ch;
+}
+
+.prose code {
+  background: var(--paper-shade);
+  padding: 0 0.25em;
+  border-radius: 2px;
+}
+
+.note {
+  border-left: 3px solid var(--cobalt);
+  background: var(--cobalt-soft);
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.9375rem;
+}
+
+.note--warn {
+  border-color: var(--ochre);
+  background: var(--ochre-soft);
+}
+
+.note--bad {
+  border-color: var(--rust);
+  background: var(--rust-soft);
+}
+
+.clerk {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+
+/* One strip of cobalt tilework marks the Azulejos case. */
+.motif {
+  height: 14px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--cobalt);
+}
+
+.motif--tilework {
+  background:
+    radial-gradient(circle at 7px 7px, var(--paper) 2px, transparent 2.5px) 0
+      0 / 28px 14px,
+    conic-gradient(
+        from 45deg at 50% 50%,
+        var(--cobalt) 25%,
+        #2f63b8 0 50%,
+        var(--cobalt) 0 75%,
+        #2f63b8 0
+      )
+      0 0 / 14px 14px;
+}
+
+.motif--dial,
+.motif--register,
+.motif--plate,
+.motif--courier,
+.motif--ledger,
+.motif--seal,
+.motif--lamp,
+.motif--route {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--navy-800) 0 10px,
+    var(--navy-700) 10px 12px
+  );
+}
+
+.stamp {
+  display: inline-block;
+  padding: 0.3rem 0.9rem;
+  border: 3px double var(--rust);
+  border-radius: 4px;
+  color: var(--rust);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 1.25rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transform: rotate(-4deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+:root[data-motion="reduced"] * {
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
+}
