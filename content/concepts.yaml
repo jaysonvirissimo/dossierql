@@ -64,7 +64,8 @@
   title: Variables
   clearance: 5
   summary: >
-    Declare an input on the operation and supply its value separately.
+    Declare an input on the operation and supply its value separately, as
+    JSON in the variables panel: `{ "city": "Lisbon" }`.
   example: |
     query Departures($city: String!) {
       city(name: $city) {

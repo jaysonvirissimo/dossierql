@@ -64,16 +64,10 @@ test("a player who knows GraphQL is promoted by placement", async ({
       .locator(":scope > .finding__row")
       .getByRole("button", { name: /^Cite (.* → )?consignee(,|$)/ }),
   );
-  // No lead is open yet, and the game says what to do about it.
-  await expect(page.getByText("Open a lead in the draft first")).toBeVisible();
-  await page
-    .getByLabel("Open a lead")
-    .selectOption({ label: "Meridian Freight" });
-  await press(
-    consignee
-      .locator(":scope > .finding__row")
-      .getByRole("button", { name: /^Cite (.* → )?consignee(,|$)/ }),
-  );
+  // A row that names a company opens the draft for that company.
+  await expect(
+    draft(page).getByRole("tab", { name: "Meridian Freight" }),
+  ).toHaveAttribute("aria-selected", "true");
   await press(
     consignee
       .locator(".finding__nested")

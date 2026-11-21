@@ -65,7 +65,7 @@ const RULES: Rule[] = [
   {
     test: /^Fields "(\w+)" conflict because they have differing arguments/,
     note: (m) =>
-      `The response cannot hold two entries both called "${String(m[1])}". Each use of the field needs a name of its own in front of it. The glossary has an entry on this.`,
+      `The response cannot hold two entries both called "${String(m[1])}". Each use of the field needs a name of its own in front of it. The glossary entry for an alias shows the form.`,
   },
   {
     test: /^Fields "(\w+)" conflict/,

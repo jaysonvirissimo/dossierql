@@ -65,7 +65,9 @@ stages:
             departingShipments {
               id
               manifest
-              # $city is filled in from the variables panel below.
+              # $city is declared on the first line and filled in
+              # from the variables panel below. The glossary entry
+              # for a variable shows the form.
               # Who receives each shipment,
               # and on which continent does it land?
             }

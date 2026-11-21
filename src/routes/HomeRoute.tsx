@@ -101,7 +101,9 @@ export function HomeRoute() {
                         )}
                         {placement && !locked && (
                           <li className="chip chip--info">
-                            Placement: attempt it to skip ahead
+                            {standing.clearance > mission.clearance
+                              ? "Optional: you already hold a higher clearance"
+                              : "Placement: attempt it to skip ahead"}
                           </li>
                         )}
                         {underway && (

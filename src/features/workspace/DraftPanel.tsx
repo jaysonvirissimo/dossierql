@@ -64,6 +64,8 @@ export function DraftPanel() {
     : null;
   const review = draft ? reviewDraft(stage, draft, state.ledger) : null;
   const others = solutionBindings(stage).filter(([name]) => name !== lead);
+  const unsupported =
+    review?.claims.filter((c) => c.status !== "supported").length ?? 0;
   const cost = (n: number) => (timed && n > 0 ? hours(n) : "free");
   // A journey is priced to the country the draft names, when it names one.
   const named = others
@@ -133,11 +135,14 @@ export function DraftPanel() {
 
       {!draft || !review ? (
         <div className="draft__empty">
-          <p>
-            A draft holds the claims you must support for one lead, and the
-            findings you cite for them. Transmit a query, then open a lead here
-            or cite a finding from the results.
-          </p>
+          <ol className="draft__steps">
+            <li>Transmit a query and read the results.</li>
+            <li>Open a lead: the {words(leadType)} you think is the answer.</li>
+            <li>
+              Press Cite on the result rows that prove each claim about it.
+            </li>
+            <li>{travel ? "Travel." : "Submit the deduction."}</li>
+          </ol>
           <p className="draft__claims-intro">
             For this {formName.toLowerCase()}, the lead you choose must bear out
             each of these claims:
@@ -333,9 +338,11 @@ export function DraftPanel() {
           </div>
           {!review.allSupported && !draft.ruledOut && (
             <p className="draft__status">
-              {review.claims.filter((c) => c.status !== "supported").length}{" "}
-              claim(s) are not yet supported, so the {formName.toLowerCase()}{" "}
-              cannot go in yet.
+              {unsupported === 1
+                ? "1 claim is"
+                : `${String(unsupported)} claims are`}{" "}
+              not yet supported, so the {formName.toLowerCase()} cannot be
+              accepted yet.
               {review.canFieldCheck &&
                 " A field check investigates this lead as it stands and leaves the case open."}
             </p>

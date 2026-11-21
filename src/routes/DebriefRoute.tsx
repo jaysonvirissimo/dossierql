@@ -136,7 +136,8 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
                   : `Assessment passed. You now hold clearance ${String(standing.clearance)}.`}
                 {!course.missions.some(
                   (m) => m.clearance >= standing.clearance,
-                ) && " No cases are filed above this level yet."}
+                ) &&
+                  " No cases are filed above this level yet. Any case you have not played is still open on the assignments desk."}
               </p>
             )}
             {mission.kind === "assessment" &&
@@ -165,7 +166,10 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
                   {state.transmissions.map((t) => (
                     <li key={t.n}>
                       <pre className="code">
-                        {(t.formatted ?? t.operation).trim()}
+                        {(t.operation.trim().includes("\n")
+                          ? t.operation
+                          : (t.formatted ?? t.operation)
+                        ).trim()}
                       </pre>
                       {t.variables.trim() && (
                         <pre className="code">{t.variables.trim()}</pre>
@@ -181,7 +185,12 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
                     <li key={i}>
                       <pre className="code">{operation.trim()}</pre>
                       {variables && (
-                        <pre className="code">{JSON.stringify(variables)}</pre>
+                        <pre className="code">
+                          {JSON.stringify(variables, null, 1).replace(
+                            /\s+/g,
+                            " ",
+                          )}
+                        </pre>
                       )}
                     </li>
                   ))}
@@ -190,7 +199,9 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
             </div>
             <p className="debrief__aside">
               Any query that returns the evidence is a correct one. The
-              reference is one economical way, not the only way.
+              reference is one economical way, not the only way. A request you
+              typed on one line is laid out here for reading, and the leading
+              word <code>query</code> is optional.
             </p>
           </section>
 

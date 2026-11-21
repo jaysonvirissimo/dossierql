@@ -114,6 +114,7 @@ export const SDL = /* GraphQL */ `
   type Company {
     name: String!
     registeredIn: Country
+    "The operative who directs the company."
     director: Operative @clearance(level: 2)
     "The operative who signs off the company's books."
     auditor: Operative @clearance(level: 4)

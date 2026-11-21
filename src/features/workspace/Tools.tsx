@@ -160,7 +160,17 @@ function DocsPanel() {
         from that record.
       </p>
       {types.map((type, index) => (
-        <details key={type.name} className="doc" open={index === 0}>
+        <details
+          key={type.name}
+          className="doc"
+          ref={(element) => {
+            // Opened once, then left as the player sets it.
+            if (element && index === 0 && !element.dataset.opened) {
+              element.dataset.opened = "yes";
+              element.open = true;
+            }
+          }}
+        >
           <summary>
             <code>{type.name}</code>
             {index === 0 && <span> · where every query starts</span>}

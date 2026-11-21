@@ -217,12 +217,13 @@ function Findings({ record }: { record: TransmissionRecord }) {
     <div className="findings">
       <p className="findings__legend">
         Each row is one fact. Citing a row attaches it together with the links
-        that lead to it, so a row deep in a record carries its whole chain.
+        that lead to it, so a row deep in a record carries its whole chain. Pin
+        keeps a fact at the top of the Evidence tab for later.
       </p>
       <p className="visually-hidden" role="status">
         {said.startsWith("Open a lead") ? "" : said}
       </p>
-      {said.startsWith("Open a lead") && (
+      {said.startsWith("Open a lead") && !stageState.activeLead && (
         <p className="note note--warn" role="alert">
           {said}
         </p>

@@ -106,7 +106,8 @@
     the operation's name, as in `query Departures($city: String!)`, and
     used where the value would go, as in `city(name: $city)`. The value is
     supplied in the variables panel as JSON, such as `{ "city": "Lisbon" }`.
-    The query stays the same while the value changes.
+    Its type is the type the documentation shows for the argument it
+    fills. The query stays the same while the value changes.
 - id: operation
   term: operation
   clearance: 5

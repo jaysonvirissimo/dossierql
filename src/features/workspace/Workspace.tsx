@@ -301,6 +301,12 @@ export default function Workspace({ mission }: { mission: Mission }) {
               <h2 id="terminal-title">Intelligence terminal</h2>
               <span className="terminal__level">Clearance {clearance}</span>
             </header>
+            {stage.scaffold.level === "none" && !stage.scaffold.carryOver && (
+              <p className="terminal__blank">
+                A blank form. The Documentation tab lists what the archive
+                holds, and reading it is free.
+              </p>
+            )}
             <div className="terminal__editor">
               <Editor
                 key={`${state.stageId}:${String(attempt)}`}

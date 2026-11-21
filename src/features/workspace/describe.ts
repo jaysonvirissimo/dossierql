@@ -108,6 +108,16 @@ export function findingAt(
       leadId = parseRef(entity).id;
     }
   }
+  // A row that names a lead, such as a shipment's consignee, opens that lead.
+  const value = ledger[own]?.fact.value;
+  if (
+    leadId === null &&
+    value?.kind === "ref" &&
+    value.ref &&
+    parseRef(value.ref).type === leadType
+  ) {
+    leadId = parseRef(value.ref).id;
+  }
   const fields = factKeys.map((key) => words(ledger[key]?.fact.field ?? ""));
   return { factKeys, label: fields.join(" → "), leadId };
 }

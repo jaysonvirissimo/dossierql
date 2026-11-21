@@ -650,3 +650,16 @@
   list-style: disc;
   padding-left: var(--space-4);
 }
+
+.draft__steps {
+  list-style: decimal;
+  padding-left: var(--space-5);
+}
+
+.terminal__blank {
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.8125rem;
+  color: var(--terminal-dim);
+  border-bottom: 1px solid var(--navy-line);
+}

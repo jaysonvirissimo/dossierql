@@ -19,19 +19,19 @@ tried on purpose and were clear and free.
 
 ## New findings
 
-| Finding                                                                                                          | Action                                                     |
-| ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| The glossary did not say where a fragment goes, that the dots are literal, or that one fragment may use another. | Fixed.                                                     |
-| A fragment written inside the query's braces produced notes that pointed the wrong way.                          | Fixed. It has its own note.                                |
-| "a Operative" in two clerk's notes.                                                                              | Fixed.                                                     |
-| "Name the for shipment above first."                                                                             | Fixed. It reads: Choose "For shipment" above first.        |
-| The Azulejos starter did not point to the Documentation tab.                                                     | Fixed.                                                     |
-| The documentation closed its sections when a stage changed.                                                      | Fixed.                                                     |
-| After travel, the previous stage's results and their Cite buttons stay on screen.                                | Open. Not yet changed.                                     |
-| The debrief shows a one-line query as one long line.                                                             | Open.                                                      |
-| The partial-evidence message does not say what is missing.                                                       | Logged. Naming the missing fact would give away the route. |
-| Field checks and distance pricing are not introduced in the Orientation.                                         | Open.                                                      |
-| The assessments at clearance 1 and 2 can be passed by substituting into the teaching case's query.               | Logged for the sessions with people.                       |
+| Finding                                                                                                          | Action                                                                                  |
+| ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| The glossary did not say where a fragment goes, that the dots are literal, or that one fragment may use another. | Fixed.                                                                                  |
+| A fragment written inside the query's braces produced notes that pointed the wrong way.                          | Fixed. It has its own note.                                                             |
+| "a Operative" in two clerk's notes.                                                                              | Fixed.                                                                                  |
+| "Name the for shipment above first."                                                                             | Fixed. It reads: Choose "For shipment" above first.                                     |
+| The Azulejos starter did not point to the Documentation tab.                                                     | Fixed.                                                                                  |
+| The documentation closed its sections when a stage changed.                                                      | Fixed.                                                                                  |
+| After travel, the previous stage's results and their Cite buttons stay on screen.                                | Fixed. A stage opens on a clean results panel, and earlier responses stay within reach. |
+| The debrief shows a one-line query as one long line.                                                             | Fixed. A request typed on one line is laid out for reading.                             |
+| The partial-evidence message does not say what is missing.                                                       | Logged. Naming the missing fact would give away the route.                              |
+| Field checks and distance pricing are not introduced in the Orientation.                                         | Fixed.                                                                                  |
+| The assessments at clearance 1 and 2 can be passed by substituting into the teaching case's query.               | Logged for the sessions with people.                                                    |
 
 ## Caveats
 

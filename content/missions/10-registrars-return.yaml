@@ -26,8 +26,9 @@ debrief:
   stampOnTime: TILES RECOVERED
   comparison: >
     The reference solution is one operation with a variable for the city.
-    It is sent from Porto and again from Southampton. The variable's value
-    changes between them, and one field is added for the director.
+    It asks for the consignee's director from the start, so between Porto
+    and Southampton only the variable's value changes. A player following
+    the clues adds that one field on arrival, which is just as good.
   geography: >
     The United Kingdom keeps the British pound and Iceland the króna.
     The Netherlands and Norway are a short sail away and use the euro and
