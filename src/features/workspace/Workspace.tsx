@@ -49,7 +49,12 @@ export default function Workspace({ mission }: { mission: Mission }) {
   const stageState = state.stages[state.stageId]!;
 
   const [notice, setNotice] = useState<Notice | null>(null);
-  const [viewing, setViewing] = useState(state.transmissions.length);
+  const [viewing, setViewing] = useState(() =>
+    // A stage opens on a clean results panel; earlier responses are kept.
+    state.transmissions.at(-1)?.stageId === state.stageId
+      ? state.transmissions.length
+      : 0,
+  );
   const [attempt, setAttempt] = useState(0);
 
   // The state the next action applies to. Kept in a ref so that two actions
@@ -61,7 +66,9 @@ export default function Workspace({ mission }: { mission: Mission }) {
 
   const dispatch = useCallback(
     (action: Action): Outcome => {
+      const before = latest.current.stageId;
       const outcome = act(env, latest.current, action);
+      if (outcome.state.stageId !== before) setViewing(0);
       latest.current = outcome.state;
       commit(mission.id, outcome.state, outcome.events);
       if (action.type !== "edit") {

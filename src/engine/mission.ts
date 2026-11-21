@@ -1,3 +1,4 @@
+import { parse, print } from "graphql";
 import {
   leadBinding,
   type Mission,
@@ -40,6 +41,8 @@ export interface TransmissionRecord {
   n: number;
   stageId: string;
   operation: string;
+  /** The operation laid out one field to a line, for the debrief. */
+  formatted?: string;
   variables: string;
   data: unknown;
   errors: ResultError[];
@@ -344,6 +347,7 @@ function doTransmit(env: Env, state: MissionState): Outcome {
       n,
       stageId: paid.stageId,
       operation: stage.editor,
+      formatted: print(parse(stage.editor)),
       variables: stage.variables,
       data: sent.result.data ?? null,
       errors,
@@ -416,6 +420,7 @@ function doProceed(env: Env, state: MissionState, leadId: string): Outcome {
       return {
         state: {
           ...added.state,
+          rejected: null,
           stageId: next,
           stages: {
             ...added.state.stages,

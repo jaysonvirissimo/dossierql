@@ -79,8 +79,9 @@ export function OrientationRoute() {
             whether it asks for one thing or for everything, so a query that
             gathers all you need at once is the cheapest. A request the clerk
             cannot read is returned without being sent and costs nothing. Travel
-            and hints cost more, and the price is always shown first. The clock
-            counts game hours only. Take as long as you like.
+            and hints cost more, and the price is always shown first. A journey
+            is priced by distance. The clock counts game hours only. Take as
+            long as you like.
           </p>
 
           <h2>Evidence, drafts and citations</h2>
@@ -90,6 +91,9 @@ export function OrientationRoute() {
             must support, and you cite findings for each, straight from the
             results. The draft shows which claims your citations support. A
             finding that contradicts a claim lets you rule a lead out, free.
+            Where a lead is only half made, some cases offer a field check: it
+            costs the journey, returns a dispatch about that lead, and leaves
+            the case open.
           </p>
 
           <h2>Where to look things up</h2>

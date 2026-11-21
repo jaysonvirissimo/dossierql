@@ -150,6 +150,11 @@ test("the Azulejos case, by keyboard at 1024 pixels, held on time", async ({
   await press(travel);
   await expect(page.locator(".casebar")).toContainText("Angola");
   await expect(clock(page)).toContainText("19 of 27 hours left");
+  // The new stage opens on a clean results panel, with Lisbon's kept.
+  await expect(
+    page.getByText("Nothing has been transmitted from here yet."),
+  ).toBeVisible();
+  await expect(page.locator(".finding__record")).toHaveCount(0);
 
   // A reload keeps the stage, the clock, the evidence and the lead history.
   await page.reload();

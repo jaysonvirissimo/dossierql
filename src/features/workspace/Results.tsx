@@ -276,18 +276,20 @@ export function Results() {
             <button
               type="button"
               className="button button--small"
-              disabled={viewing <= 1}
-              onClick={() => view(viewing - 1)}
+              disabled={viewing === 1}
+              onClick={() => view(viewing === 0 ? total : viewing - 1)}
             >
               Earlier
             </button>
             <span>
-              Transmission {viewing} of {total}
+              {viewing === 0
+                ? `${String(total)} earlier`
+                : `Transmission ${String(viewing)} of ${String(total)}`}
             </span>
             <button
               type="button"
               className="button button--small"
-              disabled={viewing >= total}
+              disabled={viewing === 0 || viewing >= total}
               onClick={() => view(viewing + 1)}
             >
               Later
@@ -309,8 +311,9 @@ export function Results() {
 
       {!record && !rejected && (
         <p className="results__empty">
-          Nothing has been transmitted yet. Write a query in the terminal and
-          transmit it.
+          {total === 0
+            ? "Nothing has been transmitted yet. Write a query in the terminal and transmit it."
+            : "Nothing has been transmitted from here yet. Responses from earlier in the case are kept: use Earlier to read them."}
         </p>
       )}
 

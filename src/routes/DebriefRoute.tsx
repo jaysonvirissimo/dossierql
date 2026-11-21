@@ -164,7 +164,9 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
                 <ol className="compare__list">
                   {state.transmissions.map((t) => (
                     <li key={t.n}>
-                      <pre className="code">{t.operation.trim()}</pre>
+                      <pre className="code">
+                        {(t.formatted ?? t.operation).trim()}
+                      </pre>
                       {t.variables.trim() && (
                         <pre className="code">{t.variables.trim()}</pre>
                       )}
