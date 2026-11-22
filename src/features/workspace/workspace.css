@@ -427,6 +427,25 @@
   color: var(--ink-soft);
 }
 
+.claim__facts {
+  flex-basis: 100%;
+  font-size: 0.875rem;
+}
+
+.claim__facts ul {
+  margin-left: var(--space-3);
+  list-style: disc;
+}
+
+.finding__for {
+  display: inline-block;
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
 .citation {
   display: flex;
   align-items: flex-start;

@@ -1,9 +1,5 @@
-import {
-  bindingTypes,
-  leadBinding,
-  solutionBindings,
-  type Stage,
-} from "../../content/types.ts";
+import type { Stage } from "../../content/types.ts";
+import { citationAt, pathKey, type CitedRow } from "../../engine/cite.ts";
 import type { LedgerEntry, TransmissionRecord } from "../../engine/mission.ts";
 import type { Fact } from "../../graphql/facts.ts";
 import { parseRef } from "../../graphql/store.ts";
@@ -56,70 +52,26 @@ export function describeFact(fact: Fact, ledger: Ledger): string {
   return `${typeWords(fact.entity)} ${labelOf(fact.entity, ledger)} · ${words(fact.field)}: ${describeValue(fact, ledger)}`;
 }
 
-export function pathKey(path: readonly (string | number)[]): string {
-  return path.join("/");
-}
+export { pathKey };
 
-export interface Finding {
-  /** The facts a citation made from this row would carry. */
-  factKeys: string[];
+export interface Finding extends CitedRow {
   label: string;
-  /** The lead the row sits under, when the response shows one. */
-  leadId: string | null;
 }
 
-/**
- * The connected chain of facts behind one row of a response: from the
- * outermost record the stage's conclusion is about, down to the row itself.
- */
+/** The citation behind one row of a response, with the words to show for it. */
 export function findingAt(
   record: TransmissionRecord,
   path: readonly (string | number)[],
   stage: Stage,
   ledger: Ledger,
+  activeLead: string | null = null,
 ): Finding | null {
-  const byPath = new Map(record.facts.map((f) => [pathKey(f.path), f.key]));
-  const chain: string[] = [];
-  for (let end = 2; end <= path.length; end++) {
-    if (typeof path[end - 1] !== "string") continue;
-    const key = byPath.get(pathKey(path.slice(0, end)));
-    if (key) chain.push(key);
-  }
-  const own = byPath.get(pathKey(path));
-  if (!own) return null;
-  if (chain[chain.length - 1] !== own) chain.push(own);
-
-  const types = bindingTypes(stage);
-  const concluded = new Set(
-    solutionBindings(stage).map(([name]) => types[name]),
+  const cited = citationAt(record, path, stage, ledger, activeLead);
+  if (!cited) return null;
+  const fields = cited.factKeys.map((key) =>
+    words(ledger[key]?.fact.field ?? ""),
   );
-  const typeOf = (key: string) => {
-    const entity = ledger[key]?.fact.entity;
-    return entity ? parseRef(entity).type : "";
-  };
-  const start = chain.findIndex((key) => concluded.has(typeOf(key)));
-  const factKeys = start >= 0 ? chain.slice(start) : [own];
-
-  const leadType = types[leadBinding(stage)];
-  let leadId: string | null = null;
-  for (const key of chain) {
-    const entity = ledger[key]?.fact.entity;
-    if (entity && parseRef(entity).type === leadType) {
-      leadId = parseRef(entity).id;
-    }
-  }
-  // A row that names a lead, such as a shipment's consignee, opens that lead.
-  const value = ledger[own]?.fact.value;
-  if (
-    leadId === null &&
-    value?.kind === "ref" &&
-    value.ref &&
-    parseRef(value.ref).type === leadType
-  ) {
-    leadId = parseRef(value.ref).id;
-  }
-  const fields = factKeys.map((key) => words(ledger[key]?.fact.field ?? ""));
-  return { factKeys, label: fields.join(" → "), leadId };
+  return { ...cited, label: fields.join(" → ") };
 }
 
 export function hours(n: number): string {

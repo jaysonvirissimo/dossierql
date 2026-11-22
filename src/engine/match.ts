@@ -70,25 +70,72 @@ function matchFact(
   return [bound];
 }
 
+export interface Filled {
+  bindings: Bindings;
+  /** The fact that met each pattern, in the order of the patterns. */
+  facts: Fact[];
+}
+
 /**
- * Finds bindings under which every pattern is met by one of the facts. A
- * binding stands for the same record wherever it appears, so the facts must
- * form a connected chain. Facts beyond those needed are ignored.
+ * Finds bindings under which every pattern is met by one of the facts, and
+ * reports which facts met them. A binding stands for the same record wherever
+ * it appears, so the facts must form a connected chain. Facts beyond those
+ * needed are ignored.
  */
+export function fillSet(
+  patterns: readonly FactPattern[],
+  facts: readonly Fact[],
+  bindings: Bindings = {},
+): Filled | null {
+  const [first, ...rest] = patterns;
+  if (!first) return { bindings, facts: [] };
+  for (const fact of facts) {
+    for (const next of matchFact(first, fact, bindings)) {
+      const done = fillSet(rest, facts, next);
+      if (done)
+        return { bindings: done.bindings, facts: [fact, ...done.facts] };
+    }
+  }
+  return null;
+}
+
+/** The bindings under which the facts meet every pattern, if any do. */
 export function matchSet(
   patterns: readonly FactPattern[],
   facts: readonly Fact[],
   bindings: Bindings = {},
 ): Bindings | null {
+  return fillSet(patterns, facts, bindings)?.bindings ?? null;
+}
+
+/** Whether one fact meets one pattern, taken apart from the other patterns. */
+export function meets(
+  pattern: FactPattern,
+  fact: Fact,
+  bindings: Bindings,
+): boolean {
+  return matchFact(pattern, fact, bindings).length > 0;
+}
+
+/**
+ * The largest number of the patterns that the facts can meet together, with
+ * each binding standing for one record throughout. When this is less than the
+ * number of patterns met one at a time, some of the facts do not connect.
+ */
+export function mostTogether(
+  patterns: readonly FactPattern[],
+  facts: readonly Fact[],
+  bindings: Bindings = {},
+): number {
   const [first, ...rest] = patterns;
-  if (!first) return bindings;
+  if (!first) return 0;
+  let best = mostTogether(rest, facts, bindings);
   for (const fact of facts) {
     for (const next of matchFact(first, fact, bindings)) {
-      const done = matchSet(rest, facts, next);
-      if (done) return done;
+      best = Math.max(best, 1 + mostTogether(rest, facts, next));
     }
   }
-  return null;
+  return best;
 }
 
 /**

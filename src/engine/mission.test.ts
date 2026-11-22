@@ -179,11 +179,85 @@ describe("citations and drafts", () => {
     );
     expect(review.claims.find((c) => c.id === "route")).toMatchObject({
       status: "open",
-      partial: true,
+      counted: ["Shipment:LIS-0417.destination"],
+      gap: "missing",
     });
     expect(review.claims.find((c) => c.id === "manifest")).toMatchObject({
       status: "open",
-      partial: false,
+      counted: [],
+      gap: "none",
+    });
+  });
+
+  it("lists under a supported claim the cited facts that support it", () => {
+    const draft = lisbonSolved().stages.lisbon!.drafts["LIS-0417"]!;
+    const review = reviewDraft(lisbon, draft, lisbonSolved().ledger);
+    expect(review.claims.find((c) => c.id === "route")).toMatchObject({
+      status: "supported",
+      counted: ROUTE_0417,
+      gap: "none",
+    });
+    expect(review.claims.find((c) => c.id === "manifest")?.counted).toEqual([
+      "Shipment:LIS-0417.manifest",
+    ]);
+  });
+
+  it("tells cited facts that do not connect from a fact that is missing", () => {
+    const review = (...keys: string[]) => {
+      const state = run(
+        afterReference(lisbon, begun()),
+        cite("LIS-0417", "route", ...keys),
+        { type: "name", leadId: "LIS-0417", binding: "country", value: "AO" },
+      );
+      return reviewDraft(
+        lisbon,
+        state.stages.lisbon!.drafts["LIS-0417"]!,
+        state.ledger,
+      ).claims.find((c) => c.id === "route");
+    };
+    // The shipment went to Luanda, and the country cited is Praia's.
+    expect(review(ROUTE_0417[0]!, ROUTE_0522[1]!)).toMatchObject({
+      status: "open",
+      counted: [ROUTE_0417[0], ROUTE_0522[1]],
+      gap: "disconnected",
+    });
+    expect(review(ROUTE_0417[0]!, ROUTE_0417[1]!)).toMatchObject({
+      status: "open",
+      gap: "missing",
+    });
+  });
+
+  it("says when connected facts do not lead to the record chosen", () => {
+    const state = run(
+      afterReference(lisbon, begun()),
+      cite("LIS-0417", "route", ...ROUTE_0417),
+      { type: "name", leadId: "LIS-0417", binding: "country", value: "CV" },
+    );
+    const review = reviewDraft(
+      lisbon,
+      state.stages.lisbon!.drafts["LIS-0417"]!,
+      state.ledger,
+    );
+    expect(review.claims.find((c) => c.id === "route")).toMatchObject({
+      status: "open",
+      counted: ROUTE_0417,
+      gap: "mismatch",
+    });
+  });
+
+  it("lists under a refuted claim the facts that contradict it", () => {
+    const state = run(
+      afterReference(lisbon, begun()),
+      cite("LIS-0486", "cargo", "Shipment:LIS-0486.manifest"),
+    );
+    const review = reviewDraft(
+      lisbon,
+      state.stages.lisbon!.drafts["LIS-0486"]!,
+      state.ledger,
+    );
+    expect(review.claims.find((c) => c.id === "manifest")).toMatchObject({
+      status: "refuted",
+      counted: ["Shipment:LIS-0486.manifest"],
     });
   });
 

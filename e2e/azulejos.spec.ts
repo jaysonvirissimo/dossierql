@@ -134,6 +134,18 @@ test("the Azulejos case, by keyboard at 1024 pixels, held on time", async ({
   await expect(
     draft(page).locator(".claim[data-status=supported]"),
   ).toHaveCount(2);
+  // Each claim lists the cited facts that support it: one manifest, and the
+  // three facts of the route that a single citation carried.
+  await expect(
+    draft(page).locator(".claim[data-status=supported] .claim__facts li"),
+  ).toHaveCount(4);
+  await expect(draft(page).locator(".claim__facts").last()).toContainText(
+    "country Angola · borders",
+  );
+  // Each Cite control shows the lead whose draft its citation enters.
+  await expect(
+    record(page, "LIS-0522").getByRole("button", { name: /^Cite id,/ }),
+  ).toHaveText("Cite for LIS-0522");
 
   // Drafts stay with their shipments, and a cited fact links to its source.
   await press(draft(page).getByRole("tab", { name: /LIS-0522/ }));

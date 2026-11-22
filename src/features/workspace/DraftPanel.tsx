@@ -10,14 +10,20 @@ import {
   knownRecords,
   proceedCost,
 } from "../../engine/mission.ts";
-import { refOf } from "../../graphql/store.ts";
+import { parseRef, refOf } from "../../graphql/store.ts";
 import { useWorkspace } from "./context.ts";
-import { describeFact, hours, labelOf, words } from "./describe.ts";
+import { describeFact, hours, labelOf, typeWords, words } from "./describe.ts";
 
 const STATUS = {
   supported: { chip: "chip--ok", text: "Supported" },
   open: { chip: "chip--open", text: "Needs evidence" },
   refuted: { chip: "chip--bad", text: "Contradicted" },
+} as const;
+
+const COUNTED = {
+  supported: "Cited facts that support this claim:",
+  open: "Cited facts that count toward this claim:",
+  refuted: "Cited facts that contradict this claim:",
 } as const;
 
 export function DraftPanel() {
@@ -64,6 +70,36 @@ export function DraftPanel() {
     : null;
   const review = draft ? reviewDraft(stage, draft, state.ledger) : null;
   const others = solutionBindings(stage).filter(([name]) => name !== lead);
+  // The records the player chose on the form, each with the label of its box.
+  const chosen = others
+    .filter(([name]) => draft?.bindings[name])
+    .map(
+      ([name]) =>
+        `${labelOf(refOf(types[name] ?? "", draft?.bindings[name] ?? ""), state.ledger)}, which you chose for “${stage.labels?.[name] ?? words(name)}” above`,
+    )
+    .join(" or ");
+  /**
+   * Says that cited facts do not connect, with the place where they part: a
+   * fact that points to one record, beside a fact about another record.
+   */
+  const disconnected = (keys: readonly string[]): string => {
+    const facts = keys
+      .map((key) => state.ledger[key]?.fact)
+      .filter((fact) => fact !== undefined);
+    const remedy =
+      "Remove a citation that does not belong, or cite a fact that joins them.";
+    for (const from of facts) {
+      const target = from.value.kind === "ref" ? from.value.ref : null;
+      if (!target || facts.some((fact) => fact.entity === target)) continue;
+      const other = facts.find(
+        (fact) => parseRef(fact.entity).type === parseRef(target).type,
+      );
+      if (!other) continue;
+      const kind = typeWords(target);
+      return `The facts listed here do not connect to each other. One fact points to the ${kind} ${labelOf(target, state.ledger)}, and the fact you cited about a ${kind} is about ${labelOf(other.entity, state.ledger)}. ${remedy}`;
+    }
+    return `The facts listed here do not connect to each other. Each fact has to be about the record that another fact points to. ${remedy}`;
+  };
   const unsupported =
     review?.claims.filter((c) => c.status !== "supported").length ?? 0;
   const cost = (n: number) => (timed && n > 0 ? hours(n) : "free");
@@ -214,13 +250,33 @@ export function DraftPanel() {
                   {STATUS[claim.status].text}
                 </span>
                 <span className="claim__prompt">{claim.prompt}</span>
+                {claim.counted.length > 0 && (
+                  <div className="claim__facts">
+                    <p>{COUNTED[claim.status]}</p>
+                    <ul>
+                      {claim.counted.map((key) => {
+                        const entry = state.ledger[key];
+                        return entry ? (
+                          <li key={key}>
+                            {describeFact(entry.fact, state.ledger)}
+                          </li>
+                        ) : null;
+                      })}
+                    </ul>
+                  </div>
+                )}
                 {claim.status === "open" &&
                   claim.unnamed.length === 0 &&
-                  claim.partial && (
+                  claim.gap !== "none" && (
                     <span className="claim__hint">
-                      You have cited part of the evidence for this claim. A fact
-                      that completes the evidence, or that connects the cited
-                      facts to each other, is still missing.
+                      {claim.gap === "disconnected" &&
+                        disconnected(claim.counted)}
+                      {claim.gap === "mismatch" &&
+                        `The facts listed here connect to each other. They are not about ${chosen}.`}
+                      {claim.gap === "missing" &&
+                        (claim.counted.length === 1
+                          ? "This fact is part of the evidence. The claim needs more facts that connect to this one."
+                          : "The facts listed here connect to each other. The claim needs at least one more fact that connects to them.")}
                     </span>
                   )}
                 {claim.status === "open" && claim.unnamed.length > 0 && (

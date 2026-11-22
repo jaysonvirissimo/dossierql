@@ -58,7 +58,13 @@ function Findings({ record }: { record: TransmissionRecord }) {
   const actions = (path: (string | number)[], name: string): ReactNode => {
     const key = factAt.get(pathKey(path));
     if (!key) return null;
-    const finding = findingAt(record, path, stage, state.ledger);
+    const finding = findingAt(
+      record,
+      path,
+      stage,
+      state.ledger,
+      stageState.activeLead,
+    );
     const leadId = finding?.leadId ?? stageState.activeLead;
     const draft = leadId ? stageState.drafts[leadId] : undefined;
     const leadName = leadId
@@ -95,6 +101,10 @@ function Findings({ record }: { record: TransmissionRecord }) {
           }}
         >
           {cited ? "Cited" : "Cite"}
+          {/* The space is for anyone who reads or copies the text; the
+              button's own gap sets the spacing on screen. */}
+          {leadId && " "}
+          {leadId && <span className="finding__for">for {leadName}</span>}
         </button>
       </span>
     );
@@ -265,9 +275,10 @@ function Findings({ record }: { record: TransmissionRecord }) {
   return (
     <div className="findings">
       <p className="findings__legend">
-        Each row is one fact. Cite the rows that prove a claim. When you cite a
-        row from deep inside a record, the citation also includes the rows that
-        lead to it, so one citation can count as several facts. The number
+        Each row is one fact. Cite the rows that prove a claim. Each Cite button
+        says which {words(leadType)} the citation is for. When you cite a row
+        that is nested under other rows, the citation also includes the rows it
+        is nested under, so one citation can count as several facts. The number
         beside a citation in the draft is how many facts it includes.
       </p>
       <p className="visually-hidden" role="status">

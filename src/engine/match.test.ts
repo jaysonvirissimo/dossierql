@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { FactPattern } from "../content/types.ts";
 import { factKey, type Fact, type FactValue } from "../graphql/facts.ts";
-import { matchSet } from "./match.ts";
+import { fillSet, matchSet, meets, mostTogether } from "./match.ts";
 
 function fact(entity: string, field: string, value: FactValue): Fact {
   return { key: factKey(entity, field), entity, field, value };
@@ -73,5 +73,34 @@ describe("matchSet", () => {
       fact("Shipment:A", "manifest", { kind: "scalar", value: v });
     expect(matchSet(p, [f("Tiles")])).toEqual({ s: "A" });
     expect(matchSet(p, [f("Slate")])).toBeNull();
+  });
+});
+
+describe("fillSet, meets and mostTogether", () => {
+  const scattered = [
+    luanda[0] as Fact,
+    fact("City:praia", "country", ref("Country:CV")),
+  ];
+
+  it("reports the fact that met each pattern", () => {
+    const extra = fact("City:praia", "country", ref("Country:CV"));
+    const filled = fillSet(route, [extra, ...luanda], { shipment: "LIS-0417" });
+    expect(filled?.facts.map((f) => f.key)).toEqual(luanda.map((f) => f.key));
+  });
+
+  it("judges one fact against one pattern", () => {
+    const [, country] = route as [FactPattern, FactPattern];
+    expect(meets(country, scattered[1] as Fact, {})).toBe(true);
+    expect(meets(country, scattered[1] as Fact, { city: "luanda" })).toBe(
+      false,
+    );
+  });
+
+  it("counts the patterns that connected facts meet together", () => {
+    const lead = { shipment: "LIS-0417" };
+    expect(mostTogether(route, luanda.slice(0, 2), lead)).toBe(2);
+    // Each fact meets a pattern, but Praia is not where the shipment went.
+    expect(mostTogether(route, scattered, lead)).toBe(1);
+    expect(mostTogether(route, [], lead)).toBe(0);
   });
 });

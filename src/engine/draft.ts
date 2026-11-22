@@ -6,7 +6,13 @@ import {
   type Stage,
 } from "../content/types.ts";
 import type { Fact } from "../graphql/facts.ts";
-import { couldMatch, matchSet, type Bindings } from "./match.ts";
+import {
+  couldMatch,
+  fillSet,
+  meets,
+  mostTogether,
+  type Bindings,
+} from "./match.ts";
 
 export interface Citation {
   id: string;
@@ -25,14 +31,28 @@ export interface Draft {
 
 export type ClaimStatus = "supported" | "open" | "refuted";
 
+/**
+ * Why an open claim with counted facts is not yet supported (SDD 3.2).
+ * `disconnected`: the facts are about records that do not lead to each other.
+ * `mismatch`: the facts connect, but not to a record chosen in the draft.
+ * `missing`: the facts connect and at least one more is needed.
+ */
+export type ClaimGap = "none" | "disconnected" | "mismatch" | "missing";
+
 export interface ClaimReview {
   id: string;
   prompt: string;
   status: ClaimStatus;
   /** Solution bindings the claim needs that the draft has not named. */
   unnamed: string[];
-  /** Some cited fact bears on the claim, though no evidence set is complete. */
-  partial: boolean;
+  /**
+   * Keys of the cited facts that count toward the claim. For a supported
+   * claim these are the facts of the complete set, and for a refuted claim
+   * the facts that contradict it.
+   */
+  counted: string[];
+  /** What stands between the counted facts and a complete evidence set. */
+  gap: ClaimGap;
 }
 
 export interface DraftReview {
@@ -66,6 +86,10 @@ function bindingsIn(patterns: readonly FactPattern[]): Set<string> {
   return found;
 }
 
+function keysOf(facts: readonly Fact[]): string[] {
+  return [...new Set(facts.map((fact) => fact.key))];
+}
+
 export function citedFacts(
   draft: Draft,
   ledger: Readonly<Record<string, { fact: Fact }>>,
@@ -97,10 +121,8 @@ export function reviewDraft(
   const refutation = outcome?.refutation;
   // A refutation speaks about the lead alone; its other records are free.
   const leadOnly: Bindings = { [lead]: draft.leadId };
-  const refutedClaim =
-    refutation && matchSet(refutation.facts, facts, leadOnly)
-      ? refutation.claim
-      : null;
+  const refuting = refutation && fillSet(refutation.facts, facts, leadOnly);
+  const refutedClaim = refutation && refuting ? refutation.claim : null;
 
   const claims: ClaimReview[] = stage.claims.map((claim) => {
     if (claim.id === refutedClaim) {
@@ -109,11 +131,11 @@ export function reviewDraft(
         prompt: claim.prompt,
         status: "refuted",
         unnamed: [],
-        partial: false,
+        counted: keysOf(refuting?.facts ?? []),
+        gap: "none",
       };
     }
     let unnamed: string[] = [];
-    let supported = false;
     for (const set of claim.evidenceSets) {
       const missing = [...bindingsIn(set.facts)].filter(
         (name) => named.includes(name) && fixed[name] === undefined,
@@ -122,23 +144,42 @@ export function reviewDraft(
         unnamed = [...new Set([...unnamed, ...missing])];
         continue;
       }
-      if (matchSet(set.facts, facts, fixed)) {
-        supported = true;
-        break;
+      const filled = fillSet(set.facts, facts, fixed);
+      if (filled) {
+        return {
+          id: claim.id,
+          prompt: claim.prompt,
+          status: "supported",
+          unnamed: [],
+          counted: keysOf(filled.facts),
+          gap: "none",
+        };
+      }
+    }
+    const counted = facts.filter((fact) =>
+      claim.evidenceSets.some((set) =>
+        set.facts.some((pattern) => meets(pattern, fact, leadOnly)),
+      ),
+    );
+    let gap: ClaimGap = counted.length > 0 ? "missing" : "none";
+    for (const set of claim.evidenceSets) {
+      if (gap === "none" || gap === "disconnected") break;
+      const apart = set.facts.filter((pattern) =>
+        counted.some((fact) => meets(pattern, fact, leadOnly)),
+      ).length;
+      const together = mostTogether(set.facts, counted, leadOnly);
+      if (apart > together) gap = "disconnected";
+      else if (together > mostTogether(set.facts, counted, fixed)) {
+        gap = "mismatch";
       }
     }
     return {
       id: claim.id,
       prompt: claim.prompt,
-      status: supported ? "supported" : "open",
-      unnamed: supported ? [] : unnamed,
-      partial:
-        !supported &&
-        claim.evidenceSets.some((set) =>
-          set.facts.some((pattern) =>
-            facts.some((fact) => couldMatch(pattern, fact, leadOnly)),
-          ),
-        ),
+      status: "open",
+      unnamed,
+      counted: keysOf(counted),
+      gap,
     };
   });
 

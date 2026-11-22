@@ -1,5 +1,6 @@
 import { isObjectType, Kind, parse, visit, type GraphQLSchema } from "graphql";
 import { clearanceInForce, deriveStanding } from "../engine/clearance.ts";
+import { citationAt, factsAlong, type CitedRow } from "../engine/cite.ts";
 import { computeBudget } from "../engine/clock.ts";
 import { reviewDraft } from "../engine/draft.ts";
 import { matchSet, type Bindings } from "../engine/match.ts";
@@ -855,7 +856,36 @@ function checkStageEvidence(
   }
 }
 
-/** Cites, for one lead, the facts of the first evidence set the ledger meets. */
+interface Control extends CitedRow {
+  /** The fact of the row the control sits on. */
+  own: string;
+  /** Every fact on the way down to that row, whether or not it is carried. */
+  along: string[];
+}
+
+/**
+ * The Cite controls the interface offers: one on each row of each response
+ * received so far, as they stand in one stage with one lead's draft open.
+ */
+function citeControls(
+  state: MissionState,
+  stage: Stage,
+  openLead: string,
+): Control[] {
+  return state.transmissions.flatMap((record) =>
+    record.facts.flatMap(({ key, path }) => {
+      const cited = citationAt(record, path, stage, state.ledger, openLead);
+      return cited
+        ? [{ ...cited, own: key, along: factsAlong(record, path) }]
+        : [];
+    }),
+  );
+}
+
+/**
+ * Cites, for one lead, the first evidence set of each claim that the ledger
+ * meets. Each fact is cited through a Cite control, as a player cites it.
+ */
 function citeSupported(
   env: Env,
   state: MissionState,
@@ -866,22 +896,76 @@ function citeSupported(
 ): MissionState {
   const lead = leadBinding(stage);
   const facts = Object.values(state.ledger).map((e) => e.fact);
+  const controls = citeControls(state, stage, String(leadId));
   let next = state;
   for (const claim of stage.claims) {
     if (!claimIds.includes(claim.id)) continue;
     for (const set of claim.evidenceSets) {
       const bound = matchSet(set.facts, facts, { ...named, [lead]: leadId });
       if (!bound) continue;
-      next = act(env, next, {
-        type: "cite",
-        leadId,
-        label: claim.id,
-        factKeys: instantiate(set.facts, bound),
-      }).state;
+      for (const key of new Set(instantiate(set.facts, bound))) {
+        const control = controls.find(
+          (c) => c.own === key && (c.leadId === null || c.leadId === leadId),
+        );
+        if (!control) continue;
+        next = act(env, next, {
+          type: "cite",
+          leadId,
+          label: claim.id,
+          factKeys: control.factKeys,
+        }).state;
+      }
       break;
     }
   }
   return next;
+}
+
+/**
+ * Citations (SDD 5.5): each evidence set the reference solution retrieves can
+ * be put together from Cite controls, in the draft of the lead it is about.
+ */
+function checkCitations(
+  at: string,
+  stage: Stage,
+  state: MissionState,
+  report: Report,
+): void {
+  const solution = Object.fromEntries(solutionBindings(stage));
+  const leadId = solution[leadBinding(stage)];
+  const facts = Object.values(state.ledger).map((e) => e.fact);
+  const controls = citeControls(state, stage, String(leadId));
+  for (const claim of stage.claims) {
+    claim.evidenceSets.forEach((set, index) => {
+      const bound = matchSet(set.facts, facts, solution);
+      if (!bound) return;
+      const setAt = `${at}.claims.${claim.id}.evidenceSets.${String(index)}`;
+      const needed = new Set(instantiate(set.facts, bound));
+      for (const key of needed) {
+        const on = controls.filter((c) => c.own === key);
+        if (!on.some((c) => c.leadId === null || c.leadId === leadId)) {
+          report(
+            setAt,
+            "citations",
+            `No Cite control puts ${key} in the draft for ${String(leadId)}.`,
+          );
+        }
+        for (const control of on) {
+          const dropped = control.along.find(
+            (k) => needed.has(k) && !control.factKeys.includes(k),
+          );
+          if (dropped) {
+            report(
+              setAt,
+              "citations",
+              `Citing ${key} leaves out ${dropped}, which is on the way to it.`,
+            );
+            break;
+          }
+        }
+      }
+    });
+  }
 }
 
 /** Plays the mission from its reference solution, as SDD section 10 asks. */
@@ -957,6 +1041,8 @@ function checkSolvable(
         );
       }
     }
+
+    checkCitations(at, stage, state, report);
 
     // Field checks: reachable, charged as quoted, and the stage stays open.
     for (const [checked, outcome] of Object.entries(stage.leadOutcomes ?? {})) {
