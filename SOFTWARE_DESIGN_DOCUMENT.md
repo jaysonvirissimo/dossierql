@@ -1,8 +1,8 @@
 # DossierQL — Software Design Document
 
 **Status:** Draft
-**Version:** 0.8
-**Last updated:** November 21, 2026
+**Version:** 0.9
+**Last updated:** November 22, 2026
 
 ## 1. Introduction and Overview
 
@@ -79,14 +79,20 @@ The game will distinguish between:
 
 Early missions may involve stolen artifacts, missing diplomats, or suspicious travel itineraries. Later missions can reveal connections to an overarching criminal organization.
 
+A campaign's arc can end in a **coda**: one short, untimed stage that follows the last case and is not counted among the cases (Section 5.4). The first campaign ends this way. The tiles are back in Lisbon, and the museum's registrar needs a signature on the receipt before the gallery can reopen. The player pulls the receipt and follows it through two sets of records. The Parallax Circle's payment orders and the crate's transfers lead back to one authorizing desk. The agency's own travel orders, the ones that sent the player from city to city, were issued by the same desk. The desk authorized the crate to leave Lisbon before the registrar reported it missing, and the record shows that the registrar objected.
+
+The coda establishes that one fact and no more. It does not identify the adversary, and it leaves open who gave the desk that authority. The desk's reason is credible and insufficient: letting the crate go was the only way to bring the Circle's paper accounts into the open. The tiles were real and the registrar had something to lose. The coda ends at the museum, with the receipt's *Released by* box still empty. A later arc should end the same way, with an answer that makes the remaining question harder.
+
+Because missions avoid dates (Section 2.1), the coda shows that one order came before another by the serial numbers of a register, not by a date.
+
 All characters, agencies, organizations, and storylines will be original creations. References to the game's creative influences must not imply affiliation with the owners of the source franchises.
 
 ### 2.4 Recurring Cast
 
 A small recurring cast gives the game's systems a voice.
 
-- **The records clerk** runs the archive behind the terminal. The clerk annotates GraphQL errors, delivers hints, and returns malformed requests unprocessed. The clerk is weary and precise, never mocking.
-- **The adversary** is a recurring figure in the campaign's criminal organization who leaves notes, narrowly escapes, and gives the player someone to pursue across missions.
+- **The records clerk** runs the archive behind the terminal. The clerk annotates GraphQL errors, delivers hints, and returns malformed requests unprocessed. The clerk is weary and precise, never mocking. In the coda (Section 2.3) the clerk turns out to have countersigned and filed both sets of orders, as the functionary who processes whatever the desk sends down. The clerk did not write the orders and is not the adversary. The clerk goes on teaching afterward, so nothing in the story may give the player a reason to distrust a hint or an annotation.
+- **The adversary** is a recurring figure in the campaign's criminal organization who leaves notes, narrowly escapes, and gives the player someone to pursue across missions. In the first campaign the adversary signs notes with the letter M. M's last note is what sends the player to the receipt. M is still at large and unidentified when the campaign ends.
 - **The bureaucracy** grants clearance, approves or rejects warrants, and bills travel. It explains the game's rules in the form of regulations.
 
 ## 3. Game and Learning Design
@@ -109,11 +115,11 @@ The player's conclusions must rest on what their queries returned.
 
 The game records every fact that appears in a query result in an **evidence ledger**. A fact is a field value of an entity, or a relationship between two entities. A fact can appear in multiple responses and keeps its identity across queries.
 
-Players can cite a finding in the open draft directly from the results or the ledger. They can also pin evidence in the ledger to keep it at hand. Result rows offer Cite alone, so that the one action a case requires is the only one beside each finding. A single citation can carry a connected chain of facts. In the Lisbon opening, **Cite cargo** attaches the manifest and **Cite route** attaches the shipment → city → country → border chain. Each fact in a citation remains inspectable and links back to its source response. The player chooses which findings to attach and can remove them.
+Players can cite a finding in the open draft directly from the results or the ledger. They can also pin evidence in the ledger to keep it at hand. Result rows offer Cite alone, so that the one action a case requires is the only one beside each finding. A single citation can carry a connected chain of facts. When the player cites a row from deep inside a response, the citation carries every fact on the path to that row that an evidence set of the stage can use. One click therefore never leaves out the link between a finding and the record it was found under, such as the link between a sighting and the city where it was filed. The Cite control shows which lead's draft the citation will enter. In the Lisbon opening, **Cite cargo** attaches the manifest and **Cite route** attaches the shipment → city → country → border chain. Each fact in a citation remains inspectable and links back to its source response. The player chooses which findings to attach and can remove them.
 
 Deduction, travel, and warrant forms present the claims the player must support in plain language. A stage defines at least two sufficient sets of facts for each claim, reached through different records, so that no claim depends on the player finding one particular field. A claim is supported when its citations contain any one complete set. Extra citations are allowed. Facts in a set must refer to the lead under consideration. For example, a shipment's destination and the destination country's border must form a connected chain.
 
-The draft shows which claims the citations support and which still need evidence. Unrelated citations receive feedback before any time is spent. A cited refutation identifies the claim and its conflicting evidence. An absent entry can refute a claim about a list only when the player retrieved the complete list without an error. A deduction is accepted when the conclusion is correct and all required claims are supported. Travel that advances the investigation meets the same standard. A field check can investigate a lead whose case is still incomplete (Section 3.5).
+The draft shows which claims the citations support and which still need evidence. Under each claim it lists the cited facts that count toward that claim. When a claim is partly supported, the draft says which of two things is wrong: the cited facts do not connect to each other, or they connect and a fact is still missing. The draft does not say which fact is missing, because that would give away the evidence route. Hints do that, at their price (Section 3.9). Unrelated citations receive feedback before any time is spent. A cited refutation identifies the claim and its conflicting evidence. An absent entry can refute a claim about a list only when the player retrieved the complete list without an error. A deduction is accepted when the conclusion is correct and all required claims are supported. Travel that advances the investigation meets the same standard. A field check can investigate a lead whose case is still incomplete (Section 3.5).
 
 Every puzzle should depend on fictional intelligence data, such as shipments, aliases, and transactions, that no player can know in advance. Real geography then narrows the possibilities. For example, an intercepted shipment leads to a city, and the city's country must satisfy a geographical clue.
 
@@ -148,7 +154,7 @@ The clock must not discourage experimentation:
 - Queries that fail validation are returned by the records clerk before transmission and cost nothing.
 - Browsing schema documentation and the evidence ledger, drafting citations, and ruling out a lead with retrieved evidence are free.
 - Budgets leave room for exploration, most of all in the onboarding missions.
-- Training drills (Section 3.14) and katas (Section 3.11) have no clock.
+- Training drills (Section 3.14), katas (Section 3.11), and a campaign's coda (Section 2.3) have no clock.
 
 An action that uses the last available hour resolves before the clock expires. If an action costs more than the time remaining, show the shortfall and let the player choose to let the deadline pass.
 
@@ -165,7 +171,7 @@ Weight arrives in two steps, so that the player has read the number before it co
 
 Weight is a limit and never a price. A transmission under the limit costs one hour whatever it weighs, so one nested query still costs the same as one flat query, and hours remain the only thing the player spends. Budgets are computed as before. The limit follows the clearance in force (Section 3.8), as the schema does, and every reference solution must fit under it (Section 5.5).
 
-There is no numeric score in the MVP, and request weight does not become one. The costs and factors in the two tables, the weight limit, and the way weight is counted are provisional. Playtesting tunes those numbers and never the budget of an individual mission.
+There is no numeric score in the MVP, and request weight does not become one. The costs and factors in the two tables, the weight limit, and the way weight is counted are provisional. Playtesting tunes those numbers and never the budget of an individual mission. The tuning waits for the sessions with beginners (Section 10.1). Hours left over by a player who already knows GraphQL do not show how much room a beginner needs.
 
 ### 3.4 Warrants
 
@@ -232,6 +238,8 @@ A player who already knows some GraphQL can skip ahead by **placement**. The ass
 
 An assessment is passed in any completion mode (Section 3.9) when the player holds its clearance and has completed the teaching mission of its level. Any other attempt is a placement, and it is passed only if the player has never viewed a solution for that mission, in this attempt or an earlier one, because the player has not played the missions that teach its concepts. A pass by placement grants the concept cards for that level and the levels it skips, and makes their missions available.
 
+A placement pass shows that the player solved the case. It does not show which technique they used, because the game accepts any query that yields sufficient evidence (Section 3.7). A player can pass the aliases assessment with three separate requests. When a placement is passed without the technique its level teaches, the debrief says so plainly and offers that level's kata (Section 3.11). The promotion stands.
+
 The clearance in force during a mission is the higher of the player's clearance and the mission's, and the terminal uses the schema for it. An assessment attempted early therefore has every type and field it needs.
 
 Separately, individual records may be classified above the player's clearance. A field on such a record returns `null` with an error, alongside the rest of the data. This teaches GraphQL's partial-result behavior and gives the player a reason to come back after a promotion.
@@ -274,13 +282,25 @@ Every mission ends with a debrief containing:
 - The real geographical fact the mission turned on.
 - A concept card for the tradecraft manual when the player earns one.
 
+When the debrief comments on the player's technique, it reads the parsed query, never the typed text, so that a comment or a string cannot count as use of a feature. It reads only the transmissions that supplied the facts the player cited. The comment describes what the player did and never changes whether the case is solved. Where the level has a kata, the debrief links to it.
+
 The tradecraft manual has two parts. Its glossary defines every term the game uses and is available from the start, because a definition is reference material. Its concept cards are earned, one per concept, by completing the mission that teaches the concept or by placement (Section 3.8). They summarize what the player has learned to do. Each teaching mission's debrief links to the next available case that practises that concept with new data.
 
 ### 3.11 Katas
 
 A GraphQL kata is an optional drill outside the story, offered in a training range with no clock and no narrative stakes.
 
-Katas are the only place where the game inspects the structure of a query, for example to confirm that a fragment was used. Missions and training drills (Section 3.14) never do. Katas arrive after the MVP (Section 11).
+A kata tests whether a technique transfers to records the player has not seen. It is passed by a transmission that returns the facts the kata expects and has the structure the kata asks for. Katas are the only place where the structure of a query decides a pass, for example to confirm that a fragment was used. Missions and training drills (Section 3.14) never judge structure. The debrief inspects structure only to describe it (Section 3.10).
+
+A kata uses the drill screen (Section 3.14), with a variables panel and the schema of the clearance the kata belongs to. Passing one earns no clearance and no concept card.
+
+Three katas arrive with 1.0 (Section 11), one for each technique that a case can be solved without:
+
+- **Aliases:** combine two lookups into one transmission.
+- **Fragments:** add a field in one place so that it appears on every record that shares the selection.
+- **Variables:** reuse an operation for a different city by changing only the JSON input.
+
+Katas for the other concepts arrive after 1.0. So do exercises that ask the player to predict a response before sending the request, which need an interaction the game does not yet have.
 
 ### 3.12 Replay
 
@@ -410,6 +430,8 @@ The intelligence data grows mission by mission. Each mission adds the records it
 Every entity has a stable identifier so that evidence can refer to it.
 
 The intelligence graph should support increasingly sophisticated investigations without requiring a fundamentally different GraphQL interface.
+
+The coda (Section 2.3) adds the records its chain needs: the office that authorized an order, the agency's travel orders, a register serial number that puts orders in sequence, the registrar's objection, and the person who released a receipt, which is empty on the receipt for the tiles. The archive is fixed, so the travel orders describe the route the campaign's cases follow and not the journeys of a particular player. The new types and fields are visible at clearance 5, where a player may notice them in the schema documentation before the coda. Their names and descriptions are plain, so that the documentation does not announce what the coda reveals. Every earlier case must still validate after the records are added.
 
 ### 5.3 GraphQL Schema
 
@@ -785,6 +807,8 @@ Both starter queries supply the `name` argument. The Lisbon query guides the pla
 
 The content model should eventually support branching investigations, multiple acceptable solutions, variant pools (Section 3.12), and connections between missions.
 
+A mission's `kind` is teaching, assessment, or coda. A coda has one stage and no clock. It grants no clearance and no concept card, and the count of resolved cases leaves it out. It becomes available when the last case of its campaign is resolved. Its claims meet the same standard as any other stage's, including two evidence sets for each claim.
+
 A mission is a single YAML file. Its prose is written in YAML block scalars and may use a small inline subset of Markdown: emphasis, code, and links to glossary entries. Mission text is brief (Sections 5.6 and 5.7) and does not need files of its own.
 
 ### 5.5 Data Validation
@@ -798,6 +822,7 @@ A build-time validation process should check:
 - Verify that the clues for each stage identify exactly one solution among the candidates in the data. For the Azulejos opening, each clue must also leave at least one wrong lead plausible on its own. In Luanda, only one order for the crate names the consignee on the logged label. Where reports conflict, the corroborating data settles the conflict.
 - Verify that every claim has at least two supporting evidence sets and that no supporting set contains another. Each authored set must be retrievable at the mission's clearance. The tests accept complete sets with extra citations and reject incomplete sets or facts from unrelated leads unless the cited facts form another complete set.
 - Verify that each authored refutation is retrievable at the mission's clearance and refutes the named claim for that lead. A field check must be reachable with a supported claim and an unverified claim, must charge the quoted cost, and must leave the stage open. A viable lead stays open after its field check.
+- **Citations:** Every authored evidence set can be assembled by Cite controls on the response to the stage's reference solution. This checks the citations the interface builds, not only the facts the engine accepts.
 - **Solvability:** The reference solution executes without error and yields the required evidence. The time it spends sets the mission's budget (Section 3.3).
 - **Request weight:** Every reference solution fits under the weight limit. In the mission that teaches pagination, the logs requested whole exceed the limit, and the reference solution pages through them under it.
 - **Curriculum order:** A mission requires only concepts taught at or below its clearance, and its reference solution uses the concept it claims to teach.
@@ -930,7 +955,7 @@ Travel and deductions are available as controls in the interface from the first 
 
 **Query validation and puzzle validation must remain distinct.** A syntactically valid query does not necessarily solve a puzzle, and multiple different queries may support the same correct deduction.
 
-Missions evaluate the player's conclusion and the evidence cited for it. They never require an exact query string. Only katas inspect a query's abstract syntax tree.
+Missions evaluate the player's conclusion and the evidence cited for it. They never require an exact query string. Only katas judge a query's abstract syntax tree (Section 3.11). The debrief reads it to describe the player's technique and for nothing else (Section 3.10).
 
 ## 7. Component Design
 
@@ -999,11 +1024,11 @@ The screens support the gameplay loop described in Section 3.1.
 
 **Orientation:** The optional introduction to the terminal and its tools (Section 3.13).
 
-**Mission Selection:** Available assignments, the clearance each requires, the concept each teaches, and campaign progress. For completed assignments, show the help used and whether the case was resolved after the deadline. An assessment that the player would attempt as a placement is marked as one.
+**Mission Selection:** Available assignments, the clearance each requires, the concept each teaches, and campaign progress. For completed assignments, show the help used and whether the case was resolved after the deadline. An assessment that the player would attempt as a placement is marked as one. One assignment is emphasized: the next case in the story. Placements are grouped under a single entry, so that a new player sees one way forward and a returning player can still skip ahead. A campaign's coda appears once its last case is resolved.
 
 **Mission Briefing:** Classified narrative introduction, objectives, and initial intelligence.
 
-The **Intelligence Terminal** shows the editor and the latest results side by side, with the objective, current location, and deadline event in view. Players can switch between leads, inspect the response, and attach a finding to the open draft. Keep raw GraphQL results, schema documentation for the clearance in force, error annotations, and hints available. After expiry, the clock shows what happened and whether the investigation is continuing untimed.
+The **Intelligence Terminal** shows the editor and the latest results side by side, with the objective, current location, and deadline event in view. Players can switch between leads, inspect the response, and attach a finding to the open draft. When a response holds several records of one type, such as three dossiers fetched under aliases, the findings can show them in columns with one row for each field, and a field that a record lacks stays visibly blank. The view arranges what the player retrieved. It never marks which record fits a clue, because that comparison is the player's work. Each response is labelled with the variables it was sent with. Keep raw GraphQL results, schema documentation for the clearance in force, error annotations, and hints available. After expiry, the clock shows what happened and whether the investigation is continuing untimed.
 
 The terminal offers optional **Vim keybindings** through a labelled switch beside the editor. The switch is off by default, and the player can change it at any time without losing the editor's text. It applies to every code editor in the game, including the variables panel. While it is on, the editor shows the current Vim mode as text. The choice is a preference (Section 7.4), so it holds from one stage, mission, and visit to the next whether it was left on or off, until the player changes it. The transmit shortcut works in every Vim mode, and a keyboard user can always move focus out of the editor.
 
@@ -1017,7 +1042,7 @@ The **Evidence Board** holds the evidence ledger and pinned facts, with links ba
 
 **Tradecraft Manual:** The glossary and the concept cards the player has earned, available for reference at any time.
 
-**Training Range:** The optional training drills (Section 3.14). Katas are added after the MVP.
+**Training Range:** The optional training drills (Section 3.14) and the katas (Section 3.11).
 
 ## 9. Assumptions, Dependencies, and Constraints
 
@@ -1059,6 +1084,8 @@ Use automated tests to check solvability and browser-agent reviews to check what
 The agents are given a self-contained prompt and no knowledge of how the game is built. A reviewer who knows the answer is not a fair test of what the game teaches.
 
 Once the first mission is playable, observe a few people who know JSON and are new to GraphQL before expanding the campaign. Watch whether they can attach evidence while comparing shipments and explain both why a wrong lead looked plausible and what ruled it out. When they reach Luanda, see whether the replacement label makes them want to send another query and whether they can explain how they identified the signer. Ask which moments they remember and whether they would choose to play another case. Give each player a short follow-up case with different data and a blank editor. Observe whether they can write a nested selection and explain how its result supports the new deduction. Use these sessions to tune the clock's costs and factors, citation feedback, and starter queries before authoring the remaining clearance levels.
+
+Before 1.0, repeat the sessions on two cases, *The Vanishing Azulejos* and *The Guest Register*. Each session has two parts. During the case, ask the player to explain why they ruled out a lead and which cited facts support each claim. Afterward, give them the kata for a technique they used and watch whether they can apply it to records they have not seen. The first part tests the detective work and the second tests whether the lesson transfers. These sessions also decide whether the draft should say more about an incomplete claim than Section 3.2 allows.
 
 ## 11. Development Milestones
 
@@ -1111,15 +1138,37 @@ To complete this milestone, a player must be able to compare and cite query find
 
 **Success criterion:** A beginner can learn several fundamental GraphQL concepts through an engaging, self-directed espionage adventure.
 
-### After the MVP
+### Milestone 5 — 1.0: Evidence the Player Can Follow
 
-- Clearance levels 6 through 10, from introspection to mutations.
+This milestone finishes clearance levels 1 through 5. It adds no clearance level. Its tasks are in priority order.
+
+- Make a citation carry every fact on its path that an evidence set can use (Section 3.2), and test the code that builds citations. Add the validation check that every evidence set can be assembled from Cite controls (Section 5.5).
+- Show under each claim the cited facts that count toward it, show on the Cite control which lead's draft it feeds, and distinguish facts that do not connect from a fact that is missing.
+- Show records of one type in columns in the findings, starting with the three dossiers of *Three Couriers*.
+- Replace the debrief's text matching with a reading of the parsed query, limited to the transmissions that supplied cited facts. State plainly when a placement was passed without its level's technique.
+- Add the katas for aliases, fragments, and variables to the training range, with a variables panel and a clearance for each kata.
+- Author the coda of the first campaign, with its records, and add the coda kind and its untimed stage to the engine.
+- Emphasize the next story case on the assignments desk and group the placements under one entry.
+- Use a country with several borders in the drills that read a list. State in the schema documentation where a player does type a `!`. Label each response with its variables.
+- Add the Vim keybindings switch, which Milestone 4 lists and did not deliver.
+- Run both agent playtests on the coda and on every changed case, then hold the sessions with beginners (Section 10.1) and tune the clock from them.
+
+**Success criterion:** A beginner can say which cited facts support each claim, and can use a case's technique on records they have not seen.
+
+### After 1.0
+
+Where this document says that a feature arrives after the MVP, and Milestone 5 does not list it, the feature arrives after 1.0.
+
+- Clearance levels 6 through 10, from introspection to mutations. The adversary is identified in these levels and not before.
 - Request weight, reported with the clearance 6 missions and limited with the clearance 8 missions that teach pagination.
 - Warrants and missions that end in an arrest.
 - Conflicting reports and source reliability.
 - Game actions as mutations.
 - Seeded mission variants.
-- Katas in the training range.
+- Katas for the remaining concepts, and exercises that ask the player to predict a response.
+- A prompt for an incomplete claim that says what kind of fact is missing, if the sessions with beginners show that the draft needs one.
+- Branching investigations, including one deadline that forces a choice between two leads. The clock keeps its single purpose until then (Section 3.3).
+- An untimed continuation after the deadline in cases other than the first.
 - Offline play through a service worker, with a prompt when a new version is available.
 - Export and import of saved progress.
 
@@ -1185,7 +1234,9 @@ A **Deduction** is a conclusion the player submits with citations.
 
 **Tradecraft Manual:** The in-game reference, made up of a glossary that is always available and the concept cards the player has earned.
 
-**GraphQL Kata:** An optional drill, outside the story, designed to develop proficiency with one piece of GraphQL syntax.
+**GraphQL Kata:** An optional drill, outside the story, designed to develop proficiency with one piece of GraphQL syntax. A kata is passed by a query with the right structure that returns the right facts.
+
+**Coda:** One short, untimed stage that ends a campaign's arc. It follows the last case and is not counted among the cases.
 
 **Training Drill:** A short, untimed exercise offered before the first case, passed by retrieving the facts it asks for.
 
@@ -1201,6 +1252,7 @@ A **Deduction** is a conclusion the player submits with citations.
 
 - *Where in the World Is Carmen Sandiego?* — Geographical investigation, educational gameplay, and whimsical criminal mysteries.
 - Ian Fleming's early James Bond novels — International espionage, intelligence tradecraft, distinctive settings, and recurring adversaries.
+- G. K. Chesterton, *The Man Who Was Thursday* — Unmaskings that deepen the mystery they appear to solve.
 
 DossierQL is an independent project and is not affiliated with or endorsed by the owners of these works.
 
