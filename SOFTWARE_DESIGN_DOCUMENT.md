@@ -1,7 +1,7 @@
 # DossierQL — Software Design Document
 
 **Status:** Draft
-**Version:** 0.9
+**Version:** 0.10
 **Last updated:** November 22, 2026
 
 ## 1. Introduction and Overview
@@ -26,6 +26,7 @@ Experienced developers should still find the later missions interesting, because
 
 - Make GraphQL the means of solving every mystery. A mission should not be solvable from general knowledge alone.
 - Teach GraphQL progressively. Each mission introduces or practises a named concept, from basic selections to mutations.
+- Introduce the game a little at a time as well. A player never has to learn several GraphQL ideas or several parts of the casework in one sitting (Section 3.15).
 - Encourage exploration, deduction, and independent problem-solving rather than reproducing predetermined queries.
 - Incorporate real geographical facts, providing incidental geography education.
 - Create a memorable atmosphere inspired by mid-20th-century espionage fiction, balancing intrigue with understated humor.
@@ -125,7 +126,7 @@ Every puzzle should depend on fictional intelligence data, such as shipments, al
 
 ### 3.3 The Mission Clock
 
-Each mission has a budget of hours. Actions spend it while the clock is active.
+Each mission after the first has a budget of hours. Actions spend it while the clock is active.
 
 | Action | Provisional cost |
 |---|---|
@@ -137,7 +138,9 @@ Each mission has a budget of hours. Actions spend it while the clock is active.
 
 The clock exists to teach GraphQL's central idea. One nested query costs the same as one flat query, so a player who asks for everything they need in a single transmission is rewarded.
 
-The clock counts game hours only. The player may take as long as they like over any decision, and the cost of an action is shown before the player commits to it. The briefing names the event the deadline represents, and the terminal counts down to it. In the Azulejos case, it reads “Buyer collects the crate in 6 hours” when six hours remain.
+The clock counts game hours only. The player may take as long as they like over any decision, and the cost of an action is shown before the player commits to it. The briefing names the event the deadline represents, and the terminal counts down to it. In *The Borrowed Chronometer*, it reads “Buyer's steamer sails in 6 hours” when six hours remain.
+
+The first case, *The Vanishing Azulejos*, has no clock. Its hints and its solution reveal cost nothing, and nothing in it is priced in hours. The clock is a casework mechanic like any other (Section 3.15), and a player who is writing their first nested query should not also be learning to budget. The clock arrives in the second case, whose briefing explains it: what a transmission costs, what the deadline is, and that a request the clerk returns costs nothing.
 
 A mission's budget is computed, not chosen by hand. It follows the reference solution through every stage and adds three amounts: the hours the solution spends travelling, the hours it spends on transmissions multiplied by a factor, and the cost of one complete hint ladder. The total is rounded up to a whole hour.
 
@@ -154,11 +157,11 @@ The clock must not discourage experimentation:
 - Queries that fail validation are returned by the records clerk before transmission and cost nothing.
 - Browsing schema documentation and the evidence ledger, drafting citations, and ruling out a lead with retrieved evidence are free.
 - Budgets leave room for exploration, most of all in the onboarding missions.
-- Training drills (Section 3.14), katas (Section 3.11), and a campaign's coda (Section 2.3) have no clock.
+- The first case, training drills (Section 3.14), katas (Section 3.11), and a campaign's coda (Section 2.3) have no clock.
 
 An action that uses the last available hour resolves before the clock expires. If an action costs more than the time remaining, show the shortfall and let the player choose to let the deadline pass.
 
-In the first mission, the buyer collects the crate at the deadline and the player can continue untimed from their current stage. The game keeps their evidence, pins, transcripts, drafts, and ruled-out leads. A late completion still requires a supported deduction. The debrief records who authorized the transfer and that the tiles have moved on. The player can also restart. In later missions, the deadline ends the attempt and the player can restart. The current stage's solution becomes free to view once the deadline passes in either case (Section 3.9).
+In a case with a clock, the deadline ends the attempt and the player can restart. The current stage's solution becomes free to view once the deadline passes (Section 3.9). No case in 1.0 continues untimed after its deadline. The engine can do so, and a later case may use it (Section 11).
 
 A flat cost for each transmission leaves one habit unpriced, which is asking for far more than the case needs in a single request. Through the MVP, a small schema and a limit on nesting depth keep that habit harmless. After the MVP (Section 11), the records clerk also weighs each request.
 
@@ -185,6 +188,8 @@ Give players a credible reason to investigate a wrong lead and let them examine 
 
 Before travel, show the cost and any claims that still need evidence. When a mission offers a **field check**, a player with at least one supported claim, at least one unverified claim, and no cited refutation can choose to spend the quoted travel hours on a provisional lead. The field check returns a dispatch and leaves the player at the same stage with their evidence intact. A wrong lead gets a dead-end dispatch that explains the gap. A viable lead can receive a provisional acknowledgement. These dispatches point back to the archive so the player can verify the lead with GraphQL.
 
+Ruling out and field checks are casework mechanics, and each arrives in its own case (Section 3.15). Ruling out first appears in *The Guest Register* and field checks in *The Quiet Consignee*. A case before those does not author a refutation or a field check, and its wrong leads are simply leads whose claims cannot be supported.
+
 ### 3.6 Unreliable Sources
 
 Intelligence reports carry a source and a reliability grade. Later missions include reports that conflict, and the player resolves the conflict by corroborating one account against other data.
@@ -199,7 +204,7 @@ Concepts are introduced in a fixed order. Each is tied to a clearance level and 
 
 | Clearance | Concept | Story reason | Scope |
 |---|---|---|---|
-| 1 | Fields and nested selections | Trace shipments to countries and borders, then find the signer of the order that matches a replacement label | MVP |
+| 1 | Fields and nested selections | Read three manifests, then trace shipments to countries and borders, then find the signer of the order that matches a replacement label | MVP |
 | 2 | Arguments | Pull one operative's file instead of the whole registry | MVP |
 | 3 | Aliases | Call the same dossier field with two suspect IDs and compare the named results side by side | MVP |
 | 4 | Fragments | Keep the same fields in a suspect's dossier and in nested dossiers for their associates by writing the selection once | MVP |
@@ -219,7 +224,9 @@ Each mission declares the concept it teaches, the concepts it practises, and the
 - A mission teaches at most one new concept. If two concepts will not separate, a mission is missing.
 - A mission may only require concepts taught at or below its clearance level.
 - Every concept is practised in at least one mission after the one that teaches it.
-- Each clearance level ends with an **assessment mission**. It teaches nothing new, starts with a blank editor, and uses a different case and data to see whether players can apply the concepts learned so far.
+- Each clearance level ends with an **assessment mission**. It teaches no GraphQL concept, starts with a blank editor, and uses a different case and data to see whether players can apply the concepts learned so far.
+
+These rules govern GraphQL concepts. Section 3.15 sets the matching limit on how much of the casework a stage or a mission may introduce.
 
 The curriculum governs what is taught and what a mission needs. It does not restrict what the terminal accepts: any valid GraphQL that the player's schema supports will execute at any time.
 
@@ -263,13 +270,13 @@ Hints follow a four-step ladder. Each step costs more time than the last.
 3. **Schema pointer:** Names the relevant types and fields.
 4. **Skeleton:** Shows the shape of a working query.
 
-Beyond the ladder there is a **solution reveal**, which shows the stage's reference solution. It is available at its stated cost while the clock is active and free after the deadline, even if the attempt has ended. In the first mission's untimed continuation, hints are also free.
+Beyond the ladder there is a **solution reveal**, which shows the stage's reference solution. It is available at its stated cost while the clock is active and free after the deadline, even if the attempt has ended. In the first case, which has no clock (Section 3.3), every hint and the solution reveal are free. They are still recorded in the completion mode.
 
 The player should always know what help costs. Each hint is labelled with its position and purpose, such as "Hint 2 of 4: names the concept", and the price of the ladder and of the solution reveal is stated before the first hint is taken.
 
 Hints carry technique, not reference material. Anything the player needs in order to reason, such as the schema documentation and the meaning of a term, is free and always available.
 
-Each completed mission records how much help the player used during that attempt as its **completion mode**. The modes are independent, hinted, and solution-revealed. All three count as completing the mission, including a completion after the first mission's deadline, and all three pass an assessment that is not a placement (Section 3.8). The mission list shows the help used and whether the investigation finished after the deadline. The player can investigate again for a different result.
+Each completed mission records how much help the player used during that attempt as its **completion mode**. The modes are independent, hinted, and solution-revealed. All three count as completing the mission, and all three pass an assessment that is not a placement (Section 3.8). The mission list shows the help used. The player can investigate again for a different result.
 
 The interface should make GraphQL errors understandable. The original error is always shown unaltered, and the records clerk adds a plain-language annotation beneath it. An annotation says where to look and is worded as a suggestion. It never contains the text to type. Errors are a routine part of the work and should not be presented as failures.
 
@@ -277,7 +284,7 @@ The interface should make GraphQL errors understandable. The original error is a
 
 Every mission ends with a debrief containing:
 
-- The narrative outcome, including what changed if the player resolved the case after the deadline.
+- The narrative outcome.
 - The player's transmissions beside the mission's reference solution. Highlight a concrete difference where it helps explain the concept, such as which repeated selections a fragment replaces or which input can change without editing the operation. A successful alternative is also worth showing.
 - The real geographical fact the mission turned on.
 - A concept card for the tradecraft manual when the player earns one.
@@ -310,19 +317,59 @@ Every variant is authored and validated in advance. This gives replay value and 
 
 ### 3.13 Orientation
 
-An optional orientation is offered before the first mission. It is one short page: what the terminal is, a query beside its result, what a transmission costs, that mistakes are free, and where the schema documentation and glossary are. It hands the player on to the training drills (Section 3.14), which teach by doing.
+An optional orientation is offered before the first mission. It is one short page: what the terminal is, a query beside its result, that a request the clerk cannot read is returned without penalty, and where the schema documentation and glossary are. It does not explain the clock, which the player first meets in the second case (Section 3.3). It hands the player on to the training drills (Section 3.14), which teach by doing.
 
 The orientation is never required and can be reopened at any time. It exists so that the first mission can teach GraphQL without also having to teach the interface.
 
 ### 3.14 Training drills
 
-The training range opens with a short run of drills, offered to a new player before the first case. Each drill teaches one skill: asking for a field, opening a record, reading a list, following two links, and consulting the documentation. Together they take about five minutes.
+The training range opens with a short run of drills, offered to a new player before the first case. Each drill teaches one skill: asking for a field, opening a record, reading a list, following two links, following a chain of three links, and consulting the documentation. Together they take about six minutes. The chain drill is there so that the deepest query of the first case is one level deeper than something the player has already written, and no more (Section 3.15).
 
 A drill has a task of one short paragraph, a starter query, the terminal, and the response beside it. It has no clock, no leads, and no draft, and every transmission is free. A drill is passed by any transmission whose response holds the facts the drill expects, so the game still never judges the text of a query. A request that does not pass shows its response and one authored nudge.
 
 Drills are optional and never lock a case. Passing them earns no clearance and no concept card. They exist so that the first case can teach casework to a player who has already seen that a query can be nested.
 
 Two aids in the terminal serve the same purpose in every case. The editor suggests the fields that fit where the cursor is. The findings name, once for each kind of record, the links on it that the query did not open.
+
+### 3.15 Pacing
+
+A player learns two things in this game: GraphQL, and the casework that the game wraps around it. Each is taught a little at a time. The curriculum (Section 3.7) limits a mission to one new GraphQL concept. This section sets the matching limit on casework, and on how much of either a single stage may ask for.
+
+A **casework mechanic** is a part of the game that the player has to learn in order to act: what a control does, what it costs, and when to use it. The table lists the mechanics of 1.0 and where a player who follows the course first meets each one.
+
+| Casework mechanic | What the player meets | First appears |
+|---|---|---|
+| Citing | A lead, one claim, and citing a finding into the form | *The Vanishing Azulejos*, stage 1 |
+| Travel order | Two claims on one form, choosing the destination, and travelling | *The Vanishing Azulejos*, stage 3 |
+| Deduction over several records | A form that asks the player to identify more than one record | *The Vanishing Azulejos*, stage 4 |
+| The clock | Hours, a deadline, and a price on hints and on the solution reveal | *The Borrowed Chronometer* |
+| Ruling out | Citing a fact that contradicts a claim, and marking the lead ruled out | *The Guest Register* |
+| Field check | Spending hours to test a lead whose case is incomplete | *The Quiet Consignee* |
+
+The course follows these rules:
+
+- A stage introduces at most one GraphQL step and at most one casework mechanic. A GraphQL step is a new concept, or one more level of nesting than the player has written before.
+- A mission introduces at most one GraphQL concept (Section 3.7). After the first case, a mission introduces at most one casework mechanic.
+- The first case is the one exception to the limit on mechanics, because casework has to start somewhere. It introduces three, each in a short stage of its own.
+- A stage uses a mechanic only if that stage or an earlier one in the course introduces it. A case before *The Guest Register* therefore authors no refutation, and a case before *The Quiet Consignee* offers no field check.
+- A mechanic that arrives after 1.0, such as warrants, takes a row in the table and a case of its own.
+
+From clearance 3 onward, every mechanic of 1.0 is in play and a case introduces its GraphQL concept alone.
+
+A player who skips ahead by placement (Section 3.8) meets every mechanic of the case they chose at once. That is their choice, and the assessment's briefing still explains the clock.
+
+*The Vanishing Azulejos* is laid out to follow these rules. It has four stages and no clock.
+
+| Stage | Objective | New GraphQL step | New casework mechanic |
+|---|---|---|---|
+| 1. Lisbon, the manifests | Identify the crate that cannot be the tiles. One of the three manifests describes slate. | None. The query asks for a field on each record in a list, as the drills did. | Citing |
+| 2. Lisbon, the routes | Identify the crate that cannot reach Namibia by road. One of the two ceramic shipments is bound for an island. | Nested selections: from a shipment to its destination, that city's country, and that country's borders | None |
+| 3. Lisbon, the travel order | Send the hold to the country that receives the remaining crate. | None. The evidence is already in the ledger. | Travel order |
+| 4. Luanda | Identify who signed the transfer order that matches the replacement label. | Two records opened side by side under one shipment | Deduction over several records |
+
+Stages 1 and 2 each ask for one claim about one crate, so the player's first two forms hold a single claim. The two crates set aside in those stages are not ruled out with the ruling-out mechanic, which does not exist yet for this player. Each is the answer to its own stage.
+
+Validation enforces the rules about mechanics (Section 5.5). It cannot measure whether a query is one step harder than the last, so the rule about nesting is an authoring rule (Section 5.6), and the novice walkthrough (Section 10.1) reports where a stage asked for too much.
 
 ## 4. System Architecture
 
@@ -498,11 +545,11 @@ Missions should be declarative and stored as human-readable YAML files in versio
 
 Each mission contains one or more stages. A stage represents an investigation objective, usually associated with a location.
 
-A mission declares what it teaches, what it practises, what it requires, and the event its deadline represents. Its time budget is computed from its reference solution (Section 3.3). An assessment mission teaches nothing and lists the concepts it combines under `practises`. A stage declares its clues, scaffold, hint ladder, evidence sets, accepted solution, and a reference solution. It can also declare which leads can be ruled out, what evidence refutes them, and what dispatch a field check returns. Each evidence set lists facts that must be cited together, and each claim has at least two sets that support it. Records are written as `Type:identifier`. A name beginning with `$` is a binding, which stands for one record. The bindings named in a stage's `solution` describe the lead under consideration, such as `$shipment`. Within one evidence set or refutation, a binding stands for the same record wherever it appears. A binding that the solution does not name, such as `$inspection`, may be any record for which every fact in the set has been cited.
+A mission declares what it teaches, what it practises, what it requires, and the event its deadline represents. Its time budget is computed from its reference solution (Section 3.3). An assessment mission teaches nothing and lists the concepts it combines under `practises`. A stage declares its clues, scaffold, hint ladder, evidence sets, accepted solution, and a reference solution. It can also declare which leads can be ruled out, what evidence refutes them, and what dispatch a field check returns. A stage that introduces a casework mechanic declares it under `introduces`, with one of the mechanics of Section 3.15. A mission with no `clock` entry is untimed. Each evidence set lists facts that must be cited together, and each claim has at least two sets that support it. Records are written as `Type:identifier`. A name beginning with `$` is a binding, which stands for one record. The bindings named in a stage's `solution` describe the lead under consideration, such as `$shipment`. Within one evidence set or refutation, a binding stands for the same record wherever it appears. A binding that the solution does not name, such as `$inspection`, may be any record for which every fact in the set has been cited.
 
 A clue's `constraint` is the machine-readable form of the clue. Each entry is a path of schema fields that starts from a binding, followed by the value the path must reach: a literal, a record, or another path. A path that passes through a list is satisfied when any member of the list matches. Validation evaluates the constraints against the data itself, not against the ledger, and tries every record of the right type for each binding the constraints use. Exactly one assignment may satisfy every constraint of the stage, and it must agree with the `solution` (Section 5.5). A part of the solution that no constraint binds, such as the signer in Luanda, must follow from the stage's evidence sets.
 
-This example follows both stages of *The Vanishing Azulejos*.
+This example follows *The Vanishing Azulejos* as it was first built, with two stages, a clock, and wrong leads to rule out in Lisbon. Section 3.15 replaces that layout with four untimed stages. The example shows the format and is rewritten when the case is re-authored (Section 11).
 
     id: vanishing-azulejos
     title: The Vanishing Azulejos
@@ -819,10 +866,11 @@ A build-time validation process should check:
 - **References:** Geographical entities, operatives, organizations, stages, missions, and campaigns that are referred to all exist.
 - **World data:** Every border is recorded from both sides, and every city belongs to a country.
 - **Reachability:** Every stage can be reached and every mission has a terminal outcome.
-- Verify that the clues for each stage identify exactly one solution among the candidates in the data. For the Azulejos opening, each clue must also leave at least one wrong lead plausible on its own. In Luanda, only one order for the crate names the consignee on the logged label. Where reports conflict, the corroborating data settles the conflict.
+- Verify that the clues for each stage identify exactly one solution among the candidates in the data. Where a stage has wrong leads that can be ruled out, each clue must also leave at least one wrong lead plausible on its own. In Luanda, only one order for the crate names the consignee on the logged label. Where reports conflict, the corroborating data settles the conflict.
 - Verify that every claim has at least two supporting evidence sets and that no supporting set contains another. Each authored set must be retrievable at the mission's clearance. The tests accept complete sets with extra citations and reject incomplete sets or facts from unrelated leads unless the cited facts form another complete set.
 - Verify that each authored refutation is retrievable at the mission's clearance and refutes the named claim for that lead. A field check must be reachable with a supported claim and an unverified claim, must charge the quoted cost, and must leave the stage open. A viable lead stays open after its field check.
 - **Citations:** Every evidence set that the stage's reference solution retrieves can be assembled by Cite controls on its response, in the draft of the lead the set is about, and no Cite control leaves out a fact of the set that lies on the path to its row. The solvability and field-check steps cite through the same controls. This checks the citations the interface builds, not only the facts the engine accepts. A reference solution retrieves one set for each claim and need not retrieve the alternatives, so the check does not reach an alternative set that only a different query returns.
+- **Pacing:** The rules of Section 3.15 hold. Validation works out which mechanics a stage uses from what the stage authors: a clock on its mission, a refutation, a field check, a travel solution, and a solution that identifies more than one record. It fails when a stage uses a mechanic that neither it nor an earlier stage in the course introduces, when a stage introduces more than one, when a mission after the first introduces more than one, and when a stage declares a mechanic it does not use.
 - **Solvability:** The reference solution executes without error and yields the required evidence. The time it spends sets the mission's budget (Section 3.3).
 - **Request weight:** Every reference solution fits under the weight limit. In the mission that teaches pagination, the logs requested whole exceed the limit, and the reference solution pages through them under it.
 - **Curriculum order:** A mission requires only concepts taught at or below its clearance, and its reference solution uses the concept it claims to teach.
@@ -844,7 +892,8 @@ Every check is an error that fails the build. A check that only prints a warning
 Validation cannot catch everything, so mission authors also follow these rules.
 
 - **State the objective, not the method.** An objective says what to find. It never says which query to write or which GraphQL feature to use. Technique belongs in the hints, where the player chooses to see it.
-- **Make wrong leads plausible.** A plausible wrong lead fits at least one clue. Give players a way to disqualify it from query results before traveling. Where the player can rule out the lead, use a short dispatch to acknowledge the deduction. Where a field check is available, write a dispatch that points the player toward the record that resolves the uncertainty.
+- **Add one thing at a time.** Before writing a stage, list what its player has not done before: each GraphQL step and each casework mechanic (Section 3.15). If the list has two GraphQL steps or two mechanics, split the stage. Keep a stage's reference solution to about one level of nesting deeper than the deepest query the course has asked for so far, counting the drills.
+- **Make wrong leads plausible.** Once ruling out has been introduced (Section 3.15), a plausible wrong lead fits at least one clue. Give players a way to disqualify it from query results before traveling. Where the player can rule out the lead, use a short dispatch to acknowledge the deduction. Where a field check is available, write a dispatch that points the player toward the record that resolves the uncertainty.
 - **Change the question as the case develops.** In a multi-stage teaching mission, have the next stage reveal something that calls for a new deduction with the same GraphQL concept. Name what will happen at the deadline in the briefing and in the clock.
 - **Give every claim two routes.** The two evidence sets should pass through different records, so that a player who misses one field can still make the case. Prefer a second route through records the schema already has, such as a border seen from the other side. Add a record for the purpose only when none exists, because each one enlarges the schema a beginner has to read.
 - **Write a fresh assessment case.** Change the evidence or relationships enough that a player has to decide which fields to retrieve. Keep the goal clear and leave the editor blank.
@@ -1024,7 +1073,7 @@ The screens support the gameplay loop described in Section 3.1.
 
 **Orientation:** The optional introduction to the terminal and its tools (Section 3.13).
 
-**Mission Selection:** Available assignments, the clearance each requires, the concept each teaches, and campaign progress. For completed assignments, show the help used and whether the case was resolved after the deadline. An assessment that the player would attempt as a placement is marked as one. One assignment is emphasized: the next case in the story. Placements are grouped under a single entry, so that a new player sees one way forward and a returning player can still skip ahead. A campaign's coda appears once its last case is resolved.
+**Mission Selection:** Available assignments, the clearance each requires, the concept each teaches, and campaign progress. For completed assignments, show the help used. An assessment that the player would attempt as a placement is marked as one. One assignment is emphasized: the next case in the story. Placements are grouped under a single entry, so that a new player sees one way forward and a returning player can still skip ahead. A campaign's coda appears once its last case is resolved.
 
 **Mission Briefing:** Classified narrative introduction, objectives, and initial intelligence.
 
@@ -1068,7 +1117,7 @@ Suggested coverage:
 - **Content tests:** The validation checks of Section 5.5, run against every mission. These recompute what a mission asserts from the data and do not trust the authored answer.
 - **Integration tests:** Execute representative GraphQL operations against actual game data.
 - **Persistence tests:** Saved data from an older format version, a changed mission, and unavailable storage are each handled as Section 7.4 describes. The Vim keybindings preference survives a reload, a change of mission, and a progress reset, both when on and when off.
-- **End-to-end tests** play the Azulejos case with the editor, results, and draft accessible by keyboard at 1024 pixels. Cite findings directly from a response and switch leads. Verify that drafts stay attached to the right shipments and that each cited fact links to its source. Rule out one wrong lead for free, confirm a field check on a different lead with an unverified claim, then reach Luanda with a complete travel order. Reload and confirm that the drafts and lead history survived. Use the replacement label to identify the signer and hold the crate. In a separate run, let the buyer collect the crate, reload, and use the retained evidence and drafts to finish with the late debrief.
+- **End-to-end tests** play the Azulejos case with the editor, results, and draft accessible by keyboard at 1024 pixels. Cite one finding for the first stage's single claim, then cite a nested row for the second stage and verify that the claim lists the facts the citation carried and that each links to its source. Complete the travel order from evidence already in the ledger and reach Luanda. Reload and confirm that the stage, the evidence, and the drafts survived. Use the replacement label to identify the signer. Verify that no clock is shown and that a hint costs nothing. A second test plays a later case with a clock: rule out one wrong lead for free, confirm a field check on a different lead with an unverified claim, and let a deadline end an attempt.
 
 Every authored mission must include a reference solution. Continuous integration plays each mission using its reference solution, computes the mission's budget from the time spent, and fails if the mission cannot be completed.
 
@@ -1085,7 +1134,9 @@ The agents are given a self-contained prompt and no knowledge of how the game is
 
 Once the first mission is playable, observe a few people who know JSON and are new to GraphQL before expanding the campaign. Watch whether they can attach evidence while comparing shipments and explain both why a wrong lead looked plausible and what ruled it out. When they reach Luanda, see whether the replacement label makes them want to send another query and whether they can explain how they identified the signer. Ask which moments they remember and whether they would choose to play another case. Give each player a short follow-up case with different data and a blank editor. Observe whether they can write a nested selection and explain how its result supports the new deduction. Use these sessions to tune the clock's costs and factors, citation feedback, and starter queries before authoring the remaining clearance levels.
 
-Before 1.0, repeat the sessions on two cases, *The Vanishing Azulejos* and *The Guest Register*. Each session has two parts. During the case, ask the player to explain why they ruled out a lead and which cited facts support each claim. Afterward, give them the kata for a technique they used and watch whether they can apply it to records they have not seen. The first part tests the detective work and the second tests whether the lesson transfers. These sessions also decide whether the draft should say more about an incomplete claim than Section 3.2 allows.
+Before 1.0, repeat the sessions in two rounds. The first round is held as soon as the opening has been re-laid to Section 3.15, and before the katas and the coda are built, because its result decides whether the opening needs more work. Each player starts from the drills and plays *The Vanishing Azulejos* and *The Borrowed Chronometer*. After each stage, ask what was new in it. A stage where the player lists more than one new thing, or cannot say what a control was for, has asked for too much. Ask the player to say which cited facts support each claim. In the second case, watch whether the clock changes how they write a query or only makes them anxious.
+
+The second round is held when the katas exist, on *The Guest Register* and one case at clearance 3 or above. During the case, ask the player to explain why they ruled out a lead. Afterward, give them the kata for a technique they used and watch whether they can apply it to records they have not seen. The first round tests the ramp and the detective work, and the second tests whether the lesson transfers. These sessions also decide whether the draft should say more about an incomplete claim than Section 3.2 allows, and they tune the clock (Section 3.3).
 
 ## 11. Development Milestones
 
@@ -1140,20 +1191,24 @@ To complete this milestone, a player must be able to compare and cite query find
 
 ### Milestone 5 — 1.0: Evidence the Player Can Follow
 
-This milestone finishes clearance levels 1 through 5. It adds no clearance level. Its tasks are in priority order.
+This milestone finishes clearance levels 1 through 5. It adds no clearance level. Its tasks are in priority order. The order puts the opening of the game first: a beginner who is lost in the first case does not reach anything built after it. The first two tasks are built.
 
 - Make a citation carry every fact on its path that an evidence set can use (Section 3.2), and test the code that builds citations. Add the validation check that every evidence set can be assembled from Cite controls (Section 5.5).
 - Show under each claim the cited facts that count toward it, show on the Cite control which lead's draft it feeds, and distinguish facts that do not connect from a fact that is missing.
+- Add the `introduces` declaration to stages and the Pacing validation check (Sections 3.15 and 5.5). Let a mission have no clock.
+- Re-author *The Vanishing Azulejos* as four untimed stages (Section 3.15). Introduce the clock in the briefing of *The Borrowed Chronometer*, ruling out in *The Guest Register*, and field checks in *The Quiet Consignee*, and remove each mechanic from the cases that come before its introduction. Update the orientation, the end-to-end tests, and the example in Section 5.4.
+- Add the drill that follows a chain of three links, and use a country with several borders in the drills that read a list.
+- Emphasize the next story case on the assignments desk and group the placements under one entry.
+- Run both agent playtests on every changed case, then hold the first round of sessions with beginners (Section 10.1). Rework the opening from what they show before going on.
 - Show records of one type in columns in the findings, starting with the three dossiers of *Three Couriers*.
 - Replace the debrief's text matching with a reading of the parsed query, limited to the transmissions that supplied cited facts. State plainly when a placement was passed without its level's technique.
 - Add the katas for aliases, fragments, and variables to the training range, with a variables panel and a clearance for each kata.
 - Author the coda of the first campaign, with its records, and add the coda kind and its untimed stage to the engine.
-- Emphasize the next story case on the assignments desk and group the placements under one entry.
-- Use a country with several borders in the drills that read a list. State in the schema documentation where a player does type a `!`. Label each response with its variables.
+- State in the schema documentation where a player does type a `!`. Label each response with its variables.
 - Add the Vim keybindings switch, which Milestone 4 lists and did not deliver.
-- Run both agent playtests on the coda and on every changed case, then hold the sessions with beginners (Section 10.1) and tune the clock from them.
+- Run both agent playtests on the coda and on every case changed since the first round, then hold the second round of sessions with beginners and tune the clock from both rounds.
 
-**Success criterion:** A beginner can say which cited facts support each claim, and can use a case's technique on records they have not seen.
+**Success criterion:** A beginner meets no more than one new GraphQL step and one new casework mechanic in any stage, can say which cited facts support each claim, and can use a case's technique on records they have not seen.
 
 ### After 1.0
 
@@ -1168,7 +1223,7 @@ Where this document says that a feature arrives after the MVP, and Milestone 5 d
 - Katas for the remaining concepts, and exercises that ask the player to predict a response.
 - A prompt for an incomplete claim that says what kind of fact is missing, if the sessions with beginners show that the draft needs one.
 - Branching investigations, including one deadline that forces a choice between two leads. The clock keeps its single purpose until then (Section 3.3).
-- An untimed continuation after the deadline in cases other than the first.
+- An untimed continuation after the deadline, for a case whose story can survive its deadline. No case in 1.0 has one (Section 3.3).
 - Offline play through a service worker, with a prompt when a new version is available.
 - Export and import of saved progress.
 
@@ -1237,6 +1292,8 @@ A **Deduction** is a conclusion the player submits with citations.
 **GraphQL Kata:** An optional drill, outside the story, designed to develop proficiency with one piece of GraphQL syntax. A kata is passed by a query with the right structure that returns the right facts.
 
 **Coda:** One short, untimed stage that ends a campaign's arc. It follows the last case and is not counted among the cases.
+
+**Casework Mechanic:** A part of the game that the player has to learn in order to act, such as citing, the clock, or ruling out. Each is introduced in a stage of its own (Section 3.15).
 
 **Training Drill:** A short, untimed exercise offered before the first case, passed by retrieving the facts it asks for.
 
