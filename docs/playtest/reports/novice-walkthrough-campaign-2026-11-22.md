@@ -71,3 +71,17 @@ Also logged from the re-reads:
 - The tools panel went back to the Case tab while the agent was reading the documentation. The panel does this when a new stage opens. It was not reproduced at any other time.
 
 Findings 1–3, 6, 7, 9–11 and 15 remain logged.
+
+### Finding 11: records side by side
+
+Finding 11 is addressed by Milestone 5's columns task (SDD 8.2). When a response holds several records of one type, a Side by side tab shows them in columns, with one row for each field. A list that holds one record shows its fields in the column too, so Bound Ledgers' three cities compare in one table. Lantern Export's shipments fill six columns, which scroll inside the panel.
+
+A novice agent played Three Couriers and Bound Ledgers with the new tab and solved both, with no hints. It noticed the tab from the sentence in Findings and found comparing "much easier than Findings". Citing from a cell felt the same as citing a row. Its points:
+
+- **Fixed:** the Side by side tab also showed the Findings legend ("Each row is one fact"), which contradicts the tab's own legend. The tab now has one legend.
+- **Fixed:** the "Not yet opened" lines pushed the table below the fold. They now come after the table.
+- **Fixed:** nested rows were told apart only by indentation, and `name` appeared twice in one table. The row header now shows the parent fields in lighter text, such as "consignee → director → organization → name".
+- **Logged:** once a lead is open, the Cite button on a city's "arriving shipments" row says it cites into that lead's draft, in every city's column. The stacked Findings view does the same. That is how the citation code routes a row that sits under no lead.
+- **Logged:** one operative's organization `name` row is labelled "Cite name", while the same row for the others reads "Cite organization → name". This is the existing citation label, which depends on which facts a claim can use.
+- **Logged:** the column headers scroll out of view in a tall table.
+- **Not seen:** the shaded cells, because each of the agent's queries asked for the same fields on every record. The e2e test covers them.

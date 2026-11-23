@@ -1,5 +1,5 @@
 import { getNamedType, isObjectType } from "graphql";
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import type { ResultError, TransmissionRecord } from "../../engine/mission.ts";
 import { annotate } from "../../feedback/annotate.ts";
 import { useWorkspace } from "./context.ts";
@@ -7,6 +7,34 @@ import { bindingTypes, leadBinding } from "../../content/types.ts";
 import { schemaFor } from "../../graphql/schema.ts";
 import { refOf } from "../../graphql/store.ts";
 import { findingAt, labelOf, pathKey, typeWords, words } from "./describe.ts";
+import {
+  cellAt,
+  hasGroup,
+  headingOf,
+  isGroup,
+  isPlainList,
+  isRecord,
+  rowsOf,
+  type Path,
+} from "./columns.ts";
+import type { Ledger } from "./describe.ts";
+
+/** A record's type, read from the facts recorded beneath it. */
+function typeOfIn(record: TransmissionRecord, ledger: Ledger) {
+  return (path: Path): string => {
+    const prefix = `${pathKey(path)}/`;
+    const child = record.facts.find(
+      (f) =>
+        pathKey(f.path).startsWith(prefix) && f.path.length === path.length + 1,
+    );
+    return child ? (ledger[child.key]?.fact.entity ?? "") : "";
+  };
+}
+
+/** The type part of an entity, such as Operative in Operative:GREY_PETREL. */
+function typeName(entity: string): string {
+  return entity.slice(0, Math.max(0, entity.indexOf(":")));
+}
 
 export function Errors({ errors }: { errors: readonly ResultError[] }) {
   if (errors.length === 0) return null;
@@ -38,18 +66,13 @@ export function Errors({ errors }: { errors: readonly ResultError[] }) {
   );
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
-function headingOf(value: Record<string, unknown>, index: number): string {
-  for (const key of ["name", "codename", "id", "code"]) {
-    if (typeof value[key] === "string") return value[key];
-  }
-  return `Entry ${String(index + 1)}`;
-}
-
-function Findings({ record }: { record: TransmissionRecord }) {
+function Findings({
+  record,
+  layout,
+}: {
+  record: TransmissionRecord;
+  layout: "stacked" | "columns";
+}) {
   const { env, state, stage, stageState, dispatch } = useWorkspace();
   const [said, setSaid] = useState("");
   const factAt = new Map(record.facts.map((f) => [pathKey(f.path), f.key]));
@@ -110,16 +133,12 @@ function Findings({ record }: { record: TransmissionRecord }) {
     );
   };
 
-  const typeAt = (path: (string | number)[]): string => {
-    // A record's type is read from the facts recorded beneath it.
-    const prefix = `${pathKey(path)}/`;
-    const child = record.facts.find(
-      (f) =>
-        pathKey(f.path).startsWith(prefix) && f.path.length === path.length + 1,
-    );
-    const entity = child ? state.ledger[child.key]?.fact.entity : undefined;
+  const entityAt = typeOfIn(record, state.ledger);
+  const typeAt = (path: Path): string => {
+    const entity = entityAt(path);
     return entity ? typeWords(entity) : "record";
   };
+  const typesAt = (paths: Path[]) => paths.map((p) => typeName(entityAt(p)));
 
   /**
    * The links on a record that the query did not follow. Naming them is how
@@ -177,6 +196,140 @@ function Findings({ record }: { record: TransmissionRecord }) {
     );
   };
 
+  /** The records as a group, if this view sets them in columns. */
+  const grouped = (values: unknown[], paths: Path[]) =>
+    layout === "columns" && isGroup(values, typesAt(paths))
+      ? (values as Record<string, unknown>[])
+      : null;
+
+  const cellValue = (value: unknown, kind: string): ReactNode => {
+    if (value === null) return <em>nothing returned</em>;
+    if (kind === "list" && Array.isArray(value)) {
+      return value.length === 0
+        ? "none"
+        : value
+            .map((item, index) =>
+              isRecord(item) ? headingOf(item, index) : String(item),
+            )
+            .join(", ");
+    }
+    if (isRecord(value)) {
+      const heading = headingOf(value, 0);
+      return heading.startsWith("Entry ") ? "on file" : heading;
+    }
+    return String(value);
+  };
+
+  /**
+   * Records of one type in columns, one row for each field. The table sets
+   * out what came back and marks nothing as a match (SDD 8.2).
+   */
+  const table = (
+    records: Record<string, unknown>[],
+    paths: Path[],
+    caption: string,
+    aliases: string[] | null,
+  ): ReactNode => {
+    const rows = rowsOf(records);
+    // The links not yet opened, said once for each kind of record. A row
+    // holds a record when it is a nested record or a list of one record.
+    const notes = [
+      unopened(paths[0] ?? []),
+      ...rows.map((row) => {
+        const inner = row.kind === "list" ? [...row.path, 0] : row.path;
+        const first = records.findIndex((r) => {
+          const cell = cellAt(r, inner);
+          return cell.kind === "value" && isRecord(cell.value);
+        });
+        return first < 0 ? null : unopened([...(paths[first] ?? []), ...inner]);
+      }),
+    ].map((note, index) => <Fragment key={index}>{note}</Fragment>);
+    return (
+      <>
+        <div className="side-by-side__wrap">
+          <table className="side-by-side">
+            <caption className="visually-hidden">{caption}</caption>
+            <thead>
+              <tr>
+                <td className="side-by-side__corner" />
+                {records.map((item, index) => (
+                  <th key={index} scope="col" className="side-by-side__record">
+                    {aliases?.[index] !== undefined && (
+                      <code className="side-by-side__alias">
+                        {aliases[index]}
+                      </code>
+                    )}
+                    <span className="label">{typeAt(paths[index] ?? [])}</span>{" "}
+                    {/* An alias already tells apart records with no name. */}
+                    {aliases && headingOf(item, index).startsWith("Entry ")
+                      ? null
+                      : headingOf(item, index)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                // A list of one record adds its index to the path; it is not a field.
+                const named = row.path.filter(
+                  (part): part is string => typeof part === "string",
+                );
+                const name = words(named[named.length - 1] ?? "");
+                const full = named.map(words).join(" → ");
+                return (
+                  <tr key={row.path.join("/")}>
+                    <th
+                      scope="row"
+                      className="side-by-side__field"
+                      title={full}
+                    >
+                      {named.length > 1 && (
+                        <span className="side-by-side__parent">
+                          {named.slice(0, -1).map(words).join(" → ")} →{" "}
+                        </span>
+                      )}
+                      {name}
+                    </th>
+                    {records.map((item, index) => {
+                      const cell = cellAt(item, row.path);
+                      if (cell.kind === "absent") {
+                        return (
+                          <td
+                            key={index}
+                            className="side-by-side__cell--absent"
+                          >
+                            <span className="visually-hidden">
+                              Not asked for in this record
+                            </span>
+                          </td>
+                        );
+                      }
+                      if (cell.kind === "under-nothing") {
+                        return <td key={index} />;
+                      }
+                      return (
+                        <td key={index} className="side-by-side__cell">
+                          <span className="finding__value">
+                            {cellValue(cell.value, row.kind)}
+                          </span>
+                          {actions(
+                            [...(paths[index] ?? []), ...row.path],
+                            name,
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        {notes}
+      </>
+    );
+  };
+
   const fields = (
     value: Record<string, unknown>,
     path: (string | number)[],
@@ -188,14 +341,9 @@ function Findings({ record }: { record: TransmissionRecord }) {
           const name = words(key);
           if (Array.isArray(child)) {
             // A list of records with nothing nested reads best on one line.
-            const plain = child.every(
-              (item) =>
-                !isRecord(item) ||
-                (Object.keys(item).length <= 1 &&
-                  Object.values(item).every(
-                    (v) => v === null || typeof v !== "object",
-                  )),
-            );
+            const plain = isPlainList(child);
+            const itemPaths = child.map((_, index) => [...childPath, index]);
+            const group = plain ? null : grouped(child, itemPaths);
             return (
               <li key={key} className="finding">
                 <div className="finding__row">
@@ -215,23 +363,29 @@ function Findings({ record }: { record: TransmissionRecord }) {
                   </span>
                   {actions(childPath, name)}
                 </div>
-                <ol className="finding__list" hidden={plain}>
-                  {child.map((item, index) =>
-                    isRecord(item) ? (
-                      <li key={index} className="finding__record">
-                        <p className="finding__heading">
-                          <span className="label">
-                            {typeAt([...childPath, index])}
-                          </span>{" "}
-                          {headingOf(item, index)}
-                        </p>
-                        {render(item, [...childPath, index])}
-                      </li>
-                    ) : (
-                      <li key={index}>{String(item)}</li>
-                    ),
-                  )}
-                </ol>
+                {group ? (
+                  <div className="finding__nested">
+                    {table(group, itemPaths, name, null)}
+                  </div>
+                ) : (
+                  <ol className="finding__list" hidden={plain}>
+                    {child.map((item, index) =>
+                      isRecord(item) ? (
+                        <li key={index} className="finding__record">
+                          <p className="finding__heading">
+                            <span className="label">
+                              {typeAt([...childPath, index])}
+                            </span>{" "}
+                            {headingOf(item, index)}
+                          </p>
+                          {render(item, [...childPath, index])}
+                        </li>
+                      ) : (
+                        <li key={index}>{String(item)}</li>
+                      ),
+                    )}
+                  </ol>
+                )}
               </li>
             );
           }
@@ -272,15 +426,46 @@ function Findings({ record }: { record: TransmissionRecord }) {
   if (!isRecord(record.data)) {
     return <p>The archive returned no data.</p>;
   }
+  const roots = Object.entries(record.data);
+  const rootPaths = roots.map(([key]) => [key]);
+  // A list asked for directly inside the query's braces, set in columns.
+  const rootList = (key: string, list: unknown[]): ReactNode => {
+    const paths = list.map((_, index) => [key, index]);
+    const group = isPlainList(list) ? null : grouped(list, paths);
+    return group ? table(group, paths, key, null) : null;
+  };
+  const rootGroup = grouped(
+    roots.map(([, value]) => value),
+    rootPaths,
+  );
   return (
     <div className="findings">
-      <p className="findings__legend">
-        Each row is one fact. Cite the rows that prove a claim. Each Cite button
-        says which {words(leadType)} the citation is for. When you cite a row
-        that is nested under other rows, the citation also includes the rows it
-        is nested under, so one citation can count as several facts. The number
-        beside a citation in the draft is how many facts it includes.
-      </p>
+      {layout === "columns" ? (
+        <p className="findings__legend">
+          Each column is one record and each row is one field, so each cell is
+          one fact. A shaded cell is a field that the query did not ask for on
+          that record. Cite the cells that prove a claim. Each Cite button says
+          which {words(leadType)} the citation is for, and a citation includes
+          the fields above it in the same column, as a row does in Findings.
+        </p>
+      ) : (
+        <>
+          {hasGroup(record.data, (p) => typeName(entityAt(p))) && (
+            <p className="findings__legend">
+              This response holds several records of the same type. The Side by
+              side tab shows them in columns, with one row for each field.
+            </p>
+          )}
+          <p className="findings__legend">
+            Each row is one fact. Cite the rows that prove a claim. Each Cite
+            button says which {words(leadType)} the citation is for. When you
+            cite a row that is nested under other rows, the citation also
+            includes the rows it is nested under, so one citation can count as
+            several facts. The number beside a citation in the draft is how many
+            facts it includes.
+          </p>
+        </>
+      )}
       <p className="visually-hidden" role="status">
         {said.startsWith("Open a lead") ? "" : said}
       </p>
@@ -289,41 +474,65 @@ function Findings({ record }: { record: TransmissionRecord }) {
           {said}
         </p>
       )}
-      {Object.entries(record.data).map(([key, value]) => (
-        <section key={key} className="findings__root">
-          <h3 className="findings__title">{key}</h3>
-          {value === null ? (
-            <p>
-              <em>No record matched.</em>
-            </p>
-          ) : Array.isArray(value) ? (
-            <ol className="finding__list">
-              {value.map((item, index) =>
-                isRecord(item) ? (
-                  <li key={index} className="finding__record">
-                    <p className="finding__heading">
-                      <span className="label">{typeAt([key, index])}</span>{" "}
-                      {headingOf(item, index)}
-                    </p>
-                    {render(item, [key, index])}
-                  </li>
-                ) : null,
-              )}
-            </ol>
-          ) : (
-            render(value, [key])
+      {rootGroup ? (
+        <section className="findings__root">
+          {table(
+            rootGroup,
+            rootPaths,
+            "Records returned",
+            roots.map(([key]) => key),
           )}
         </section>
-      ))}
+      ) : (
+        roots.map(([key, value]) => (
+          <section key={key} className="findings__root">
+            <h3 className="findings__title">{key}</h3>
+            {value === null ? (
+              <p>
+                <em>No record matched.</em>
+              </p>
+            ) : Array.isArray(value) && rootList(key, value) ? (
+              rootList(key, value)
+            ) : Array.isArray(value) ? (
+              <ol className="finding__list">
+                {value.map((item, index) =>
+                  isRecord(item) ? (
+                    <li key={index} className="finding__record">
+                      <p className="finding__heading">
+                        <span className="label">{typeAt([key, index])}</span>{" "}
+                        {headingOf(item, index)}
+                      </p>
+                      {render(item, [key, index])}
+                    </li>
+                  ) : null,
+                )}
+              </ol>
+            ) : (
+              render(value, [key])
+            )}
+          </section>
+        ))
+      )}
     </div>
   );
 }
 
 export function Results() {
   const { state, viewing, view } = useWorkspace();
-  const [tab, setTab] = useState<"findings" | "raw">("findings");
+  const [chosen, setTab] = useState<"findings" | "columns" | "raw">("findings");
   const total = state.transmissions.length;
   const record = state.transmissions.find((t) => t.n === viewing);
+  const typeOf = record ? typeOfIn(record, state.ledger) : null;
+  // The Side by side tab is offered only for a response that has a group.
+  const sideBySide =
+    record !== undefined &&
+    typeOf !== null &&
+    isRecord(record.data) &&
+    hasGroup(record.data, (p) => typeName(typeOf(p)));
+  const tab = chosen === "columns" && !sideBySide ? "findings" : chosen;
+  const names = sideBySide
+    ? (["findings", "columns", "raw"] as const)
+    : (["findings", "raw"] as const);
   const rejected = state.rejected;
 
   return (
@@ -383,7 +592,7 @@ export function Results() {
       {record && (
         <>
           <div className="tabs" role="tablist" aria-label="Result views">
-            {(["findings", "raw"] as const).map((name) => (
+            {names.map((name) => (
               <button
                 key={name}
                 type="button"
@@ -394,7 +603,11 @@ export function Results() {
                 className="tab"
                 onClick={() => setTab(name)}
               >
-                {name === "findings" ? "Findings" : "Raw response"}
+                {name === "findings"
+                  ? "Findings"
+                  : name === "columns"
+                    ? "Side by side"
+                    : "Raw response"}
               </button>
             ))}
           </div>
@@ -406,10 +619,11 @@ export function Results() {
             tabIndex={0}
           >
             <Errors errors={record.errors} />
-            {tab === "findings" ? (
+            {tab !== "raw" ? (
               <Findings
-                key={`${state.stageId}:${String(record.n)}`}
+                key={`${state.stageId}:${String(record.n)}:${tab}`}
                 record={record}
+                layout={tab === "columns" ? "columns" : "stacked"}
               />
             ) : (
               <pre className="raw" data-testid="raw-response">

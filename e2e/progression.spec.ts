@@ -328,4 +328,37 @@ test("aliases bring three files back in one transmission", async ({ page }) => {
     '"handler": null',
   );
   await expect(page.getByTestId("raw-response")).toContainText('"petrel"');
+
+  // The two files side by side: a column for each, a row for each field.
+  await press(page.getByRole("tab", { name: "Side by side" }));
+  const table = page.getByRole("table", { name: "Records returned" });
+  await expect(table.getByRole("columnheader")).toHaveCount(2);
+  await expect(table.getByRole("columnheader").first()).toContainText(
+    "GREY_PETREL",
+  );
+  // The query did not ask for SABLE_IBIS's last known location.
+  const location = table.getByRole("row", {
+    name: /^last known location /,
+  });
+  await expect(location.locator("td").nth(1)).toHaveClass(
+    /side-by-side__cell--absent/,
+  );
+  await expect(location.locator("td").nth(1)).toHaveText(
+    "Not asked for in this record",
+  );
+  // A cell cites its fact as the row does in the Findings tab.
+  await page.getByLabel("Open a lead").selectOption({ label: "GREY_PETREL" });
+  await press(
+    table.getByRole("row", { name: /^organization / }).getByRole("button", {
+      name: "Cite organization, into the draft for GREY_PETREL",
+    }),
+  );
+  await expect(draft(page).locator(".citation")).toHaveCount(1);
+  await expect(
+    draft(page).locator(".claim[data-status=supported]"),
+  ).toHaveCount(1);
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(overflow).toBeLessThanOrEqual(0);
 });
