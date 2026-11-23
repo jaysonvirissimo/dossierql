@@ -55,9 +55,9 @@ export function factsAlong(
 
 /**
  * The citation behind one row of a response (SDD 3.2). It carries the row's
- * own fact and the facts on the path down to it, starting at the first one an
- * evidence set of the stage can use for the citation's lead. The link between a finding and the
- * record it was found under is therefore never left out.
+ * own fact and the facts on the path down to it. Start at the first fact a
+ * claim can use for this lead, or at a refuting fact when no claim can use
+ * the chain.
  *
  * `leadId` is the lead whose draft the citation enters. It is null when the
  * response does not settle that, and the caller then uses the open draft.
@@ -129,11 +129,11 @@ export function citationAt(
     else if (under !== null) leadId = under;
     else leadId = value?.kind === "ref" ? (pointsTo[0] ?? null) : null;
   }
-  // A fact is carried when an evidence set can use it for the lead the
-  // citation is for. A fact about some other lead stays out, so that citing
-  // one lead's row never cites what the response says of another.
+  // Find the start of a chain that supports a claim for this lead.
   const forLead = leadId ?? activeLead;
   const bound: Bindings = forLead === null ? {} : { [lead]: forLead };
+  const refutation =
+    forLead === null ? undefined : stage.leadOutcomes?.[forLead]?.refutation;
   const evidence = stage.claims.flatMap((c) =>
     c.evidenceSets.flatMap((s) => s.facts),
   );
@@ -148,7 +148,19 @@ export function citationAt(
       )
     );
   };
-  const start = chain.findIndex(usable);
+  let start = chain.findIndex(usable);
+  if (start < 0 && refutation) {
+    start = chain.findIndex((key) => {
+      const fact = ledger[key]?.fact;
+      return (
+        fact !== undefined &&
+        // A list's omission cannot start a chain from a nested row.
+        refutation.facts.some(
+          (p) => p.excludes === undefined && meets(p, fact, bound),
+        )
+      );
+    });
+  }
   const factKeys = start >= 0 ? chain.slice(start) : [own];
   return { factKeys, leadId };
 }

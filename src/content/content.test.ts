@@ -179,6 +179,21 @@ describe("validation fails the build when", () => {
     ).toContain("refutation");
   });
 
+  it("a refutation cannot be cited in the draft of the lead it rules out", () => {
+    // True in the data, but its Cite control enters SABLE_IBIS's draft.
+    expect(
+      codes(
+        mutated("three-couriers", (m) => {
+          m.stages.zanzibar!.leadOutcomes!.TIN_FALCON!.refutation!.facts.push({
+            entity: "Operative:SABLE_IBIS",
+            field: "codename",
+            equals: "SABLE_IBIS",
+          });
+        }),
+      ),
+    ).toContain("citations");
+  });
+
   it("the reference solution does not yield the evidence", () => {
     expect(
       codes(

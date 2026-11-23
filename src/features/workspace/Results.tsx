@@ -1,5 +1,6 @@
 import { getNamedType, isObjectType } from "graphql";
 import { Fragment, useState, type ReactNode } from "react";
+import { useGame } from "../../app/GameProvider.tsx";
 import type { ResultError, TransmissionRecord } from "../../engine/mission.ts";
 import { annotate } from "../../feedback/annotate.ts";
 import { useWorkspace } from "./context.ts";
@@ -36,8 +37,18 @@ function typeName(entity: string): string {
   return entity.slice(0, Math.max(0, entity.indexOf(":")));
 }
 
-export function Errors({ errors }: { errors: readonly ResultError[] }) {
+export function Errors({
+  errors,
+  clearance,
+}: {
+  errors: readonly ResultError[];
+  clearance: number;
+}) {
+  const { course } = useGame();
   if (errors.length === 0) return null;
+  const aliasAvailable = course.glossary.some(
+    (entry) => entry.id === "alias" && entry.clearance <= clearance,
+  );
   // The same complaint about three fields is worth saying once.
   const unique = errors.filter(
     (error, index) =>
@@ -58,7 +69,7 @@ export function Errors({ errors }: { errors: readonly ResultError[] }) {
           )}
           <p className="clerk">
             <span className="visually-hidden">Clerk's note: </span>
-            {annotate(error)}
+            {annotate(error, aliasAvailable)}
           </p>
         </li>
       ))}
@@ -444,9 +455,8 @@ function Findings({
         <p className="findings__legend">
           Each column is one record and each row is one field, so each cell is
           one fact. A shaded cell is a field that the query did not ask for on
-          that record. Cite the cells that prove a claim. Each Cite button says
-          which {words(leadType)} the citation is for, and a citation includes
-          the fields above it in the same column, as a row does in Findings.
+          that record. Cite the cells that prove a claim. A citation includes
+          the fields above the cell in the same column.
         </p>
       ) : (
         <>
@@ -457,15 +467,20 @@ function Findings({
             </p>
           )}
           <p className="findings__legend">
-            Each row is one fact. Cite the rows that prove a claim. Each Cite
-            button says which {words(leadType)} the citation is for. When you
+            Each row is one fact. Cite the rows that prove a claim. When you
             cite a row that is nested under other rows, the citation also
             includes the rows it is nested under, so one citation can count as
-            several facts. The number beside a citation in the draft is how many
+            several facts. If the facts you need sit beside each other, cite
+            each row. The number beside a citation in the draft is how many
             facts it includes.
           </p>
         </>
       )}
+      <p className="findings__legend">
+        A Cite button shows which {words(leadType)} gets the citation. For facts
+        that belong to no particular {words(leadType)}, the button uses the
+        draft you have open. If the button says only Cite, open a lead first.
+      </p>
       <p className="visually-hidden" role="status">
         {said.startsWith("Open a lead") ? "" : said}
       </p>
@@ -537,7 +552,7 @@ export function sentWith(variables: string): string | null {
 }
 
 export function Results() {
-  const { state, viewing, view } = useWorkspace();
+  const { env, state, viewing, view } = useWorkspace();
   const [chosen, setTab] = useState<"findings" | "columns" | "raw">("findings");
   const total = state.transmissions.length;
   const record = state.transmissions.find((t) => t.n === viewing);
@@ -596,7 +611,7 @@ export function Results() {
               The records clerk returned your request without processing it.
               {state.clock !== "none" && " No time was spent."}
             </p>
-            <Errors errors={rejected.errors} />
+            <Errors errors={rejected.errors} clearance={env.clearance} />
           </div>
         )}
       </div>
@@ -643,7 +658,7 @@ export function Results() {
             className="results__view"
             tabIndex={0}
           >
-            <Errors errors={record.errors} />
+            <Errors errors={record.errors} clearance={env.clearance} />
             {tab !== "raw" ? (
               <Findings
                 key={`${state.stageId}:${String(record.n)}:${tab}`}

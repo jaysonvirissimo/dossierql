@@ -139,3 +139,28 @@ describe("citationAt where one lead is listed under another record", () => {
     );
   });
 });
+
+describe("citationAt for a refutation", () => {
+  const { at } = reference("three-couriers", "zanzibar");
+
+  it("carries the relationship that refutes the lead instead of citing just the label", () => {
+    expect(at("falcon/organization/name", "GREY_PETREL")).toEqual({
+      leadId: "TIN_FALCON",
+      factKeys: [
+        "Operative:TIN_FALCON.organization",
+        "Organization:baltic-exchange.name",
+      ],
+    });
+  });
+
+  it("keeps a supporting citation focused on the director when the shipper refutes another claim", () => {
+    const { at } = reference("quiet-consignee", "callao");
+    expect(at("shipment/shipper/director/codename")).toEqual({
+      leadId: "CL-MERIDIAN-FWD",
+      factKeys: [
+        "Company:CL-MERIDIAN-FWD.director",
+        "Operative:UMBER_SKUA.codename",
+      ],
+    });
+  });
+});

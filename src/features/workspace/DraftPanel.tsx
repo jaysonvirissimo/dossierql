@@ -200,12 +200,12 @@ export function DraftPanel() {
                 : "Transmit a query and read the results."}
             </li>
             <li>
-              Press Cite on the rows that support your claims. A Cite button
-              that shows a {words(leadType)} opens its draft.
+              Press Cite on the rows that support your claims. If the button
+              shows a lead, pressing Cite opens the draft for that lead.
             </li>
             <li>
-              If Results asks you to open a lead first, choose the{" "}
-              {words(leadType)} your claim is about from the list above.
+              If the button says only Cite, choose the {words(leadType)} your
+              claim is about from Open a lead above. Then press Cite on the row.
             </li>
             <li>{travel ? "Travel." : "Submit the deduction."}</li>
           </ol>

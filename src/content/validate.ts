@@ -9,7 +9,7 @@ import { computeBudget } from "../engine/clock.ts";
 import { reviewDraft } from "../engine/draft.ts";
 import { levelKata } from "../engine/debrief.ts";
 import { attemptKata } from "../engine/kata.ts";
-import { matchSet, type Bindings } from "../engine/match.ts";
+import { couldMatch, matchSet, type Bindings } from "../engine/match.ts";
 import { parseRequest, showsTechnique } from "../engine/technique.ts";
 import {
   act,
@@ -934,8 +934,76 @@ function citeSupported(
 }
 
 /**
+ * Checks that one set of facts can be put together from Cite controls in the
+ * lead's draft. No control on a fact of the set may leave out another fact of
+ * the set on the way to it. No control that enters the lead's draft from a row
+ * beneath a fact of the set may leave that fact out, unless the citation is
+ * built for another purpose, as `supports` says. A list that shows a
+ * refutation by what it lacks is cited whole, so rows inside it are exempt.
+ */
+function checkSet(
+  setAt: string,
+  patterns: readonly FactPattern[],
+  bound: Bindings,
+  controls: readonly Control[],
+  leadId: string,
+  report: Report,
+  supports: (control: Control) => boolean = () => false,
+): void {
+  const needed = new Set(instantiate(patterns, bound));
+  const carried = new Set(
+    instantiate(
+      patterns.filter((p) => p.excludes === undefined),
+      bound,
+    ),
+  );
+  const inDraft = (c: Control) => c.leadId === null || c.leadId === leadId;
+  for (const key of needed) {
+    const on = controls.filter((c) => c.own === key);
+    if (!on.some(inDraft)) {
+      report(
+        setAt,
+        "citations",
+        `No Cite control puts ${key} in the draft for ${leadId}.`,
+      );
+    }
+    for (const control of on) {
+      const dropped = control.along.find(
+        (k) => needed.has(k) && !control.factKeys.includes(k),
+      );
+      if (dropped) {
+        report(
+          setAt,
+          "citations",
+          `Citing ${key} leaves out ${dropped}, which is on the way to it.`,
+        );
+        break;
+      }
+    }
+  }
+  for (const control of controls) {
+    if (needed.has(control.own) || !inDraft(control) || supports(control)) {
+      continue;
+    }
+    const dropped = control.along.find(
+      (k) =>
+        k !== control.own && carried.has(k) && !control.factKeys.includes(k),
+    );
+    if (dropped) {
+      report(
+        setAt,
+        "citations",
+        `Citing ${control.own} leaves out ${dropped}, which it is found under.`,
+      );
+      return;
+    }
+  }
+}
+
+/**
  * Citations (SDD 5.5): each evidence set the reference solution retrieves can
  * be put together from Cite controls, in the draft of the lead it is about.
+ * So can each lead's refutation, in that lead's draft.
  */
 function checkCitations(
   at: string,
@@ -944,39 +1012,47 @@ function checkCitations(
   report: Report,
 ): void {
   const solution = Object.fromEntries(solutionBindings(stage));
-  const leadId = solution[leadBinding(stage)];
+  const lead = leadBinding(stage);
+  const leadId = String(solution[lead]);
   const facts = Object.values(state.ledger).map((e) => e.fact);
-  const controls = citeControls(state, stage, String(leadId));
+  const controls = citeControls(state, stage, leadId);
   for (const claim of stage.claims) {
     claim.evidenceSets.forEach((set, index) => {
       const bound = matchSet(set.facts, facts, solution);
       if (!bound) return;
       const setAt = `${at}.claims.${claim.id}.evidenceSets.${String(index)}`;
-      const needed = new Set(instantiate(set.facts, bound));
-      for (const key of needed) {
-        const on = controls.filter((c) => c.own === key);
-        if (!on.some((c) => c.leadId === null || c.leadId === leadId)) {
-          report(
-            setAt,
-            "citations",
-            `No Cite control puts ${key} in the draft for ${String(leadId)}.`,
-          );
-        }
-        for (const control of on) {
-          const dropped = control.along.find(
-            (k) => needed.has(k) && !control.factKeys.includes(k),
-          );
-          if (dropped) {
-            report(
-              setAt,
-              "citations",
-              `Citing ${key} leaves out ${dropped}, which is on the way to it.`,
-            );
-            break;
-          }
-        }
-      }
+      checkSet(setAt, set.facts, bound, controls, leadId, report);
     });
+  }
+  for (const [refuted, outcome] of Object.entries(stage.leadOutcomes ?? {})) {
+    const refutation = outcome.refutation;
+    if (!refutation) continue;
+    // The check on refutations proves that the data bears this one out. Here
+    // only what the reference solution retrieves can be cited.
+    const only: Bindings = { [lead]: refuted };
+    const bound = matchSet(refutation.facts, facts, only);
+    if (!bound) continue;
+    // A row that is evidence for a claim is cited for that claim, and the
+    // citation starts where the evidence does (SDD 3.2).
+    const evidence = stage.claims.flatMap((c) =>
+      c.evidenceSets.flatMap((set) => set.facts),
+    );
+    const supports = (control: Control) =>
+      control.factKeys.some((key) => {
+        const fact = state.ledger[key]?.fact;
+        return (
+          fact !== undefined && evidence.some((p) => couldMatch(p, fact, only))
+        );
+      });
+    checkSet(
+      `${at}.leadOutcomes.${refuted}.refutation`,
+      refutation.facts,
+      bound,
+      citeControls(state, stage, refuted),
+      refuted,
+      report,
+      supports,
+    );
   }
 }
 

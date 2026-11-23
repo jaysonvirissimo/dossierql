@@ -6,10 +6,13 @@ import { annotate } from "./annotate.ts";
 
 function notes(operation: string, clearance = 5): string[] {
   return check(operation, schemaFor(clearance)).map((error) =>
-    annotate({
-      message: error.message,
-      ...(error.locations?.[0] ? { line: error.locations[0].line } : {}),
-    }),
+    annotate(
+      {
+        message: error.message,
+        ...(error.locations?.[0] ? { line: error.locations[0].line } : {}),
+      },
+      clearance >= 3,
+    ),
   );
 }
 
@@ -88,6 +91,16 @@ describe("annotate", () => {
   });
 
   it("falls back to a general note for anything else", () => {
-    expect(annotate({ message: "Something unforeseen." })).toMatch(FALLBACK);
+    expect(annotate({ message: "Something unforeseen." }, false)).toMatch(
+      FALLBACK,
+    );
+  });
+
+  it("offers separate transmissions before aliases appear in the glossary", () => {
+    const query = `{ company(name: "A") { name } company(name: "B") { name } }`;
+    const [note] = notes(query, 2);
+    expect(note).toContain('asking for "company" once per transmission');
+    expect(note).not.toMatch(/alias|glossary/);
+    expect(styleIssues(note!)).toEqual([]);
   });
 });

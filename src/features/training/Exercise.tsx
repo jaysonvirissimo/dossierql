@@ -169,7 +169,7 @@ export function Exercise({
                 You sent this request with the variables <code>{label}</code>.
               </p>
             )}
-            {sent && <Errors errors={sent.errors} />}
+            {sent && <Errors errors={sent.errors} clearance={clearance} />}
             {sent?.transmitted && (
               <pre className="raw" data-testid="raw-response">
                 {JSON.stringify({ data: sent.data }, null, 2)}

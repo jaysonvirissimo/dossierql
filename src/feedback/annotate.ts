@@ -8,7 +8,11 @@ import type { ResultError } from "../engine/mission.ts";
  */
 interface Rule {
   test: RegExp;
-  note: (match: RegExpExecArray, error: ResultError) => string;
+  note: (
+    match: RegExpExecArray,
+    error: ResultError,
+    aliasAvailable: boolean,
+  ) => string;
 }
 
 function near(error: ResultError): string {
@@ -66,13 +70,21 @@ const RULES: Rule[] = [
   },
   {
     test: /^Fields "(\w+)" conflict because they have differing arguments/,
-    note: (m) =>
-      `You asked for "${String(m[1])}" more than once, and the response cannot hold two entries that are both called "${String(m[1])}". The clerk suggests an alias in front of each one. The glossary entry for an alias shows how to write one.`,
+    note: (m, _e, aliasAvailable) =>
+      `You asked for "${String(m[1])}" more than once with different values. Both answers would have the same field name in the response. ${
+        aliasAvailable
+          ? "The clerk suggests an alias in front of each one. The glossary entry for an alias shows how to write one."
+          : `The clerk suggests asking for "${String(m[1])}" once per transmission. Keep one lookup in this query and transmit the other separately.`
+      }`,
   },
   {
     test: /^Fields "(\w+)" conflict/,
-    note: (m) =>
-      `Two fields in the request would both come back as "${String(m[1])}", with different contents. The clerk suggests an alias in front of one of the two.`,
+    note: (m, _e, aliasAvailable) =>
+      `Two fields in the request would both come back as "${String(m[1])}", with different contents. ${
+        aliasAvailable
+          ? "The clerk suggests an alias in front of one of the two."
+          : "The clerk suggests asking for the two fields in separate transmissions."
+      }`,
   },
   {
     test: /^Unknown argument "(\w+)" on field "([\w.]+)"/,
@@ -169,10 +181,10 @@ const RULES: Rule[] = [
 const FALLBACK = (error: ResultError) =>
   `The clerk returns the request with the archive's own note${near(error)}, and suggests checking the request against the documentation panel.`;
 
-export function annotate(error: ResultError): string {
+export function annotate(error: ResultError, aliasAvailable: boolean): string {
   for (const rule of RULES) {
     const match = rule.test.exec(error.message);
-    if (match) return rule.note(match, error);
+    if (match) return rule.note(match, error, aliasAvailable);
   }
   return FALLBACK(error);
 }
