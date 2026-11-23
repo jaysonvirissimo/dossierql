@@ -1360,6 +1360,8 @@ Before 1.0, repeat the sessions in two rounds. The first round is held as soon a
 
 The second round is held when the katas exist, on *The Guest Register* and one case at clearance 3 or above. During the case, ask the player to explain why they ruled out a lead. Afterward, give them the kata for a technique they used and watch whether they can apply it to records they have not seen. The first round tests the ramp and the detective work, and the second tests whether the lesson transfers. These sessions also decide whether the draft should say more about an incomplete claim than Section 3.2 allows, and they tune the clock (Section 3.3).
 
+The project has no access to beginners, so both rounds are held as simulated sessions (`docs/playtest/simulated-sessions.md`). In each session, an agent plays a persona from Section 1.2 and interviews itself at each stage boundary, using the questions above. Each persona plays in a fresh context. A model already knows GraphQL, so the agent records where on screen it learned each piece of syntax. A piece it cannot trace to the screen is a finding against the game. A simulated session is weaker evidence than a person, and it measures transmissions rather than minutes. Sessions with people replace the simulations if beginners become available.
+
 ## 11. Development Milestones
 
 ### Milestone 1 — Technical Prototype

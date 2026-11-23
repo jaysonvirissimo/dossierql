@@ -52,5 +52,7 @@ the game communicates on screen. Run both before a mission ships (SDD 10.1).
 
 Sessions with people follow [beginner-sessions.md](beginner-sessions.md),
 the observer's script for the first round of sessions with beginners.
+Until beginners are available, both rounds are held as
+[simulated-sessions.md](simulated-sessions.md), one agent run per persona.
 
 Reports go in `docs/playtest/reports/`, named `<kind>-<mission or level>-<date>.md`.
