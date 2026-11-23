@@ -61,7 +61,16 @@ export async function press(control: Locator): Promise<void> {
  * bracket closing, so the text is set and the editor is then focused.
  */
 export async function writeQuery(page: Page, text: string): Promise<void> {
-  const host = page.getByTestId("query-editor");
+  await setEditor(page, "query-editor", text);
+}
+
+/** Replaces the text of the editor with the test id, such as the variables. */
+export async function setEditor(
+  page: Page,
+  testId: string,
+  text: string,
+): Promise<void> {
+  const host = page.getByTestId(testId);
   await host.evaluate((element, value) => {
     const view = (
       element as HTMLElement & {
@@ -76,6 +85,48 @@ export async function writeQuery(page: Page, text: string): Promise<void> {
     });
   }, text);
 }
+
+/**
+ * Starts the game with the missions recorded as completed, then reloads,
+ * because the game reads the save once, as it starts.
+ */
+export async function seedCompleted(
+  page: Page,
+  missions: readonly string[],
+): Promise<void> {
+  await page.goto("./");
+  await page.evaluate((ids) => {
+    localStorage.setItem(
+      "dossierql:save",
+      JSON.stringify({
+        format: 1,
+        events: ids.map((missionId) => ({
+          type: "completed",
+          missionId,
+          mode: "independent",
+          late: false,
+        })),
+        investigations: {},
+      }),
+    );
+  }, missions);
+  await page.reload();
+}
+
+/** The missions completed by a player who holds clearance 3, and 5. */
+export const TO_CLEARANCE_3 = [
+  "vanishing-azulejos",
+  "borrowed-chronometer",
+  "guest-register",
+  "quiet-consignee",
+] as const;
+export const TO_CLEARANCE_5 = [
+  ...TO_CLEARANCE_3,
+  "three-couriers",
+  "bound-ledgers",
+  "the-paymaster",
+  "lantern-export",
+] as const;
 
 /** Sends the query from inside the editor with the keyboard shortcut. */
 export async function transmit(page: Page): Promise<void> {

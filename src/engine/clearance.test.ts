@@ -99,6 +99,17 @@ describe("deriveStanding", () => {
     expect(s.cards).toEqual([]);
     expect(s.completions).toEqual({});
   });
+
+  it("records a passed kata without rank or a concept card", () => {
+    const s = deriveStanding(missions, [
+      { type: "kata-passed", kataId: "aliases" },
+      { type: "kata-passed", kataId: "aliases" },
+    ]);
+    expect(s.katas).toEqual(["aliases"]);
+    expect(s.drills).toEqual([]);
+    expect(s.clearance).toBe(1);
+    expect(s.cards).toEqual([]);
+  });
 });
 
 describe("nextCase", () => {

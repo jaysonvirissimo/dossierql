@@ -7,6 +7,8 @@ export type ProgressEvent =
   | { type: "solution-viewed"; missionId: string }
   /** A training drill was passed. It earns no rank and no card. */
   | { type: "drill-passed"; drillId: string }
+  /** A kata was passed. It earns no rank and no card (SDD 3.11). */
+  | { type: "kata-passed"; kataId: string }
   | {
       type: "completed";
       missionId: string;
@@ -30,6 +32,8 @@ export interface Standing {
   solutionsViewed: string[];
   /** Training drills passed, by id. */
   drills: string[];
+  /** Katas passed, by id. */
+  katas: string[];
 }
 
 /**
@@ -49,10 +53,15 @@ export function deriveStanding(
   const viewed = new Set<string>();
   const taught = new Set<number>();
   const drills = new Set<string>();
+  const katas = new Set<string>();
 
   for (const event of events) {
     if (event.type === "drill-passed") {
       drills.add(event.drillId);
+      continue;
+    }
+    if (event.type === "kata-passed") {
+      katas.add(event.kataId);
       continue;
     }
     const mission = byId.get(event.missionId);
@@ -104,6 +113,7 @@ export function deriveStanding(
     cards: [...cards],
     solutionsViewed: [...viewed],
     drills: [...drills],
+    katas: [...katas],
   };
 }
 

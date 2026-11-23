@@ -299,7 +299,15 @@ A GraphQL kata is an optional drill outside the story, offered in a training ran
 
 A kata tests whether a technique transfers to records the player has not seen. It is passed by a transmission that returns the facts the kata expects and has the structure the kata asks for. Katas are the only place where the structure of a query decides a pass, for example to confirm that a fragment was used. Missions and training drills (Section 3.14) never judge structure. The debrief inspects structure only to describe it (Section 3.10).
 
-A kata uses the drill screen (Section 3.14), with a variables panel and the schema of the clearance the kata belongs to. Passing one earns no clearance and no concept card.
+A kata uses the drill screen (Section 3.14) with the schema of the clearance the kata belongs to. The variables kata adds a variables panel, and its response is labelled with the variables it was sent with when the request declares one. Passing one earns no clearance and no concept card.
+
+A kata opens when the player holds its clearance, which is the clearance of the concept card it practises. Until then the training range lists it only by that clearance, because its title may use a term the player has not met. The structure check reads the parsed request, never its text, so a comment or a string does not count:
+
+- **Aliases:** one selection asks for the same field more than once, under different aliases. Asking for every country at once returns the facts and does not pass.
+- **Fragments:** a fragment that asks for the kata's field is spread in two or more places. Writing the field beside each spread does not pass.
+- **Variables:** the request declares a variable and takes every argument from a variable. Typing the city into the query does not pass.
+
+When the response holds the facts and the request lacks the structure, the kata says so with a nudge of its own, separate from the nudge for a response that lacks the facts.
 
 Three katas arrive with 1.0 (Section 11), one for each technique that a case can be solved without:
 
@@ -1087,8 +1095,9 @@ A build-time validation process should check:
 - **Course shape:** The rules of Section 3.7 hold. Every taught concept is practised later, every clearance level ends with an assessment mission, and every mission file in the content directory is part of the course.
 - **Starter queries:** A stage's starter query does not, unchanged, yield the required evidence.
 - **Training drills:** Each drill's reference transmits without error at clearance 1 and returns the expected facts, and its starter query does not.
+- **Katas:** Each kata's clearance is that of its concept's card. Its reference, sent with its reference variables, transmits without error at that clearance, returns the expected facts, and has the structure of the kata's technique (Section 3.11). Its starter, sent with its starting variables, does not pass.
 - **Hints:** Every stage has the complete hint ladder, and each schema pointer names types and fields that exist at the mission's clearance.
-- **Terms:** GraphQL terms used in mission text are glossary entries, and are introduced at or below the mission's clearance. Drills are held to clearance 1, and a concept card to its own clearance.
+- **Terms:** GraphQL terms used in mission text are glossary entries, and are introduced at or below the mission's clearance. Drills are held to clearance 1, and a kata and a concept card to their own clearance.
 - **Text references:** Entity names and identifiers quoted in mission text exist in the data.
 - **Wording:** No player-facing text in the content directory contains a phrase that Section 5.7 rules out: a back-reference with no target, "name" used as a verb, or "object" for a record. The check covers missions, drills, concept cards, the glossary, and campaigns.
 - **Glossary links:** Every link to a glossary entry points at an entry that exists.
@@ -1170,7 +1179,7 @@ The cast keeps its voice (Sections 2.2 and 2.4). A dispatch from the harbourmast
 
 Inline Markdown is rendered in some fields and shown as typed in the others. Use backticks only where they are rendered.
 
-- Rendered: a stage's `briefing`, the `ruledOut` and `fieldCheck` dispatches, every `debrief` text, a glossary `definition`, a concept card's `summary`, and a drill's `task`, `nudge`, and `payoff`.
+- Rendered: a stage's `briefing`, the `ruledOut` and `fieldCheck` dispatches, every `debrief` text, a glossary `definition`, a concept card's `summary`, a drill's `task`, `nudge`, and `payoff`, and a kata's `task`, `nudge`, `structureNudge`, and `payoff`.
 - Shown as typed: `objective`, clue text, all four hints, claim prompts, `resolved`, the clock texts, a concept card's `payoff`, and the mission and campaign `summary`.
 
 #### What is checked
@@ -1402,7 +1411,7 @@ To complete this milestone, a player must be able to compare and cite query find
 
 ### Milestone 5 — 1.0: Evidence the Player Can Follow
 
-This milestone finishes clearance levels 1 through 5. It adds no clearance level. Its tasks are in priority order. The order puts the opening of the game first: a beginner who is lost in the first case does not reach anything built after it. The first six tasks, the columns in the findings, the variables label, and the Vim keybindings switch are built. The beginner sessions of the seventh task are still to be held.
+This milestone finishes clearance levels 1 through 5. It adds no clearance level. Its tasks are in priority order. The order puts the opening of the game first: a beginner who is lost in the first case does not reach anything built after it. The first six tasks, the columns in the findings, the katas, the variables label, and the Vim keybindings switch are built. The beginner sessions of the seventh task are still to be held.
 
 - Make a citation carry every fact on its path that an evidence set can use (Section 3.2), and test the code that builds citations. Add the validation check that every evidence set can be assembled from Cite controls (Section 5.5).
 - Show under each claim the cited facts that count toward it, show on the Cite control which lead's draft it feeds, and distinguish facts that do not connect from a fact that is missing.

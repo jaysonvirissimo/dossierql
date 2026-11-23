@@ -17,6 +17,10 @@ describe("parseRoute", () => {
       name: "manual",
       entryId: "alias",
     });
+    expect(parseRoute("#/training/kata/aliases")).toEqual({
+      name: "kata",
+      kataId: "aliases",
+    });
     expect(parseRoute("#/nowhere")).toEqual({
       name: "not-found",
       path: "nowhere",
@@ -32,6 +36,7 @@ describe("parseRoute", () => {
       { name: "manual", entryId: "query" },
       { name: "orientation" },
       { name: "training" },
+      { name: "kata", kataId: "aliases" },
       { name: "settings" },
     ];
     for (const route of routes) expect(parseRoute(href(route))).toEqual(route);

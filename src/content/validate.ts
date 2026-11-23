@@ -3,6 +3,7 @@ import { clearanceInForce, deriveStanding } from "../engine/clearance.ts";
 import { citationAt, factsAlong, type CitedRow } from "../engine/cite.ts";
 import { computeBudget } from "../engine/clock.ts";
 import { reviewDraft } from "../engine/draft.ts";
+import { attemptKata } from "../engine/kata.ts";
 import { matchSet, type Bindings } from "../engine/match.ts";
 import {
   act,
@@ -26,6 +27,7 @@ import {
   campaignsSchema,
   conceptsSchema,
   drillsSchema,
+  katasSchema,
   glossarySchema,
   intelSchema,
   missionSchema,
@@ -1583,6 +1585,15 @@ function checkReferenceText(catalog: Catalog, report: Report): void {
     check(`${at}.payoff`, drill.payoff, 1, true);
     check(`${at}.starter`, commentsOf(drill.starter), 1, true);
   }
+  for (const kata of catalog.katas) {
+    const at = `katas.${kata.id}`;
+    check(`${at}.title`, kata.title, kata.clearance, false);
+    check(`${at}.task`, kata.task, kata.clearance, true);
+    check(`${at}.nudge`, kata.nudge, kata.clearance, true);
+    check(`${at}.structureNudge`, kata.structureNudge, kata.clearance, true);
+    check(`${at}.payoff`, kata.payoff, kata.clearance, true);
+    check(`${at}.starter`, commentsOf(kata.starter), kata.clearance, true);
+  }
   for (const card of catalog.concepts) {
     const at = `concepts.${card.id}`;
     check(`${at}.title`, card.title, card.clearance, false);
@@ -1661,6 +1672,75 @@ function checkDrills(catalog: Catalog, report: Report): void {
   }
 }
 
+/**
+ * A kata is sound when its reference passes it, structure included, and its
+ * starter does not. Its clearance is the clearance of its concept's card.
+ */
+function checkKatas(catalog: Catalog, report: Report): void {
+  const parsed = katasSchema.safeParse(catalog.katas);
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues) {
+      report(`katas.${issue.path.join(".")}`, "structure", issue.message);
+    }
+    return;
+  }
+  const seen = new Set<string>();
+  for (const kata of catalog.katas) {
+    const at = `katas.${kata.id}`;
+    if (seen.has(kata.id)) report(at, "structure", "The id is used twice.");
+    seen.add(kata.id);
+    const card = catalog.concepts.find((c) => c.id === kata.concept);
+    if (card?.clearance !== kata.clearance) {
+      report(
+        `${at}.clearance`,
+        "kata",
+        `The clearance is not that of the ${kata.concept} card.`,
+      );
+    }
+    if (kata.concept === "fragments" && !kata.field) {
+      report(`${at}.field`, "kata", "A fragments kata needs a field.");
+    }
+    const reference = attemptKata(
+      catalog.store,
+      kata,
+      kata.reference,
+      kata.referenceVariables ?? "",
+    );
+    if (
+      reference.kind === "refused-variables" ||
+      !reference.sent.transmitted ||
+      reference.sent.result.errors?.length
+    ) {
+      report(
+        `${at}.reference`,
+        "kata",
+        "The reference does not transmit cleanly at the kata's clearance.",
+      );
+    } else if (reference.verdict === "facts") {
+      report(
+        `${at}.reference`,
+        "kata",
+        "The reference does not return the expected facts.",
+      );
+    } else if (reference.verdict === "structure") {
+      report(
+        `${at}.reference`,
+        "kata",
+        "The reference does not use the kata's technique.",
+      );
+    }
+    const starter = attemptKata(
+      catalog.store,
+      kata,
+      kata.starter,
+      kata.variables ?? "",
+    );
+    if (starter.kind === "sent" && starter.verdict === "passed") {
+      report(`${at}.starter`, "kata", "The starter already passes the kata.");
+    }
+  }
+}
+
 /** Runs every check of SDD 5.5. Each finding is an error. */
 export function validateContent(raw: RawContent): Issue[] {
   const issues: Issue[] = [];
@@ -1694,6 +1774,7 @@ export function validateContent(raw: RawContent): Issue[] {
   checkCourseShape(catalog, report);
   checkPacing(catalog, report);
   checkDrills(catalog, report);
+  checkKatas(catalog, report);
   checkReferenceText(catalog, report);
   return issues;
 }

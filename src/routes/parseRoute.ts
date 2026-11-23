@@ -5,6 +5,7 @@ export type Route =
   | { name: "manual"; entryId?: string }
   | { name: "orientation" }
   | { name: "training" }
+  | { name: "kata"; kataId: string }
   | { name: "settings" }
   | { name: "not-found"; path: string };
 
@@ -29,6 +30,9 @@ export function parseRoute(hash: string): Route {
     return { name: "orientation" };
   }
   if (head === "training" && second === undefined) return { name: "training" };
+  if (head === "training" && second === "kata" && third) {
+    return { name: "kata", kataId: third };
+  }
   if (head === "settings" && second === undefined) return { name: "settings" };
   return { name: "not-found", path };
 }
@@ -49,6 +53,8 @@ export function href(route: Route): string {
       return "#/orientation";
     case "training":
       return "#/training";
+    case "kata":
+      return `#/training/kata/${encodeURIComponent(route.kataId)}`;
     case "settings":
       return "#/settings";
     case "not-found":

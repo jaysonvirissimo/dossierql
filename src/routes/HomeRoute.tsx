@@ -148,6 +148,12 @@ export function HomeRoute() {
   const trained = course.drills.filter((d) =>
     standing.drills.includes(d.id),
   ).length;
+  const katasOpen = course.katas.filter(
+    (k) => standing.clearance >= k.clearance,
+  );
+  const katasPassed = katasOpen.filter((k) =>
+    standing.katas.includes(k.id),
+  ).length;
 
   return (
     <main className="page">
@@ -186,6 +192,12 @@ export function HomeRoute() {
                     {trained} of {drills} drills passed
                   </li>
                 )
+              )}
+              {katasOpen.length > 0 && (
+                <li className="chip chip--info" data-testid="katas-chip">
+                  {katasPassed} of {katasOpen.length}{" "}
+                  {katasOpen.length === 1 ? "kata" : "katas"} passed
+                </li>
               )}
             </ul>
             <p className="case__go">

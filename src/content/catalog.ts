@@ -6,6 +6,7 @@ import type {
   Campaign,
   ConceptCard,
   Drill,
+  Kata,
   GlossaryEntry,
   Mission,
   World,
@@ -18,6 +19,7 @@ export interface RawContent {
   concepts: ConceptCard[];
   campaigns: Campaign[];
   drills: Drill[];
+  katas: Kata[];
   world: World;
 }
 

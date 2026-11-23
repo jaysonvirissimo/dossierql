@@ -1,12 +1,14 @@
 import campaigns from "../../content/campaigns.yaml";
 import concepts from "../../content/concepts.yaml";
 import drills from "../../content/drills.yaml";
+import katas from "../../content/katas.yaml";
 import glossary from "../../content/glossary.yaml";
 import { sortMissions } from "./order.ts";
 import type {
   Campaign,
   ConceptCard,
   Drill,
+  Kata,
   GlossaryEntry,
   Mission,
 } from "./types.ts";
@@ -26,6 +28,7 @@ export interface Course {
   concepts: ConceptCard[];
   campaigns: Campaign[];
   drills: Drill[];
+  katas: Kata[];
 }
 
 export const course: Course = {
@@ -34,4 +37,5 @@ export const course: Course = {
   concepts: concepts as ConceptCard[],
   campaigns: campaigns as Campaign[],
   drills: drills as Drill[],
+  katas: katas as Kata[],
 };

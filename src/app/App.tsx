@@ -12,7 +12,7 @@ import { useGame } from "./GameProvider.tsx";
 const Workspace = lazy(() => import("../features/workspace/Workspace.tsx"));
 const Training = lazy(() => import("../features/training/Training.tsx"));
 
-function TrainingRoute() {
+function TrainingRoute({ kataId }: { kataId?: string }) {
   return (
     <Suspense
       fallback={
@@ -23,7 +23,7 @@ function TrainingRoute() {
         </main>
       }
     >
-      <Training />
+      <Training kataId={kataId} />
     </Suspense>
   );
 }
@@ -78,6 +78,8 @@ function Screen({ route }: { route: Route }) {
       return <OrientationRoute />;
     case "training":
       return <TrainingRoute />;
+    case "kata":
+      return <TrainingRoute kataId={route.kataId} />;
     case "settings":
       return <SettingsRoute />;
     case "not-found":
@@ -92,6 +94,7 @@ const TITLES: Record<Route["name"], string> = {
   manual: "Tradecraft manual",
   orientation: "Orientation",
   training: "Training range",
+  kata: "Kata",
   settings: "Settings",
   "not-found": "Not found",
 };

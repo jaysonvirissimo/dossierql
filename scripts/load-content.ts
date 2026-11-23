@@ -40,6 +40,7 @@ export function loadContent(): LoadedContent {
       concepts: yaml("content/concepts.yaml") as RawContent["concepts"],
       campaigns: yaml("content/campaigns.yaml") as RawContent["campaigns"],
       drills: yaml("content/drills.yaml") as RawContent["drills"],
+      katas: yaml("content/katas.yaml") as RawContent["katas"],
       world: JSON.parse(
         readFileSync(join(root, "data/world.json"), "utf8"),
       ) as World,

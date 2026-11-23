@@ -410,4 +410,39 @@ describe("validation fails the build when", () => {
     Object.assign(copy.drills[0]!, { surprise: true });
     expect(codes(copy)).toContain("structure");
   });
+
+  function kata(id: string, copy: RawContent) {
+    const found = copy.katas.find((k) => k.id === id);
+    if (!found) throw new Error(`No kata ${id}.`);
+    return found;
+  }
+
+  it("a kata's reference returns the facts without the technique", () => {
+    const copy = structuredClone(raw);
+    kata("aliases", copy).reference = `query { countries { name capital } }`;
+    expect(validateContent(copy)).toContainEqual({
+      path: "katas.aliases.reference",
+      code: "kata",
+      message: "The reference does not use the kata's technique.",
+    });
+  });
+
+  it("a kata's starter already passes it", () => {
+    const copy = structuredClone(raw);
+    const variables = kata("variables", copy);
+    variables.variables = variables.referenceVariables;
+    expect(codes(copy)).toContain("kata");
+  });
+
+  it("a kata's clearance is not its concept's", () => {
+    const copy = structuredClone(raw);
+    kata("fragments", copy).clearance = 3;
+    expect(codes(copy)).toContain("kata");
+  });
+
+  it("a kata uses a term before its clearance", () => {
+    const copy = structuredClone(raw);
+    kata("aliases", copy).payoff = "A fragment would help here.";
+    expect(codes(copy)).toContain("terms");
+  });
 });

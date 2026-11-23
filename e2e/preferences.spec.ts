@@ -3,6 +3,9 @@ import {
   expectClean,
   openCase,
   press,
+  seedCompleted,
+  setEditor,
+  TO_CLEARANCE_5,
   transmit,
   watchPage,
   writeQuery,
@@ -27,22 +30,6 @@ async function editorText(page: Page, testId: string): Promise<string> {
       }
     ).cmView.state.doc.toString(),
   );
-}
-
-async function setEditor(page: Page, testId: string, text: string) {
-  await page.getByTestId(testId).evaluate((element, value) => {
-    const view = (
-      element as HTMLElement & {
-        cmView: {
-          state: { doc: { length: number } };
-          dispatch(spec: unknown): void;
-        };
-      }
-    ).cmView;
-    view.dispatch({
-      changes: { from: 0, to: view.state.doc.length, insert: value },
-    });
-  }, text);
 }
 
 const PASS = `query { country(name: "Portugal") { name capital } }`;
@@ -113,17 +100,6 @@ test("the Vim keybindings switch is kept and works in every mode", async ({
   await expect(mode).toHaveCount(0);
 });
 
-const BEFORE = [
-  "vanishing-azulejos",
-  "borrowed-chronometer",
-  "guest-register",
-  "quiet-consignee",
-  "three-couriers",
-  "bound-ledgers",
-  "the-paymaster",
-  "lantern-export",
-];
-
 const DEPARTURES = `query Departures($city: String!) {
   city(name: $city) {
     departingShipments { id manifest }
@@ -133,24 +109,7 @@ const DEPARTURES = `query Departures($city: String!) {
 test("each response is labelled with the variables it was sent with", async ({
   page,
 }) => {
-  await page.goto("./");
-  await page.evaluate((missions) => {
-    localStorage.setItem(
-      "dossierql:save",
-      JSON.stringify({
-        format: 1,
-        events: missions.map((missionId) => ({
-          type: "completed",
-          missionId,
-          mode: "independent",
-          late: false,
-        })),
-        investigations: {},
-      }),
-    );
-  }, BEFORE);
-  // The game reads the save once, as it starts.
-  await page.reload();
+  await seedCompleted(page, TO_CLEARANCE_5);
   await openCase(page, "forwarding-address");
   const label = page.getByTestId("sent-with");
 

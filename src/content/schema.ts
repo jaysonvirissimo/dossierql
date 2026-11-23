@@ -162,6 +162,25 @@ export const drillsSchema = z.array(
   }),
 );
 
+export const katasSchema = z.array(
+  z.strictObject({
+    id: z.string().regex(/^[a-z][a-z0-9-]*$/),
+    title: text,
+    concept: z.enum(["aliases", "fragments", "variables"]),
+    clearance: z.number().int().min(1),
+    task: text,
+    starter: text,
+    variables: text.optional(),
+    expects: z.array(factPattern).min(1),
+    field: z.string().optional(),
+    reference: text,
+    referenceVariables: text.optional(),
+    nudge: text,
+    structureNudge: text,
+    payoff: text,
+  }),
+);
+
 export const campaignsSchema = z.array(
   z.strictObject({ id: z.string(), title: text, summary: text }),
 );

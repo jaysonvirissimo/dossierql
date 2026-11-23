@@ -1,0 +1,186 @@
+# The katas of the training range (SDD 3.11). A kata is passed by one
+# transmission whose response holds the facts under `expects` and whose
+# request has the structure of the kata's concept.
+
+- id: aliases
+  title: Two lookups in one transmission
+  concept: aliases
+  clearance: 3
+  task: >
+    The query below asks for one country, Chile, and its capital. The clerk
+    also wants the capital of Peru, and wants both countries in one
+    transmission. If you ask for `country` twice in one query, the two
+    results collide, because both would come back as `country`. Write a
+    name of your own and a colon in front of each `country`, as in
+    `chile: country(name: "Chile")`. That name is an alias. In one
+    transmission, find the capital of Chile and the capital of Peru.
+  starter: |
+    query {
+      country(name: "Chile") {
+        name
+        capital
+      }
+    }
+  expects:
+    - entity: Country:CL
+      field: capital
+      equals: Santiago
+    - entity: Country:PE
+      field: capital
+      equals: Lima
+  reference: |
+    query {
+      chile: country(name: "Chile") {
+        name
+        capital
+      }
+      peru: country(name: "Peru") {
+        name
+        capital
+      }
+    }
+  nudge: >
+    The response needs the capital of Chile and the capital of Peru. Ask
+    for `country` twice in the same query, once with `name: "Chile"` and
+    once with `name: "Peru"`, and write an alias in front of each.
+  structureNudge: >
+    The response holds both capitals, but the request did not ask for
+    `country` twice under two aliases. Write one `country(name: "Chile")`
+    and one `country(name: "Peru")`, and put an alias of your own in front
+    of each.
+  payoff: >
+    Both capitals came back in one response, each under the alias you wrote
+    in front of its `country`. The clerk files one response instead of two.
+
+- id: fragments
+  title: Add a field in one place
+  concept: fragments
+  clearance: 4
+  task: >
+    The query below asks for two countries, Argentina and Uruguay. The
+    braces after each `country` hold `...Profile`. Those three dots and the
+    name spread the fragment called `Profile`, which is written at the
+    bottom of the query. The fragment asks
+    for `name` and `capital`, so both countries come back with both fields.
+    A country also has a `currency` field, which holds a record with a
+    `name` of its own. Change the query in one place only: inside the
+    braces of the fragment. Find the name of the currency of Argentina and
+    of Uruguay by adding `currency { name }` to the fragment.
+  starter: |
+    query {
+      argentina: country(name: "Argentina") {
+        ...Profile
+      }
+      uruguay: country(name: "Uruguay") {
+        ...Profile
+      }
+    }
+
+    fragment Profile on Country {
+      name
+      capital
+    }
+  expects:
+    - entity: Country:AR
+      field: currency
+      equals: Currency:ARS
+    - entity: Currency:ARS
+      field: name
+      equals: Argentine peso
+    - entity: Country:UY
+      field: currency
+      equals: Currency:UYU
+    - entity: Currency:UYU
+      field: name
+      equals: Uruguayan peso
+  field: currency
+  reference: |
+    query {
+      argentina: country(name: "Argentina") {
+        ...Profile
+      }
+      uruguay: country(name: "Uruguay") {
+        ...Profile
+      }
+    }
+
+    fragment Profile on Country {
+      name
+      capital
+      currency {
+        name
+      }
+    }
+  nudge: >
+    The response needs the name of the currency of each country. Inside the
+    braces of `fragment Profile on Country`, under `capital`, add
+    `currency { name }`.
+  structureNudge: >
+    The response holds both currencies, but `currency` was not asked for
+    inside the fragment that both countries spread. Move `currency { name }`
+    into the braces of `fragment Profile on Country`, and keep `...Profile`
+    inside the braces after both countries.
+  payoff: >
+    You wrote `currency { name }` once, and it came back for both
+    countries, because both spread `Profile`. Argentina and Uruguay each
+    use a peso, and the two pesos are different currencies.
+
+- id: variables
+  title: Change only the variables
+  concept: variables
+  clearance: 5
+  task: >
+    The query below is an operation called `Where`, and no city is written
+    into it. Its first line, `query Where($city: String!)`, declares a
+    variable called `$city`. Then `city(name: $city)` looks up the city
+    whose name is the value of the variable. You type the variable's value as JSON in the
+    variables panel, below the editor. At present the panel holds
+    Valparaíso, so a transmission returns Valparaíso and its country,
+    Chile. Leave the query as it is, and change only the JSON in the
+    variables panel. Find the country that the city of Busan is in.
+  starter: |
+    query Where($city: String!) {
+      city(name: $city) {
+        name
+        country {
+          name
+          capital
+        }
+      }
+    }
+  variables: |
+    { "city": "Valparaíso" }
+  expects:
+    - entity: City:busan
+      field: country
+      equals: Country:KR
+    - entity: Country:KR
+      field: name
+      equals: South Korea
+  reference: |
+    query Where($city: String!) {
+      city(name: $city) {
+        name
+        country {
+          name
+          capital
+        }
+      }
+    }
+  referenceVariables: |
+    { "city": "Busan" }
+  nudge: >
+    The response needs the city of Busan and its country. Keep the query
+    as the task gave it, with `query Where($city: String!)` as its first
+    line and `city(name: $city)` below it. Then, in the variables panel,
+    change `"Valparaíso"` to `"Busan"`.
+  structureNudge: >
+    The response holds Busan and its country, but you typed the city into
+    the query instead of the variables panel. Put the query back as the
+    task gave it: `query Where($city: String!)` as its first line, and
+    `city(name: $city)` below it. Then type `"Busan"` in the variables
+    panel.
+  payoff: >
+    The operation did not change, and the archive returned a different
+    city. Busan is in South Korea. You can keep one operation and look up
+    any city the archive holds by changing one value.

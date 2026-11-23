@@ -333,11 +333,16 @@ function charge(
   return outcome;
 }
 
+/** What the clerk says when the variables panel is not a JSON object. */
+export const VARIABLES_REFUSED =
+  "The variables panel does not hold a JSON object, so nothing was sent. A JSON object is written in braces.";
+
 function refuse(state: MissionState, text: string): Outcome {
   return { state, notice: { kind: "refused", text }, events: [] };
 }
 
-function parseVariables(
+/** The variables panel, read as a JSON object; empty means none. */
+export function parseVariables(
   text: string,
 ): { ok: true; value: Record<string, unknown> | undefined } | { ok: false } {
   if (text.trim() === "") return { ok: true, value: undefined };
@@ -369,10 +374,7 @@ function doTransmit(env: Env, state: MissionState): Outcome {
   const stage = current(state);
   const variables = parseVariables(stage.variables);
   if (!variables.ok) {
-    return refuse(
-      state,
-      "The variables panel does not hold a JSON object, so nothing was sent. A JSON object is written in braces.",
-    );
+    return refuse(state, VARIABLES_REFUSED);
   }
   const sent = transmit(env.store, {
     operation: stage.editor,

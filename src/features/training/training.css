@@ -26,6 +26,36 @@
   border-color: var(--terminal-ink);
 }
 
+.kata__title {
+  margin-top: var(--space-4);
+  font-size: 1.125rem;
+}
+
+.kata__lede {
+  max-width: 64ch;
+  margin-top: var(--space-1);
+}
+
+.kata__pick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  color: var(--terminal-ink);
+  border: 1px solid var(--navy-line);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+}
+
+.kata__pick[aria-current] {
+  border-color: var(--terminal-ink);
+}
+
+.kata__pick--locked {
+  color: var(--terminal-dim);
+  border-style: dashed;
+}
+
 .drill__task {
   padding: var(--space-3) var(--space-4);
   margin-bottom: var(--space-3);
@@ -49,6 +79,11 @@
 .drill__grid .results {
   min-height: 20rem;
   max-height: 30rem;
+}
+
+.drill__grid--variables .terminal,
+.drill__grid--variables .results {
+  max-height: 38rem;
 }
 
 .drill__verdict {
@@ -91,4 +126,9 @@
   .drill__grid {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* The drill response pane is padded already. */
+.drill .results__variables {
+  padding: 0 0 var(--space-2);
 }

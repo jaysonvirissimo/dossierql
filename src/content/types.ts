@@ -151,6 +151,33 @@ export interface Drill {
   payoff: string;
 }
 
+/**
+ * A kata on the training range (SDD 3.11). It is passed by one transmission
+ * that returns the expected facts and has the structure of its technique.
+ */
+export interface Kata {
+  id: string;
+  title: string;
+  concept: "aliases" | "fragments" | "variables";
+  /** The clearance of the concept, and of the schema the kata uses. */
+  clearance: number;
+  task: string;
+  starter: string;
+  /** What the variables panel holds at the start, as JSON. */
+  variables?: string;
+  expects: FactPattern[];
+  /** For a fragments kata: the field the shared fragment must ask for. */
+  field?: string;
+  reference: string;
+  referenceVariables?: string;
+  /** Shown when the response lacks the expected facts. */
+  nudge: string;
+  /** Shown when the facts are there and the technique is not. */
+  structureNudge: string;
+  /** Shown on passing. */
+  payoff: string;
+}
+
 export interface GlossaryEntry {
   id: string;
   term: string;
