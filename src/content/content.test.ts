@@ -427,6 +427,23 @@ describe("validation fails the build when", () => {
     });
   });
 
+  it("a case at a kata's level has a reference without the technique", () => {
+    const copy = structuredClone(raw);
+    const mission = copy.missions.find((m) => m.id === "bound-ledgers");
+    const stage = mission?.stages.ports;
+    if (!stage) throw new Error("No stage bound-ledgers.ports.");
+    const fields = `arrivingShipments { id manifest inspection { finding } consignee { name director { codename organization { name } } } }`;
+    stage.referenceSolution = ["Mombasa", "Dar es Salaam", "Maputo"].map(
+      (city) => `query { city(name: "${city}") { ${fields} } }`,
+    );
+    expect(validateContent(copy)).toContainEqual({
+      path: "bound-ledgers.stages",
+      code: "kata",
+      message:
+        "No reference solution uses aliases, the technique of the level's kata.",
+    });
+  });
+
   it("a kata's starter already passes it", () => {
     const copy = structuredClone(raw);
     const variables = kata("variables", copy);

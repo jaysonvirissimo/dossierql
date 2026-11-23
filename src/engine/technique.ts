@@ -57,6 +57,18 @@ function selects(set: SelectionSetNode, field: string): boolean {
   return found;
 }
 
+/** How many times each fragment is spread, by the fragment's name. */
+function fragmentSpreads(doc: DocumentNode): Map<string, number> {
+  const spreads = new Map<string, number>();
+  visit(doc, {
+    FragmentSpread(node) {
+      const name = node.name.value;
+      spreads.set(name, (spreads.get(name) ?? 0) + 1);
+    },
+  });
+  return spreads;
+}
+
 /**
  * Whether a fragment that asks for the field is spread in two or more
  * places, so that the field is written once and appears in each of them.
@@ -65,13 +77,7 @@ export function sharedFragmentSelects(
   doc: DocumentNode,
   field: string,
 ): boolean {
-  const spreads = new Map<string, number>();
-  visit(doc, {
-    FragmentSpread(node) {
-      const name = node.name.value;
-      spreads.set(name, (spreads.get(name) ?? 0) + 1);
-    },
-  });
+  const spreads = fragmentSpreads(doc);
   return doc.definitions.some(
     (definition): definition is FragmentDefinitionNode =>
       definition.kind === Kind.FRAGMENT_DEFINITION &&
@@ -125,6 +131,33 @@ export function hasStructure(
       return field !== undefined && sharedFragmentSelects(doc, field);
     case "variables":
       return argumentsFromVariables(doc);
+  }
+}
+
+/**
+ * Whether the request shows the technique, as the debrief reads it (SDD
+ * 3.10). This describes what the player did and decides nothing, so it is
+ * looser than a kata's check: any fragment spread twice counts, and one
+ * argument taken from a variable counts beside literal ones.
+ */
+export function showsTechnique(
+  concept: KataConcept,
+  doc: DocumentNode,
+): boolean {
+  switch (concept) {
+    case "aliases":
+      return repeatsWithAliases(doc);
+    case "fragments":
+      return [...fragmentSpreads(doc).values()].some((n) => n >= 2);
+    case "variables": {
+      let found = false;
+      visit(doc, {
+        Argument(node) {
+          if (node.value.kind === Kind.VARIABLE) found = true;
+        },
+      });
+      return found;
+    }
   }
 }
 

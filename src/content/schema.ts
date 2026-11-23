@@ -178,6 +178,7 @@ export const katasSchema = z.array(
     nudge: text,
     structureNudge: text,
     payoff: text,
+    debrief: z.strictObject({ unused: text, placement: text }),
   }),
 );
 

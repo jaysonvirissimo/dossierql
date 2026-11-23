@@ -6,6 +6,7 @@ import {
   parseRequest,
   repeatsWithAliases,
   sharedFragmentSelects,
+  showsTechnique,
 } from "./technique.ts";
 
 function doc(text: string) {
@@ -141,5 +142,42 @@ describe("hasStructure", () => {
 
   it("does not parse a request that is not GraphQL", () => {
     expect(parseRequest("{ country(")).toBeNull();
+  });
+});
+
+describe("showsTechnique", () => {
+  it("counts any fragment spread twice", () => {
+    expect(showsTechnique("fragments", doc(SHARED))).toBe(true);
+    expect(
+      showsTechnique(
+        "fragments",
+        doc(`{ a: country(name: "Argentina") { ...Profile } }
+        fragment Profile on Country { name }`),
+      ),
+    ).toBe(false);
+  });
+
+  it("counts one argument from a variable beside a literal one", () => {
+    expect(
+      showsTechnique(
+        "variables",
+        doc(
+          `query W($c: String!) { city(name: $c) { name } country(name: "Chile") { name } }`,
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      showsTechnique("variables", doc(`{ city(name: "$c") { name } }`)),
+    ).toBe(false);
+  });
+
+  it("reads aliases the way the kata does", () => {
+    expect(
+      showsTechnique(
+        "aliases",
+        doc(`{ # a: country(name: "Peru")
+          country(name: "Chile") { capital } }`),
+      ),
+    ).toBe(false);
   });
 });

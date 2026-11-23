@@ -289,7 +289,7 @@ Every mission ends with a debrief containing:
 - The real geographical fact the mission turned on.
 - A concept card for the tradecraft manual when the player earns one.
 
-When the debrief comments on the player's technique, it reads the parsed query, never the typed text, so that a comment or a string cannot count as use of a feature. It reads only the transmissions that supplied the facts the player cited. The comment describes what the player did and never changes whether the case is solved. Where the level has a kata, the debrief links to it.
+When the debrief comments on the player's technique, it reads the parsed query, never the typed text, so that a comment or a string cannot count as use of a feature. It reads only the transmissions that supplied the facts the player cited, in any draft, and a single one of them that shows the technique is enough. The level of a teaching case is the concept it teaches, and the level of an assessment is the concept card of its clearance. The reading is looser than a kata's check, because it describes and does not judge: an alias counts as in the kata, any fragment spread in two places counts, and one argument taken from a variable counts beside literal ones. When none of the transmissions shows the technique, the debrief says so with the note of the level's kata, or with its placement note after a placement pass, which ends by saying that the promotion stands. The comment describes what the player did and never changes whether the case is solved. Where the level has a kata and the player holds its clearance, the debrief links to it.
 
 The tradecraft manual has two parts. Its glossary defines every term the game uses and is available from the start, because a definition is reference material. Its concept cards are earned, one per concept, by completing the mission that teaches the concept or by placement (Section 3.8). They summarize what the player has learned to do. Each teaching mission's debrief links to the next available case that practises that concept with new data.
 
@@ -1095,7 +1095,7 @@ A build-time validation process should check:
 - **Course shape:** The rules of Section 3.7 hold. Every taught concept is practised later, every clearance level ends with an assessment mission, and every mission file in the content directory is part of the course.
 - **Starter queries:** A stage's starter query does not, unchanged, yield the required evidence.
 - **Training drills:** Each drill's reference transmits without error at clearance 1 and returns the expected facts, and its starter query does not.
-- **Katas:** Each kata's clearance is that of its concept's card. Its reference, sent with its reference variables, transmits without error at that clearance, returns the expected facts, and has the structure of the kata's technique (Section 3.11). Its starter, sent with its starting variables, does not pass.
+- **Katas:** Each kata's clearance is that of its concept's card. Its reference, sent with its reference variables, transmits without error at that clearance, returns the expected facts, and has the structure of the kata's technique (Section 3.11). Its starter, sent with its starting variables, does not pass. Every case at a kata's level has a reference solution that shows the kata's technique as the debrief reads it (Section 3.10), so the debrief never faults a player for doing what the reference does.
 - **Hints:** Every stage has the complete hint ladder, and each schema pointer names types and fields that exist at the mission's clearance.
 - **Terms:** GraphQL terms used in mission text are glossary entries, and are introduced at or below the mission's clearance. Drills are held to clearance 1, and a kata and a concept card to their own clearance.
 - **Text references:** Entity names and identifiers quoted in mission text exist in the data.
@@ -1179,7 +1179,7 @@ The cast keeps its voice (Sections 2.2 and 2.4). A dispatch from the harbourmast
 
 Inline Markdown is rendered in some fields and shown as typed in the others. Use backticks only where they are rendered.
 
-- Rendered: a stage's `briefing`, the `ruledOut` and `fieldCheck` dispatches, every `debrief` text, a glossary `definition`, a concept card's `summary`, a drill's `task`, `nudge`, and `payoff`, and a kata's `task`, `nudge`, `structureNudge`, and `payoff`.
+- Rendered: a stage's `briefing`, the `ruledOut` and `fieldCheck` dispatches, every `debrief` text, a glossary `definition`, a concept card's `summary`, a drill's `task`, `nudge`, and `payoff`, and a kata's `task`, `nudge`, `structureNudge`, `payoff`, and the `unused` and `placement` notes of its `debrief`.
 - Shown as typed: `objective`, clue text, all four hints, claim prompts, `resolved`, the clock texts, a concept card's `payoff`, and the mission and campaign `summary`.
 
 #### What is checked
@@ -1411,7 +1411,7 @@ To complete this milestone, a player must be able to compare and cite query find
 
 ### Milestone 5 — 1.0: Evidence the Player Can Follow
 
-This milestone finishes clearance levels 1 through 5. It adds no clearance level. Its tasks are in priority order. The order puts the opening of the game first: a beginner who is lost in the first case does not reach anything built after it. The first six tasks, the columns in the findings, the katas, the variables label, and the Vim keybindings switch are built. The beginner sessions of the seventh task are still to be held.
+This milestone finishes clearance levels 1 through 5. It adds no clearance level. Its tasks are in priority order. The order puts the opening of the game first: a beginner who is lost in the first case does not reach anything built after it. The first six tasks, the columns in the findings, the debrief's reading of the parsed query, the katas, the variables label, and the Vim keybindings switch are built. The beginner sessions of the seventh task are still to be held.
 
 - Make a citation carry every fact on its path that an evidence set can use (Section 3.2), and test the code that builds citations. Add the validation check that every evidence set can be assembled from Cite controls (Section 5.5).
 - Show under each claim the cited facts that count toward it, show on the Cite control which lead's draft it feeds, and distinguish facts that do not connect from a fact that is missing.

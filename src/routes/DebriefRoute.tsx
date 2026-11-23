@@ -1,6 +1,7 @@
 import { useGame } from "../app/GameProvider.tsx";
-import { referenceOperations, type Concept } from "../content/types.ts";
+import { referenceOperations } from "../content/types.ts";
 import { availability } from "../engine/clearance.ts";
+import { readTechnique } from "../engine/debrief.ts";
 import { ConceptCardView } from "../features/ConceptCardView.tsx";
 import { Prose } from "../features/Prose.tsx";
 import { href } from "./parseRoute.ts";
@@ -10,30 +11,6 @@ const MODE_TEXT = {
   hinted: "with hints",
   "solution-revealed": "with the solution revealed",
 } as const;
-
-/**
- * How to tell, from the text a player sent, that a taught concept was used,
- * and what to say in the debrief when it was not. This never affects
- * whether a case is solved: any query that yields the evidence is accepted.
- */
-const CONCEPT_USE: Partial<Record<Concept, { test: RegExp; unused: string }>> =
-  {
-    aliases: {
-      test: /[A-Za-z_]\w*\s*:\s*[A-Za-z_]\w*\s*\(/,
-      unused:
-        "Your transmissions asked for one file at a time. If you ask for all the files in one query and put an alias in front of each, the files come back together in a single transmission.",
-    },
-    fragments: {
-      test: /\bfragment\s+\w+\s+on\s+\w+/,
-      unused:
-        "Your transmissions wrote out the same fields in each place that needed them, which works. A fragment holds those fields once. You then change the fields in one place, and every place that spreads the fragment changes with it. The reference solution beside your transmissions shows how a fragment is written.",
-    },
-    variables: {
-      test: /\$\w+/,
-      unused:
-        "Your transmissions wrote the city into the query each time. With a variable, you leave the query alone and change only the value in the variables panel.",
-    },
-  };
 
 function plural(n: number, word: string): string {
   return n === 1 ? `1 ${word}` : `${String(n)} ${word}s`;
@@ -84,15 +61,23 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
         availability(m, standing) === "available" &&
         !standing.completions[m.id],
     );
-  // What the concept would have changed in the player's own transmissions.
-  const sent = state.transmissions.map((t) => t.operation).join("\n");
-  const usedNote =
-    mission.teaches && CONCEPT_USE[mission.teaches]
-      ? CONCEPT_USE[mission.teaches]?.test.test(sent)
-        ? null
-        : (CONCEPT_USE[mission.teaches]?.unused ?? null)
-      : null;
+  // What the transmissions behind the cited facts show of the level's
+  // technique (SDD 3.10). This never changes the outcome or the promotion.
+  const reading = readTechnique(mission, state, course);
   const promoted = mission.kind === "assessment" && completion?.passed === true;
+  const techniqueNote =
+    reading && !reading.used
+      ? promoted && completion.placement
+        ? reading.kata.debrief.placement
+        : reading.kata.debrief.unused
+      : null;
+  const kata =
+    reading && standing.clearance >= reading.kata.clearance
+      ? reading.kata
+      : null;
+  const kataCard = kata
+    ? course.concepts.find((c) => c.id === kata.concept)
+    : undefined;
 
   return (
     <main className="page">
@@ -161,7 +146,22 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
               {plural(reference.length, "transmission")}.
             </p>
             <Prose text={mission.debrief.comparison} />
-            {usedNote && <p className="note">{usedNote}</p>}
+            {techniqueNote && (
+              <div className="note" data-testid="technique-note">
+                <Prose text={techniqueNote} />
+              </div>
+            )}
+            {kata && kataCard && (
+              <p data-testid="kata-link">
+                To practise {kataCard.title.toLowerCase()} on records that no
+                case uses, try the kata{" "}
+                <a href={href({ name: "kata", kataId: kata.id })}>
+                  {kata.title}
+                </a>{" "}
+                in the training range.
+                {standing.katas.includes(kata.id) && " You have passed it."}
+              </p>
+            )}
             <div className="compare">
               <div>
                 <h3>Yours</h3>

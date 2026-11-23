@@ -176,6 +176,12 @@ export interface Kata {
   structureNudge: string;
   /** Shown on passing. */
   payoff: string;
+  /**
+   * What the debrief of a case at this kata's level says when the
+   * transmissions that supplied the cited facts lack the technique (SDD
+   * 3.10): `unused` after a case, `placement` after a placement pass.
+   */
+  debrief: { unused: string; placement: string };
 }
 
 export interface GlossaryEntry {

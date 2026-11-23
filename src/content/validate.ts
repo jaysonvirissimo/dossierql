@@ -3,8 +3,10 @@ import { clearanceInForce, deriveStanding } from "../engine/clearance.ts";
 import { citationAt, factsAlong, type CitedRow } from "../engine/cite.ts";
 import { computeBudget } from "../engine/clock.ts";
 import { reviewDraft } from "../engine/draft.ts";
+import { levelKata } from "../engine/debrief.ts";
 import { attemptKata } from "../engine/kata.ts";
 import { matchSet, type Bindings } from "../engine/match.ts";
+import { parseRequest, showsTechnique } from "../engine/technique.ts";
 import {
   act,
   fieldCheckCost,
@@ -1592,6 +1594,13 @@ function checkReferenceText(catalog: Catalog, report: Report): void {
     check(`${at}.nudge`, kata.nudge, kata.clearance, true);
     check(`${at}.structureNudge`, kata.structureNudge, kata.clearance, true);
     check(`${at}.payoff`, kata.payoff, kata.clearance, true);
+    check(`${at}.debrief.unused`, kata.debrief.unused, kata.clearance, true);
+    check(
+      `${at}.debrief.placement`,
+      kata.debrief.placement,
+      kata.clearance,
+      true,
+    );
     check(`${at}.starter`, commentsOf(kata.starter), kata.clearance, true);
   }
   for (const card of catalog.concepts) {
@@ -1737,6 +1746,25 @@ function checkKatas(catalog: Catalog, report: Report): void {
     );
     if (starter.kind === "sent" && starter.verdict === "passed") {
       report(`${at}.starter`, "kata", "The starter already passes the kata.");
+    }
+  }
+  // The debrief of a case at a kata's level reads the player's technique
+  // (SDD 3.10), so the case's own reference must show it.
+  for (const mission of catalog.missions) {
+    const kata = levelKata(mission, catalog);
+    if (!kata) continue;
+    const shows = Object.values(mission.stages).some((stage) =>
+      referenceOperations(stage).some(({ operation }) => {
+        const doc = parseRequest(operation);
+        return doc !== null && showsTechnique(kata.concept, doc);
+      }),
+    );
+    if (!shows) {
+      report(
+        `${mission.id}.stages`,
+        "kata",
+        `No reference solution uses ${kata.concept}, the technique of the level's kata.`,
+      );
     }
   }
 }

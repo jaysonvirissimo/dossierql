@@ -1,5 +1,4 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
-import { DebriefRoute } from "../routes/DebriefRoute.tsx";
 import { HomeRoute } from "../routes/HomeRoute.tsx";
 import { ManualRoute } from "../routes/ManualRoute.tsx";
 import { OrientationRoute } from "../routes/OrientationRoute.tsx";
@@ -11,6 +10,28 @@ import { useGame } from "./GameProvider.tsx";
 // The editor, the GraphQL engine and the world data load when a case opens.
 const Workspace = lazy(() => import("../features/workspace/Workspace.tsx"));
 const Training = lazy(() => import("../features/training/Training.tsx"));
+// The debrief reads the parsed query, so it loads with the GraphQL parser.
+const DebriefRoute = lazy(() =>
+  import("../routes/DebriefRoute.tsx").then((m) => ({
+    default: m.DebriefRoute,
+  })),
+);
+
+function DebriefScreen({ missionId }: { missionId: string }) {
+  return (
+    <Suspense
+      fallback={
+        <main className="page">
+          <p className="loading" role="status">
+            Filing the debrief…
+          </p>
+        </main>
+      }
+    >
+      <DebriefRoute missionId={missionId} />
+    </Suspense>
+  );
+}
 
 function TrainingRoute({ kataId }: { kataId?: string }) {
   return (
@@ -71,7 +92,7 @@ function Screen({ route }: { route: Route }) {
     case "mission":
       return <MissionRoute missionId={route.missionId} />;
     case "debrief":
-      return <DebriefRoute missionId={route.missionId} />;
+      return <DebriefScreen missionId={route.missionId} />;
     case "manual":
       return <ManualRoute entryId={route.entryId} />;
     case "orientation":
