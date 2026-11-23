@@ -517,12 +517,32 @@ function Findings({
   );
 }
 
+/**
+ * The variables a transmission was sent with, on one line, or null when it
+ * was sent with none (SDD 8.2).
+ */
+export function sentWith(variables: string): string | null {
+  if (variables.trim() === "") return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(variables);
+  } catch {
+    return null;
+  }
+  if (!isRecord(parsed) || Object.keys(parsed).length === 0) return null;
+  const pairs = Object.entries(parsed).map(
+    ([key, value]) => `${JSON.stringify(key)}: ${JSON.stringify(value)}`,
+  );
+  return `{ ${pairs.join(", ")} }`;
+}
+
 export function Results() {
   const { state, viewing, view } = useWorkspace();
   const [chosen, setTab] = useState<"findings" | "columns" | "raw">("findings");
   const total = state.transmissions.length;
   const record = state.transmissions.find((t) => t.n === viewing);
   const typeOf = record ? typeOfIn(record, state.ledger) : null;
+  const sent = record ? sentWith(record.variables) : null;
   // The Side by side tab is offered only for a response that has a group.
   const sideBySide =
     record !== undefined &&
@@ -591,6 +611,11 @@ export function Results() {
 
       {record && (
         <>
+          {sent !== null && (
+            <p className="results__variables" data-testid="sent-with">
+              You sent this request with the variables <code>{sent}</code>.
+            </p>
+          )}
           <div className="tabs" role="tablist" aria-label="Result views">
             {names.map((name) => (
               <button

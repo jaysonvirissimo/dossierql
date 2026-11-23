@@ -137,9 +137,61 @@
   overflow: hidden;
 }
 
-.editor-host,
+.editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.editor-host {
+  flex: 1;
+  min-height: 0;
+}
+
 .editor-host .cm-editor {
   height: 100%;
+}
+
+.editor--compact .editor-host {
+  flex: none;
+  height: 5.5rem;
+  border: 1px solid var(--navy-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.editor--compact .cm-content {
+  padding: var(--space-1) var(--space-2);
+}
+
+.editor-mode {
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--terminal-dim);
+  border-top: 1px solid var(--navy-line);
+}
+
+.editor--compact .editor-mode {
+  padding: var(--space-1) 0 0;
+  border-top: none;
+}
+
+.terminal__tools {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  white-space: nowrap;
+}
+
+.terminal .vim-switch {
+  font-size: 0.8125rem;
+  color: var(--terminal-ink);
+  cursor: pointer;
+}
+
+.vim-switch input {
+  accent-color: var(--terminal-key);
 }
 
 .terminal__variables {
@@ -150,17 +202,6 @@
   border-top: 1px solid var(--navy-line);
   font-size: 0.8125rem;
   color: var(--terminal-dim);
-}
-
-.terminal__variables textarea {
-  background: var(--navy-950);
-  color: var(--terminal-ink);
-  border: 1px solid var(--navy-line);
-  border-radius: var(--radius);
-  font-family: var(--font-mono);
-  font-size: 1rem;
-  padding: var(--space-2);
-  resize: vertical;
 }
 
 .terminal__foot {
@@ -202,6 +243,16 @@
   align-items: center;
   gap: var(--space-2);
   font-size: 0.875rem;
+}
+
+.results__variables {
+  padding: var(--space-2) var(--space-3) 0;
+  font-size: 0.875rem;
+}
+
+.results__variables code {
+  font-family: var(--font-mono);
+  color: var(--cobalt);
 }
 
 .results__empty,

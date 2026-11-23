@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useGame } from "../app/GameProvider.tsx";
+import { VimSwitch } from "../features/workspace/VimSwitch.tsx";
 
 export function SettingsRoute() {
   const { preferences, setPreferences, reset, save, remembers } = useGame();
@@ -30,6 +31,18 @@ export function SettingsRoute() {
               />
               Reduce motion, whatever the system setting says
             </label>
+          </section>
+
+          <section aria-labelledby="keyboard-title">
+            <h2 id="keyboard-title">Keyboard</h2>
+            <p>
+              With Vim keybindings on, every editor where you type in the
+              terminal takes Vim keys, and the current Vim mode is shown as text
+              below the editor. Ctrl+Enter (⌘+Enter) still transmits in every
+              mode, and Tab still moves out of the editor. The same switch is at
+              the top of each terminal.
+            </p>
+            <VimSwitch />
           </section>
 
           <section aria-labelledby="progress-title">

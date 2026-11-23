@@ -11,6 +11,7 @@ import { Prose } from "../Prose.tsx";
 import { SchemaDocs } from "../SchemaDocs.tsx";
 import { Editor } from "../workspace/Editor.tsx";
 import { Errors } from "../workspace/Results.tsx";
+import { VimSwitch } from "../workspace/VimSwitch.tsx";
 import "../workspace/workspace.css";
 import "./training.css";
 
@@ -34,7 +35,7 @@ function DrillView({
   last: boolean;
   onNext(): void;
 }) {
-  const { course, standing, record } = useGame();
+  const { course, standing, record, preferences } = useGame();
   const text = useRef(drill.starter);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
   const firstCase = course.missions[0];
@@ -73,13 +74,19 @@ function DrillView({
         <section className="terminal" aria-labelledby="terminal-title">
           <header className="terminal__head">
             <h2 id="terminal-title">Terminal</h2>
-            <span className="terminal__level">Practice · nothing is timed</span>
+            <div className="terminal__tools">
+              <VimSwitch />
+              <span className="terminal__level">
+                Practice · nothing is timed
+              </span>
+            </div>
           </header>
           <div className="terminal__editor">
             <Editor
               initial={drill.starter}
               schema={schemaFor(CLEARANCE)}
               label="GraphQL query"
+              vim={preferences.vim}
               onChange={(value) => {
                 text.current = value;
               }}

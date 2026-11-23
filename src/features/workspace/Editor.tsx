@@ -11,7 +11,7 @@ import {
   indentOnInput,
   syntaxHighlighting,
 } from "@codemirror/language";
-import { EditorState, Prec } from "@codemirror/state";
+import { Compartment, EditorState, Prec } from "@codemirror/state";
 import {
   drawSelection,
   EditorView,
@@ -22,7 +22,7 @@ import {
 import { tags } from "@lezer/highlight";
 import { graphql } from "cm6-graphql";
 import type { GraphQLSchema } from "graphql";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const theme = EditorView.theme(
   {
@@ -78,11 +78,29 @@ const highlight = HighlightStyle.define([
   { tag: tags.punctuation, color: "var(--terminal-dim)" },
 ]);
 
+// The Vim keybindings are fetched the first time a player turns them on
+// (SDD 4.3), and once only.
+let vimModule: Promise<typeof import("@replit/codemirror-vim")> | null = null;
+const loadVim = () => (vimModule ??= import("@replit/codemirror-vim"));
+
+const MODES: Record<string, string> = {
+  normal: "normal",
+  insert: "insert",
+  visual: "visual",
+  replace: "replace",
+};
+
 interface EditorProps {
   /** The text the editor opens with. Later changes come from the player. */
   initial: string;
-  schema: GraphQLSchema;
+  /** The schema for a query editor. Without one the editor holds plain text. */
+  schema?: GraphQLSchema;
   label: string;
+  /** Vim keybindings, the player's preference. */
+  vim: boolean;
+  /** A short editor with no line numbers, for the variables panel. */
+  compact?: boolean;
+  testId?: string;
   onChange(text: string): void;
   onTransmit(): void;
 }
@@ -98,10 +116,16 @@ export function Editor({
   initial,
   schema,
   label,
+  vim,
+  compact = false,
+  testId = "query-editor",
   onChange,
   onTransmit,
 }: EditorProps) {
   const host = useRef<Host>(null);
+  const views = useRef<EditorView | null>(null);
+  const vimSlot = useRef(new Compartment());
+  const [mode, setMode] = useState<string | null>(null);
   const change = useRef(onChange);
   const send = useRef(onTransmit);
   useEffect(() => {
@@ -117,7 +141,9 @@ export function Editor({
       state: EditorState.create({
         doc: initial,
         extensions: [
-          lineNumbers(),
+          // Vim goes before every other keymap, as the package asks.
+          vimSlot.current.of([]),
+          compact ? [] : lineNumbers(),
           history(),
           drawSelection(),
           indentOnInput(),
@@ -145,7 +171,7 @@ export function Editor({
             ...defaultKeymap,
             ...historyKeymap,
           ]),
-          graphql(schema),
+          schema ? graphql(schema) : [],
           syntaxHighlighting(highlight),
           theme,
           EditorView.contentAttributes.of({
@@ -161,13 +187,47 @@ export function Editor({
     // Browser tests set the text through the view, as typing fights the
     // editor's bracket closing.
     parent.cmView = view;
+    views.current = view;
     return () => {
       delete parent.cmView;
+      views.current = null;
       view.destroy();
     };
     // The editor is rebuilt only when its parent gives it a new key.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <div ref={host} className="editor-host" data-testid="query-editor" />;
+  // Turning Vim on or off changes the keymap and keeps the text.
+  useEffect(() => {
+    const view = views.current;
+    if (!view) return;
+    if (!vim) {
+      view.dispatch({ effects: vimSlot.current.reconfigure([]) });
+      setMode(null);
+      return;
+    }
+    let current = true;
+    void loadVim().then(({ vim: vimKeys, getCM }) => {
+      if (!current || views.current !== view) return;
+      view.dispatch({ effects: vimSlot.current.reconfigure(vimKeys()) });
+      setMode("normal");
+      getCM(view)?.on("vim-mode-change", (event: { mode: string }) => {
+        if (current) setMode(MODES[event.mode] ?? event.mode);
+      });
+    });
+    return () => {
+      current = false;
+    };
+  }, [vim]);
+
+  return (
+    <div className={compact ? "editor editor--compact" : "editor"}>
+      <div ref={host} className="editor-host" data-testid={testId} />
+      {vim && mode && (
+        <p className="editor-mode" aria-live="polite" data-testid="vim-mode">
+          Vim: {mode} mode
+        </p>
+      )}
+    </div>
+  );
 }

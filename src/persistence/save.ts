@@ -25,11 +25,14 @@ export interface SaveData {
 export interface Preferences {
   motion: "system" | "reduced";
   orientationSeen: boolean;
+  /** Vim keybindings in every code editor (SDD 8.2). */
+  vim: boolean;
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
   motion: "system",
   orientationSeen: false,
+  vim: false,
 };
 
 export function emptySave(): SaveData {
@@ -128,6 +131,7 @@ export function loadPreferences(storage: StorageAdapter): Preferences {
     return {
       motion: parsed.motion === "reduced" ? "reduced" : "system",
       orientationSeen: parsed.orientationSeen === true,
+      vim: parsed.vim === true,
     };
   } catch {
     return DEFAULT_PREFERENCES;

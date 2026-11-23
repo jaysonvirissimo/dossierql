@@ -95,13 +95,32 @@ describe("storage that is unavailable", () => {
 describe("preferences", () => {
   it("are stored apart from progress and survive a reset", () => {
     const storage = saved({ format: 1, events: [], investigations: {} });
-    writePreferences(storage, { motion: "reduced", orientationSeen: true });
+    writePreferences(storage, {
+      motion: "reduced",
+      orientationSeen: true,
+      vim: true,
+    });
     expect(resetProgress(storage).events).toEqual([]);
     expect(storage.read(SAVE_KEY)).toBeNull();
     expect(storage.read(PREFS_KEY)).not.toBeNull();
     expect(loadPreferences(storage)).toEqual({
       motion: "reduced",
       orientationSeen: true,
+      vim: true,
     });
+  });
+
+  it("keep Vim keybindings off through a reset when they were off", () => {
+    const storage = saved({ format: 1, events: [], investigations: {} });
+    expect(loadPreferences(storage).vim).toBe(false);
+    writePreferences(storage, { ...DEFAULT_PREFERENCES, vim: false });
+    resetProgress(storage);
+    expect(loadPreferences(storage).vim).toBe(false);
+  });
+
+  it("read a stored Vim value that is not true as off", () => {
+    const storage = saved({ format: 1, events: [], investigations: {} });
+    storage.write(PREFS_KEY, JSON.stringify({ vim: "yes" }));
+    expect(loadPreferences(storage).vim).toBe(false);
   });
 });

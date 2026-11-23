@@ -27,6 +27,7 @@ import { DraftPanel } from "./DraftPanel.tsx";
 import { Editor } from "./Editor.tsx";
 import { Results } from "./Results.tsx";
 import { Tools } from "./Tools.tsx";
+import { VimSwitch } from "./VimSwitch.tsx";
 import "./workspace.css";
 
 const EDIT_DELAY_MS = 400;
@@ -326,7 +327,10 @@ export default function Workspace({ mission }: { mission: Mission }) {
           <section className="terminal" aria-labelledby="terminal-title">
             <header className="terminal__head">
               <h2 id="terminal-title">Intelligence terminal</h2>
-              <span className="terminal__level">Clearance {clearance}</span>
+              <div className="terminal__tools">
+                <VimSwitch />
+                <span className="terminal__level">Clearance {clearance}</span>
+              </div>
             </header>
             {stage.scaffold.level === "none" && !stage.scaffold.carryOver && (
               <p className="terminal__blank">
@@ -341,22 +345,25 @@ export default function Workspace({ mission }: { mission: Mission }) {
                 initial={stageState.editor}
                 schema={schemaFor(clearance)}
                 label="GraphQL query"
+                vim={game.preferences.vim}
                 onChange={(editor) => edit({ editor })}
                 onTransmit={transmit}
               />
             </div>
             {showVariables && (
-              <label className="terminal__variables">
-                <span>Variables (JSON)</span>
-                <textarea
+              <div className="terminal__variables">
+                <p aria-hidden="true">Variables (JSON)</p>
+                <Editor
                   key={`${state.stageId}:${String(attempt)}`}
-                  defaultValue={stageState.variables}
-                  spellCheck={false}
-                  rows={3}
-                  data-testid="variables-editor"
-                  onChange={(event) => edit({ variables: event.target.value })}
+                  initial={stageState.variables}
+                  label="Variables (JSON)"
+                  vim={game.preferences.vim}
+                  compact
+                  testId="variables-editor"
+                  onChange={(variables) => edit({ variables })}
+                  onTransmit={transmit}
                 />
-              </label>
+              </div>
             )}
             <footer className="terminal__foot">
               <button
