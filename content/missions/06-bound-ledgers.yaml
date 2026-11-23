@@ -49,7 +49,9 @@ stages:
           $shipment.manifest: Bound ledgers
       - text: >
           Accounts have been written in. The crate's contents are
-          account books, handwritten.
+          account books, handwritten. The papers for all three crates
+          declare the same bound ledgers, so the papers cannot show
+          which crate has been written in.
         constraint:
           $shipment.inspection.finding: Account books, handwritten
       - text: >

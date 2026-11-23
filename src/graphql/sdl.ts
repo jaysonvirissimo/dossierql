@@ -95,7 +95,7 @@ export const SDL = /* GraphQL */ `
   type Shipment {
     "The shipment's identifier, as written on its papers."
     id: ID!
-    "The goods as the shipper declared them."
+    "The goods as the shipper declared them on the shipping papers. Customs takes the declaration as evidence of what a shipment holds."
     manifest: String!
     "The city the shipment left from."
     origin: City!
@@ -105,7 +105,7 @@ export const SDL = /* GraphQL */ `
     shipper: Company
     "The company the shipping papers give as receiving the goods."
     consignee: Company
-    "The customs inspection at the port of departure, if one was made."
+    "The customs inspection at the port of departure, if one was made. The inspector's finding is evidence of what a shipment holds, and it can tell shipments apart when their papers declare the same goods."
     inspection: Inspection
     "The depot's record of the shipment on arrival."
     intake: IntakeRecord

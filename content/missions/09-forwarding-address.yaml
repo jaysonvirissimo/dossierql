@@ -55,6 +55,8 @@ stages:
           $shipment.consignee: Company:CH-LIMMAT
       - text: >
           The forwarding note says the crate leaves Europe for Asia.
+          Go by the continent that the archive gives for the
+          destination country.
         constraint:
           $shipment.destination.country.continent: Continent:asia
           $shipment.destination.country: $country
@@ -67,10 +69,14 @@ stages:
             departingShipments {
               id
               manifest
-              # $city is a variable. The first line declares it,
-              # and its value comes from the variables panel below
-              # the editor. The glossary entry for a variable
-              # explains each part.
+              # $city is a variable, and it has three parts:
+              # 1. The first line declares $city, with the type
+              #    String!. The type is copied from the name
+              #    argument of city in the documentation.
+              # 2. city(name: $city) uses $city as the argument.
+              # 3. The variables panel below the editor gives the
+              #    value. Its key is city, the variable without the $.
+              # The glossary entry for a variable explains more.
               # Who receives each shipment, and on which continent
               # does the shipment land?
             }
@@ -212,7 +218,10 @@ stages:
       The crate did not stay. Several shipments have left
       Istanbul since it landed, and a second forwarding note says
       it has gone back to Europe. Your request from Trieste is
-      still on the desk.
+      still on the desk, and so is the variables panel, which
+      still gives Trieste as the city. Travelling does not change
+      the value for you. Change the city in the variables panel
+      to Istanbul.
 
     clues:
       - text: >

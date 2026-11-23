@@ -72,6 +72,10 @@ stages:
               # each associate's own associates. A fragment lets you
               # write the fields once. The glossary entry for
               # a fragment shows how to write one.
+              # The associates' associates are one level further in,
+              # inside these braces. The query has to open that level
+              # itself. A fragment cannot spread itself, because the
+              # request would never end.
             }
           }
         }

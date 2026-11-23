@@ -778,6 +778,25 @@ describe("field check in The Quiet Consignee", () => {
     expect(after.allSupported).toBe(true);
     expect(after.canProceed).toBe(true);
   });
+
+  it("says which record the cited facts show while a box is blank", () => {
+    const cited = play(
+      send(
+        play(startMission(callao), { type: "begin" }),
+        'query { company(name: "Meridian Freight") { name director { codename } } }',
+      ),
+      cite("PE-MERIDIAN-FRT", "director", "Company:PE-MERIDIAN-FRT.director"),
+    );
+    const draft = cited.stages.callao!.drafts["PE-MERIDIAN-FRT"]!;
+    const waiting = reviewDraft(stage, draft, cited.ledger).claims[1]!;
+    expect(waiting.status).toBe("open");
+    expect(waiting.unnamed).toEqual(["operative"]);
+    expect(waiting.shows).toEqual({ operative: "PEWTER_SWIFT" });
+
+    // A claim with no complete evidence shows nothing.
+    const bare = reviewDraft(stage, { ...draft, citations: [] }, cited.ledger);
+    expect(bare.claims[1]!.shows).toEqual({});
+  });
 });
 
 describe("formatted", () => {

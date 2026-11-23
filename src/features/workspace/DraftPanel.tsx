@@ -5,7 +5,11 @@ import {
   solutionBindings,
 } from "../../content/types.ts";
 import { travelHours } from "../../engine/clock.ts";
-import { emptyDraft, reviewDraft } from "../../engine/draft.ts";
+import {
+  emptyDraft,
+  reviewDraft,
+  type ClaimReview,
+} from "../../engine/draft.ts";
 import {
   deskStages,
   fieldCheckCost,
@@ -106,6 +110,17 @@ export function DraftPanel() {
   };
   const unsupported =
     review?.claims.filter((c) => c.status !== "supported").length ?? 0;
+  // A claim whose cited facts are complete, and which waits only on a box
+  // the player has left blank.
+  const waiting = (claim: ClaimReview) =>
+    claim.status === "open" && Object.keys(claim.shows).length > 0;
+  const shown = (claim: ClaimReview) =>
+    Object.entries(claim.shows)
+      .map(([n, id]) => labelOf(refOf(types[n] ?? "", id), state.ledger))
+      .join(" and ");
+  const onlyChoices =
+    review !== null &&
+    review.claims.every((c) => c.status === "supported" || waiting(c));
   // A case with no clock prices nothing, so its buttons quote no price.
   const cost = (n: number) =>
     state.clock === "none" ? "" : ` (${timed && n > 0 ? hours(n) : "free"})`;
@@ -258,7 +273,9 @@ export function DraftPanel() {
             {review.claims.map((claim) => (
               <li key={claim.id} className="claim" data-status={claim.status}>
                 <span className={`chip ${STATUS[claim.status].chip}`}>
-                  {STATUS[claim.status].text}
+                  {waiting(claim)
+                    ? "Needs a choice"
+                    : STATUS[claim.status].text}
                 </span>
                 <span className="claim__prompt">{claim.prompt}</span>
                 {claim.counted.length > 0 && (
@@ -290,15 +307,48 @@ export function DraftPanel() {
                           : "The facts listed here connect to each other. The claim needs at least one more fact that connects to them.")}
                     </span>
                   )}
-                {claim.status === "open" && claim.unnamed.length > 0 && (
+                {waiting(claim) && (
                   <span className="claim__hint">
-                    Choose{" "}
-                    {claim.unnamed
-                      .map((n) => `“${stage.labels?.[n] ?? words(n)}”`)
+                    The facts you cited show {shown(claim)}. Choose{" "}
+                    {Object.entries(claim.shows)
+                      .map(
+                        ([n, id]) =>
+                          `${labelOf(refOf(types[n] ?? "", id), state.ledger)} for “${stage.labels?.[n] ?? words(n)}”`,
+                      )
                       .join(" and ")}{" "}
-                    above first.
+                    above.{" "}
+                    <button
+                      type="button"
+                      className="button button--small"
+                      disabled={closed || draft.ruledOut}
+                      onClick={() => {
+                        for (const [binding, value] of Object.entries(
+                          claim.shows,
+                        )) {
+                          dispatch({
+                            type: "name",
+                            leadId: draft.leadId,
+                            binding,
+                            value,
+                          });
+                        }
+                      }}
+                    >
+                      Choose {shown(claim)}
+                    </button>
                   </span>
                 )}
+                {claim.status === "open" &&
+                  claim.unnamed.length > 0 &&
+                  !waiting(claim) && (
+                    <span className="claim__hint">
+                      Choose{" "}
+                      {claim.unnamed
+                        .map((n) => `“${stage.labels?.[n] ?? words(n)}”`)
+                        .join(" and ")}{" "}
+                      above first.
+                    </span>
+                  )}
               </li>
             ))}
           </ul>
@@ -407,11 +457,9 @@ export function DraftPanel() {
           </div>
           {!review.allSupported && !draft.ruledOut && (
             <p className="draft__status">
-              {unsupported === 1
-                ? "1 claim is"
-                : `${String(unsupported)} claims are`}{" "}
-              not yet supported, so the {formName.toLowerCase()} cannot be
-              accepted yet.
+              {onlyChoices
+                ? `The facts you cited are complete. Make the ${review.unnamed.length === 1 ? "choice" : "choices"} above to complete the ${formName.toLowerCase()}.`
+                : `${unsupported === 1 ? "1 claim is" : `${String(unsupported)} claims are`} not yet supported, so the ${formName.toLowerCase()} cannot be accepted yet.`}
               {review.canFieldCheck &&
                 " A field check investigates this lead as it stands and leaves the case open."}
             </p>

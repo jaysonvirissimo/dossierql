@@ -55,8 +55,22 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
         the name of a city, as text in double quotes, and you get back one City
         record. Inside parentheses, a <code>!</code> means that you must give
         that value. Anywhere else, a <code>!</code> means only that the value is
-        never missing, and you can ignore it. You never type a <code>!</code> in
-        a query.
+        never missing, and you can ignore it.{" "}
+        {clearance < 5 ? (
+          <>
+            You never type a <code>!</code> in a query.
+          </>
+        ) : (
+          <>
+            Before clearance 5 you never typed a <code>!</code>. Now you type
+            one in one place only, which is where a query declares a variable.
+            In <code>query Departures($city: String!)</code>, the variable{" "}
+            <code>$city</code> fills the <code>name</code> argument of{" "}
+            <code>city</code>. That argument is shown here as{" "}
+            <code>name: String!</code>, so the declaration copies{" "}
+            <code>String!</code> exactly, with its <code>!</code>.
+          </>
+        )}
       </p>
       {types.map((type, index) => (
         <details

@@ -125,6 +125,11 @@ const RULES: Rule[] = [
       `The fragment "${String(m[1])}" is written for records of type ${String(m[3])}. The place where the request spreads it holds a record of type ${String(m[2])}.`,
   },
   {
+    test: /^Cannot spread fragment "(\w+)" within itself/,
+    note: (m) =>
+      `The fragment "${String(m[1])}" spreads itself, either directly or through another fragment. The archive refuses this, because the request would never end. A fragment does not follow a chain of records for you. The query has to open each level of the chain that you want, and you can spread "${String(m[1])}" inside each level.`,
+  },
+  {
     test: /^Unknown type "(\w+)"/,
     note: (m) =>
       `The archive has no type called "${String(m[1])}" at your clearance. The documentation panel lists the types that exist.`,

@@ -47,6 +47,10 @@ stages:
       declared as samples left the port that morning. Customs
       cannot hold all three, and asks you to set aside one crate
       at a time. Start with any crate that does not hold tiles.
+      Customs takes each shipment's papers at their word. The
+      papers list the contents as the shipment's `manifest`. If
+      the manifest says a crate holds something other than tiles,
+      that is evidence enough.
 
       Customs accepts nothing without evidence. The Deduction form
       states a claim about one shipment. The shipment you are

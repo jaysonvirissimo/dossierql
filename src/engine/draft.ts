@@ -53,6 +53,12 @@ export interface ClaimReview {
   counted: string[];
   /** What stands between the counted facts and a complete evidence set. */
   gap: ClaimGap;
+  /**
+   * For a claim that waits on a choice: the records that the cited facts
+   * already show for the boxes left blank, by binding. Empty when they show
+   * none.
+   */
+  shows: Record<string, string>;
 }
 
 export interface DraftReview {
@@ -133,15 +139,29 @@ export function reviewDraft(
         unnamed: [],
         counted: keysOf(refuting?.facts ?? []),
         gap: "none",
+        shows: {},
       };
     }
     let unnamed: string[] = [];
+    let shows: Record<string, string> = {};
     for (const set of claim.evidenceSets) {
       const missing = [...bindingsIn(set.facts)].filter(
         (name) => named.includes(name) && fixed[name] === undefined,
       );
       if (missing.length > 0) {
         unnamed = [...new Set([...unnamed, ...missing])];
+        // The cited facts may complete the set with the blank boxes left
+        // free. The claim then waits only on the player's choice (SDD 3.2).
+        const free =
+          Object.keys(shows).length === 0 && fillSet(set.facts, facts, fixed);
+        if (free) {
+          shows = Object.fromEntries(
+            missing.flatMap((name) => {
+              const value = free.bindings[name];
+              return value === undefined ? [] : [[name, value]];
+            }),
+          );
+        }
         continue;
       }
       const filled = fillSet(set.facts, facts, fixed);
@@ -153,6 +173,7 @@ export function reviewDraft(
           unnamed: [],
           counted: keysOf(filled.facts),
           gap: "none",
+          shows: {},
         };
       }
     }
@@ -180,6 +201,7 @@ export function reviewDraft(
       unnamed,
       counted: keysOf(counted),
       gap,
+      shows,
     };
   });
 

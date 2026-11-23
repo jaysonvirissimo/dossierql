@@ -142,9 +142,18 @@ test("the Azulejos case, by keyboard at 1024 pixels, with no clock", async ({
   ).toBeVisible();
   await cite(page, "LIS-0417", "manifest");
   await cite(page, "LIS-0417", "borders");
-  await draft(page)
-    .getByLabel("Country receiving the shipment")
-    .selectOption({ label: "Angola" });
+  // The route is cited and the country box is blank: the claim waits on a
+  // choice, and the draft offers the country the cited facts show.
+  await expect(
+    draft(page).locator(".claim[data-status=open] .chip"),
+  ).toHaveText("Needs a choice");
+  await expect(draft(page).locator(".draft__status")).toContainText(
+    "Make the choice above",
+  );
+  await press(draft(page).getByRole("button", { name: "Choose Angola" }));
+  await expect(
+    draft(page).getByLabel("Country receiving the shipment"),
+  ).toHaveValue("AO");
   await expect(
     draft(page).locator(".claim[data-status=supported]"),
   ).toHaveCount(2);

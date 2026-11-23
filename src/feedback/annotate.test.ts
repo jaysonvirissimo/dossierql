@@ -56,6 +56,11 @@ describe("annotate", () => {
       `{ cities { ...Port } } fragment Port { name }`,
       /which type of record/,
     ],
+    [
+      "a fragment that spreads itself",
+      `{ operative(codename: "GREY_PETREL") { ...Dossier } } fragment Dossier on Operative { codename knownAssociates { ...Dossier } }`,
+      /open each level/,
+    ],
     ["an unclosed brace", `{ cities { name }`, /braces and parentheses/],
     ["a mutation", `mutation { x }`, /read from|documentation panel/],
   ];

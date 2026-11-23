@@ -114,7 +114,11 @@
     to. To use the fragment, write three dots and its name, `...Dossier`,
     in any place where the query opens a record of the type `Operative`.
     Writing the three dots is called spreading the fragment. One fragment
-    may spread another.
+    may spread another, but a fragment may never spread itself. A fragment
+    therefore cannot follow a chain of records, such as an operative's
+    associates and their associates, on its own. The query opens each level
+    of the chain, and you spread the fragment inside each level:
+    `knownAssociates { ...Dossier knownAssociates { ...Dossier } }`.
 - id: variable
   term: variable
   clearance: 5
