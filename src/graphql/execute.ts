@@ -2,6 +2,7 @@ import {
   execute,
   getOperationAST,
   GraphQLError,
+  isObjectType,
   Kind,
   parse,
   specifiedRules,
@@ -98,12 +99,39 @@ function pathArray(path: {
   return out;
 }
 
-function matches(record: RawRecord, args: Record<string, unknown>): boolean {
+/** Text compared as a player would type it: case and accents aside. */
+function plain(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Whether a record passes the arguments that filter its list. A field that
+ * points at another record, such as a city, matches that record by its id
+ * or by its name. A true-or-false field the record does not mention is false.
+ */
+function matches(
+  record: RawRecord,
+  args: Record<string, unknown>,
+  store: Store,
+  schema: GraphQLSchema,
+): boolean {
   return Object.entries(args).every(([name, wanted]) => {
     if (wanted === null || wanted === undefined) return true;
     const actual = record[name] ?? (name === "id" ? record.id : undefined);
+    if (typeof wanted === "boolean") return (actual ?? false) === wanted;
     if (typeof actual === "string" && typeof wanted === "string") {
-      return actual.trim().toLowerCase() === wanted.trim().toLowerCase();
+      if (plain(actual) === plain(wanted)) return true;
+      const type = schema.getType(record.type);
+      const field = isObjectType(type) ? type.getFields()[name] : undefined;
+      const target = field ? fieldShape(field.type).target : null;
+      const other = target ? store.get(target, actual) : undefined;
+      return (
+        typeof other?.name === "string" && plain(other.name) === plain(wanted)
+      );
     }
     return actual === wanted;
   });
@@ -126,9 +154,12 @@ const resolveField: GraphQLFieldResolver<unknown, Context> = (
   if (info.parentType === info.schema.getQueryType()) {
     if (shape.target === null) return null;
     const candidates = store.all(shape.target);
-    if (shape.list) return candidates.filter((r) => matches(r, args));
+    if (shape.list)
+      return candidates.filter((r) => matches(r, args, store, info.schema));
     const supplied = Object.values(args).some((v) => v != null);
-    return supplied ? (candidates.find((r) => matches(r, args)) ?? null) : null;
+    return supplied
+      ? (candidates.find((r) => matches(r, args, store, info.schema)) ?? null)
+      : null;
   }
 
   const record = source as RawRecord;
@@ -160,7 +191,7 @@ const resolveField: GraphQLFieldResolver<unknown, Context> = (
     const records = ids
       .map((id) => store.get(target, id))
       .filter((r): r is RawRecord => r !== undefined)
-      .filter((r) => matches(r, args));
+      .filter((r) => matches(r, args, store, info.schema));
     note({
       kind: "list",
       refs: records.map((r) => refOf(r.type, r.id)),
@@ -260,6 +291,9 @@ export function transmit(
     variableValues: transmission.variables ?? {},
     contextValue: context,
     fieldResolver: resolveField,
+    // A record reached through an interface answers with the type it was
+    // filed as.
+    typeResolver: (value) => (value as RawRecord).type,
   });
   if (outcome instanceof Promise) {
     throw new Error("The archive resolves synchronously.");

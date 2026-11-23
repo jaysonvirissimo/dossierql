@@ -1,7 +1,9 @@
+import { parse } from "graphql";
 import { describe, expect, it } from "vitest";
 import { loadContent } from "../../scripts/load-content.ts";
 import type { RawContent } from "./catalog.ts";
 import type { Mission } from "./types.ts";
+import { stepById } from "./steps.ts";
 import { validateContent } from "./validate.ts";
 
 const { raw } = loadContent();
@@ -24,9 +26,9 @@ describe("the authored course", () => {
     expect(validateContent(raw)).toEqual([]);
   });
 
-  it("covers clearance 1 to 6 with a teaching mission and an assessment each", () => {
+  it("covers clearance 1 to 7 with a teaching mission and an assessment each", () => {
     const cases = raw.missions.filter((m) => m.kind !== "coda");
-    expect(cases).toHaveLength(12);
+    expect(cases).toHaveLength(14);
   });
 
   it("ends the first campaign with one coda", () => {
@@ -610,5 +612,48 @@ describe("validation of steps (SDD 3.7) fails the build when a step", () => {
         ),
       ).join(" "),
     ).toMatch(/belongs to clearance 6/);
+  });
+});
+
+describe("the steps of clearance 7 are recognised from the parsed request", () => {
+  const uses = (id: string, query: string) =>
+    stepById(id)?.uses(parse(query)) ?? false;
+
+  it("an inline fragment, only with a type condition", () => {
+    expect(
+      uses(
+        "inline-fragment",
+        `{ caseFile(reference: "CF-0417") { documents { ... on Telegram { text } } } }`,
+      ),
+    ).toBe(true);
+    expect(uses("inline-fragment", `{ cities { ... { name } } }`)).toBe(false);
+  });
+
+  it("an argument on a field inside the query, and not on the first field", () => {
+    expect(
+      uses(
+        "field-argument",
+        `{ caseFile(reference: "CF-0417") { documents(city: "Lisbon") { reference } } }`,
+      ),
+    ).toBe(true);
+    expect(
+      uses("field-argument", `{ caseFile(reference: "CF-0417") { title } }`),
+    ).toBe(false);
+    expect(
+      uses(
+        "field-argument",
+        `{ __type(name: "Docket") { fields(includeDeprecated: true) { name } } }`,
+      ),
+    ).toBe(false);
+  });
+
+  it("a true-or-false value", () => {
+    expect(
+      uses(
+        "boolean-value",
+        `{ caseFile(reference: "CF-0417") { documents(sealed: true) { reference } } }`,
+      ),
+    ).toBe(true);
+    expect(uses("boolean-value", `{ cities { name } }`)).toBe(false);
   });
 });

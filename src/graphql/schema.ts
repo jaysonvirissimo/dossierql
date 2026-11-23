@@ -38,6 +38,7 @@ export function schemaDocumentFor(
   for (const definition of full.definitions) {
     if (
       (definition.kind === Kind.OBJECT_TYPE_DEFINITION ||
+        definition.kind === Kind.INTERFACE_TYPE_DEFINITION ||
         definition.kind === Kind.SCALAR_TYPE_DEFINITION) &&
       clearanceOf(definition.directives) > level
     ) {
@@ -48,6 +49,15 @@ export function schemaDocumentFor(
     DirectiveDefinition: (node) =>
       !keepDirectives && INTERNAL.has(node.name.value) ? null : undefined,
     ObjectTypeDefinition: (node) =>
+      hidden.has(node.name.value)
+        ? null
+        : {
+            ...node,
+            interfaces: node.interfaces?.filter(
+              (i) => !hidden.has(i.name.value),
+            ),
+          },
+    InterfaceTypeDefinition: (node) =>
       hidden.has(node.name.value) ? null : undefined,
     ScalarTypeDefinition: (node) =>
       hidden.has(node.name.value) ? null : undefined,
@@ -111,13 +121,14 @@ export function isUndocumented(type: string, field?: string): boolean {
     for (const definition of parse(SDL).definitions) {
       if (
         definition.kind !== Kind.OBJECT_TYPE_DEFINITION &&
+        definition.kind !== Kind.INTERFACE_TYPE_DEFINITION &&
         definition.kind !== Kind.SCALAR_TYPE_DEFINITION
       ) {
         continue;
       }
       const name = definition.name.value;
       if (marked(definition.directives)) found.add(name);
-      if (definition.kind === Kind.OBJECT_TYPE_DEFINITION) {
+      if (definition.kind !== Kind.SCALAR_TYPE_DEFINITION) {
         for (const f of definition.fields ?? []) {
           if (marked(f.directives)) found.add(`${name}.${f.name.value}`);
         }

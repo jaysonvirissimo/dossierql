@@ -73,6 +73,62 @@ export const STEPS: readonly Step[] = [
     uses: (document) =>
       hasField(document, (field) => field.name.value === "__typename"),
   },
+  {
+    id: "inline-fragment",
+    clearance: 7,
+    summary:
+      "an inline fragment, as in ... on Telegram { text }, for the fields of one kind",
+    term: "inline fragment",
+    uses: (document) => {
+      let found = false;
+      visit(document, {
+        InlineFragment(node) {
+          if (node.typeCondition) found = true;
+        },
+      });
+      return found;
+    },
+  },
+  {
+    id: "field-argument",
+    clearance: 7,
+    summary:
+      'an argument on a field inside the query, as in documents(city: "Valparaíso")',
+    uses: (document) => {
+      let found = false;
+      let depth = 0;
+      visit(document, {
+        Field: {
+          enter(node) {
+            if (INTROSPECTION.has(node.name.value)) depth += 100;
+            if (depth > 0 && depth < 100 && (node.arguments?.length ?? 0) > 0) {
+              found = true;
+            }
+            depth++;
+          },
+          leave(node) {
+            depth--;
+            if (INTROSPECTION.has(node.name.value)) depth -= 100;
+          },
+        },
+      });
+      return found;
+    },
+  },
+  {
+    id: "boolean-value",
+    clearance: 7,
+    summary: "a true-or-false value, as in documents(sealed: true)",
+    uses: (document) => {
+      let found = false;
+      visit(document, {
+        BooleanValue() {
+          found = true;
+        },
+      });
+      return found;
+    },
+  },
 ];
 
 export function stepById(id: string): Step | undefined {

@@ -88,6 +88,8 @@ Because missions avoid dates (Section 2.1), the coda shows that one order came b
 
 The second campaign, *The Fourth Desk*, starts at clearance 6, where the coda left the question. The bureaucracy has sealed a cabinet that the Fourth Desk kept outside the agency's registry, and the player is to read it. Nobody at the agency documented the cabinet, which is the story reason for introspection (Section 3.7). Its first case shows that the Fourth Desk did not write the instruction to let the tiles go. It carried out a minute written by the First Desk, which countersigns nothing, and it held the docket's papers for GILT_MAGPIE, the Parallax Circle's own handler. The assessment follows the copy of the minute to a book that Lusaka Exchange Control kept apart from its register. The answer moves the question one desk further up and makes it harder: the campaign does not yet say who at the First Desk wrote the minute, and M is not identified at clearance 6.
 
+At clearance 7 the inquiry reads a file of mixed papers on the minute: telegrams, memoranda, and minutes that share one filing stamp. That is the story reason for interfaces. *The Valparaíso Draft* shows that the First Desk did not write the minute either. Tomás Eyzaguirre, the second secretary at Valparaíso Station, drafted it to an instruction that reached the station by telegram, and the First Desk copied it out under its own serial. The assessment, *The Station File*, follows that telegram to the agency's Cipher Room in Lisbon. The Cipher Room sends whatever is handed in at its counter, and its register records no name for the person who handed in the instruction. The answer identifies the drafter and the channel, and leaves open who wrote the instruction. An unsigned memorandum at the First Desk, which orders the draft copied out and sent back under seal, is the remaining lead.
+
 All characters, agencies, organizations, and storylines will be original creations. References to the game's creative influences must not imply affiliation with the owners of the source franchises.
 
 ### 2.4 Recurring Cast
@@ -599,6 +601,8 @@ At clearance 11, game actions become available as mutations, and from clearance 
     }
 
 The levels after 1.0 need these schema features, each at the clearance of the step or concept that uses it (Section 3.7): fields that take arguments inside a query, including a true-or-false argument; a `Document` interface with several kinds of document; a union returned by a search; enums, and arguments that take a list; a custom scalar, which is `DeskSerial` at clearance 6; paginated logs whose entries may not be null, with classified entries among them; input types, one of them marked `@oneOf`; a mutation root; a subscription root; and a polling field marked `@deprecated` in favour of a subscription.
+
+From clearance 7, a case file holds documents of several kinds. `Query.caseFile(reference:)` returns a `CaseFile`, whose field `documents` returns the interface `Document`. `Telegram`, `Memorandum`, and `Minute` implement it. `Document` lists the filing stamp that every kind shares: `reference`, `title`, `stamp`, `city`, and `sealed`. Each kind adds fields of its own, which a query reaches through an inline fragment. The field `documents` takes two arguments, `city: String` and `sealed: Boolean = false`, so it is the first field inside a query that takes arguments. A city matches by its name or its identifier, without regard to case or accents. A sealed document is listed only when the request asks for `sealed: true`, and that request lists only the sealed documents. A record reached through an interface keeps the type it was filed as, so a fact about it belongs to that type, such as `Telegram:TEL-0089`. The documentation panel lists an interface beside the object types, with the kinds that implement it, and shows an argument's default value.
 
 From clearance 6, part of the archive is **undocumented**. An internal directive, `@undocumented`, marks a type or a field that the documentation panel leaves out. Like `@clearance`, it is removed before the schema is served. The seized records of clearance 6 are reached through two fields of `Query`, `cabinet` and `exchangeBook`, that the panel does not list, and their types are not listed either. The schema still holds a description of every one of them, written in the filing language of the office that kept the records. Introspection returns those descriptions, so an undocumented type is fully described to a player who asks the archive. From clearance 6 the panel says that seized records are not listed, and points to the glossary entry for introspection. A clerk's note on a field that an undocumented type lacks points there as well, and not to the panel.
 
@@ -1144,7 +1148,7 @@ A build-time validation process should check:
 - **Pacing:** The rules of Section 3.15 hold. Validation works out which mechanics a stage uses from what the stage authors: a clock on its mission, a refutation, a field check, a travel solution, and a deduction that identifies more than one record. Every stage uses citing. It fails when a stage uses a mechanic that neither it nor an earlier stage in the course introduces, when a mission after the first introduces more than one, when two stages introduce the same mechanic, and when a stage declares a mechanic it does not use. The format gives a stage one `introduces` entry, so a stage cannot introduce two.
 - **Solvability:** The reference solution executes without error and yields the required evidence. The time it spends sets the mission's budget (Section 3.3).
 - **Request weight:** Every reference solution fits under the weight limit. In the mission that teaches pagination, the logs requested whole exceed the limit, and the reference solution pages through them under it.
-- **Curriculum order:** A mission requires only concepts taught at or below its clearance, and its reference solution uses the concept it claims to teach.
+- **Curriculum order:** A mission requires only concepts taught at or below its clearance, and its reference solution uses the concept it claims to teach. A reference solution uses interfaces when it opens a field that returns an interface, and it must then declare the concept.
 - **Steps:** From clearance 6, each stage declares the step of Section 3.7 it introduces, if any. A stage introduces at most one step or concept, so the first stage of a teaching mission, which introduces the concept, declares none. The step is one the coverage table lists at the mission's clearance, only a teaching mission introduces one, the stage's reference solution uses it, a later mission's reference solution practises it, and no reference solution uses it before the stage that introduces it. Mission text uses the step's glossary term only from its clearance. Validation recognises a step from the parsed reference solution, never from its text. A teaching mission from clearance 6 has at most four stages.
 - **Course shape:** The rules of Section 3.7 hold. Every taught concept is practised later, every clearance level ends with an assessment mission, and every mission file in the content directory is part of the course. A coda is left out of these rules about levels and out of the check that the course order promotes the player to each mission's clearance. It has one stage, no clock, teaches nothing, introduces no mechanic, and is the only coda and the last mission of its campaign, at the clearance of the campaign's last case.
 - **Starter queries:** A stage's starter query does not, unchanged, yield the required evidence.
@@ -1505,11 +1509,30 @@ This milestone opens the second campaign, *The Fourth Desk*, and adds the first 
 
 **Success criterion:** A player who has never written introspection can identify a field the documentation does not list, tell two fields apart by their descriptions, read a type through `ofType`, and use `__typename`, each in a stage that introduces nothing else.
 
+### Milestone 7 — Clearance 7: Interfaces
+
+This milestone adds the second level of *The Fourth Desk*. It builds the engine's support for abstract types, which unions at clearance 8 also need, and the first field inside a query that takes arguments.
+
+- Resolve a field that returns an interface: the store looks a record up through every type that implements the interface, and the executor answers each record as the type it was filed as.
+- Filter a list inside a query by its arguments: a city by its name, and a true-or-false argument with a default (Section 5.3).
+- Count an interface and its inline fragments in request weight.
+- List interfaces in the documentation panel, with the kinds that implement them, and show argument defaults.
+- Add clerk's notes for a field that only one kind of record has and for an inline fragment that can never apply.
+- Add the steps `inline-fragment`, `field-argument`, and `boolean-value` to `src/content/steps.ts`.
+- Add the clearance 7 schema: `CaseFile`, the interface `Document` with `Telegram`, `Memorandum`, and `Minute`, and `Officer`.
+- Add the concept card for interfaces, and glossary entries for an interface and an inline fragment.
+- Author the teaching mission, *The Valparaíso Draft*, in four stages that follow the coverage table, and the assessment, *The Station File*.
+- Run both agent playtests on the two new cases, and act on what they find.
+
+Interfaces have no kata yet (Section 3.11).
+
+**Success criterion:** A player who has never read an interface can ask a mixed list for its shared fields, ask one kind for its own fields with an inline fragment, narrow a list with an argument inside the query, and ask for sealed records with `true`, each in a stage that introduces nothing else.
+
 ### After 1.0
 
-Where this document says that a feature arrives after the MVP, and Milestones 5 and 6 do not list it, the feature arrives after 1.0.
+Where this document says that a feature arrives after the MVP, and Milestones 5 to 7 do not list it, the feature arrives after 1.0.
 
-- Clearance levels 7 through 13, from interfaces to subscriptions, with the steps of Section 3.7. The adversary is identified in these levels and not before.
+- Clearance levels 8 through 13, from unions to subscriptions, with the steps of Section 3.7. The adversary is identified in these levels and not before.
 - Request weight limited with the clearance 9 missions that teach pagination.
 - A kata for introspection, whose pass does not rest on facts (Section 3.11).
 - Warrants and missions that end in an arrest.
@@ -1576,6 +1599,8 @@ A **Deduction** is a conclusion the player submits with citations.
 **Undocumented:** Said of a type or field that the documentation panel leaves out, so that only introspection describes it (Section 5.3).
 
 **Interface:** A type that names fields several kinds of record share. A query asks for those fields directly and for the rest in an inline fragment.
+
+**Inline fragment:** Three dots, `on`, a type's name, and a selection, written inside a field that returns an interface or a union. Its fields come back only for records of that type.
 
 **Union:** A type whose value is one of several unrelated kinds of record. Every field is asked for in an inline fragment.
 

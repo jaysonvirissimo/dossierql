@@ -7,6 +7,7 @@ export const CONCEPTS = [
   "fragments",
   "variables",
   "introspection",
+  "interfaces",
 ] as const;
 export type Concept = (typeof CONCEPTS)[number];
 

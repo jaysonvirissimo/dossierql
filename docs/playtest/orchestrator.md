@@ -55,6 +55,10 @@ start.
 | `novice-walkthrough.md`          | _The Sealed Cabinet_               | `registrars-return`    | 6         |
 | `clean-room-solve.md`            | _The Exchange Book_                | `registrars-return`    | 6         |
 | `novice-walkthrough.md`          | _The Exchange Book_                | `registrars-return`    | 6         |
+| `clean-room-solve.md`            | _The Valparaíso Draft_             | `exchange-book`        | 7         |
+| `novice-walkthrough.md`          | _The Valparaíso Draft_             | `exchange-book`        | 7         |
+| `clean-room-solve.md`            | _The Station File_                 | `exchange-book`        | 7         |
+| `novice-walkthrough.md`          | _The Station File_                 | `exchange-book`        | 7         |
 | `simulated-sessions.md`, round 1 | the drills and the first two cases | none                   | 1         |
 | `simulated-sessions.md`, round 2 | the path given in the prompt       | in the prompt          | 2         |
 
@@ -69,6 +73,14 @@ start.
   campaign, and you remember what its debriefs taught. You have never asked
   an archive to describe itself." For _The Exchange Book_, add: "You have
   also played The Sealed Cabinet."
+- **_The Valparaíso Draft_ and _The Station File_.** They are the clearance 7
+  cases of the second campaign. Seed the completion of `exchange-book`, and
+  for _The Station File_ the completion of `valparaiso-draft` as well. For the
+  novice walkthrough of _The Valparaíso Draft_, set [PRIOR PLAY] to: "You have
+  played every case of the first campaign, The Sealed Cabinet, and The
+  Exchange Book, and you remember what their debriefs taught. You have never
+  read a list whose records are of different kinds." For _The Station File_,
+  add: "You have also played The Valparaíso Draft."
 - **The simulated rounds.** Run each round once for each persona, P1 to P4,
   in a fresh context each time. Start round 2 only after round 1's summary
   is written and its fixes are made. If round 1's fixes change the opening,

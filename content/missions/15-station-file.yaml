@@ -1,0 +1,159 @@
+id: station-file
+title: The Station File
+campaign: fourth-desk
+order: 4
+clearance: 7
+kind: assessment
+teaches: null
+practises: [nested-selections, arguments, interfaces]
+requires: [nested-selections, arguments, interfaces]
+summary: >
+  Valparaíso Station kept its own file on the draft it sent to Lisbon. The
+  instruction that the draft was written to is somewhere in that file.
+motif: wire
+clock:
+  countdown: The station's file goes back under seal in {remaining}
+  expired: The station's file has gone back under seal
+  onExpiry: end
+startingStage: valparaiso
+
+debrief:
+  onTime: |
+    The Cipher Room in Lisbon wired the instruction to Valparaíso
+    Station. The First Desk had already told the station that it would
+    send no instruction of its own.
+
+    The Cipher Room's register gives the rest. The instruction was handed
+    in at the counter, and nobody wrote down who handed it in. The
+    Cipher Room sends whatever reaches its counter, for any desk in the
+    building.
+  stampOnTime: INSTRUCTION TRACED
+  comparison: >
+    The reference solution asks file CF-0044 for its documents in
+    Valparaíso, with `sealed: true` to reach the telegram that the head
+    of station filed under seal. Inside `documents` it writes an inline
+    fragment for `Telegram`, with `text` and `origin`. It asks for the
+    open documents in a second query, because one list holds either the
+    sealed documents or the open ones, and the First Desk's telegram is
+    open. The solution also asks the Cipher Room for its `register`, and
+    the register's entry for the telegram says that nobody gave a name
+    at the counter.
+  geography: >
+    Chile runs more than four thousand kilometres from north to south and
+    is rarely more than two hundred kilometres wide. Valparaíso lies near
+    the middle of that coast, close to the capital, Santiago.
+
+stages:
+  valparaiso:
+    location: CL
+    objective: Identify the office that sent Valparaíso Station the instruction to draft the minute on docket DKT-0417.
+
+    briefing: |
+      Tomás Eyzaguirre drafted the minute on docket DKT-0417 at
+      Valparaíso Station. He wrote it to an instruction that reached the
+      station by telegram. Valparaíso Station kept its own file on the
+      draft, and the file's reference is CF-0044.
+
+      Two offices in Lisbon sent the station a telegram about the docket.
+      One of them is the First Desk. The file also holds a telegram that
+      went the other way, from the station to Lisbon. Identify the office
+      that sent the station the instruction.
+
+    clues:
+      - text: >
+          The office sent the station a telegram instructing it to draft the
+          minute.
+        constraint:
+          $telegram.origin: $office
+          $telegram.text: Draft a minute to the Fourth Desk for the release of the museum's tiles under order REL-0417. Send the draft to the First Desk in the bag, under seal.
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        The head of station filed the telegram with the instruction under
+        seal. The other telegram is open, and it says where the instruction
+        would come from.
+      concept: >
+        Inside documents, ask for the fields of a telegram in an inline
+        fragment for Telegram. The argument sealed: true lists the sealed
+        documents.
+      schema: >
+        Look at CaseFile.documents, Telegram.text, Telegram.origin, and
+        Office.register.
+      skeleton: |
+        caseFile(reference: "CF-0044") { documents(sealed: true) { reference ... on Telegram { text origin { name } } } }
+
+    solution:
+      type: deduction
+      office: cipher-room
+    labels:
+      office: Office
+
+    claims:
+      - id: instructed
+        prompt: This office sent Valparaíso Station the instruction to draft the minute.
+        evidenceSets:
+          - facts:
+              - entity: Telegram:$telegram
+                field: text
+                equals: >-
+                  Draft a minute to the Fourth Desk for the release of the
+                  museum's tiles under order REL-0417. Send the draft to the
+                  First Desk in the bag, under seal.
+              - entity: Telegram:$telegram
+                field: origin
+                equals: Office:$office
+          - facts:
+              - entity: Office:$office
+                field: register
+                includes: RegisterEntry:$entry
+              - entity: RegisterEntry:$entry
+                field: note
+                equals: >-
+                  Instruction to draft a minute on docket DKT-0417, sent to
+                  Valparaíso Station by wire. Handed in at the counter, with
+                  no name given.
+
+    leadOutcomes:
+      first-desk:
+        refutation:
+          claim: instructed
+          facts:
+            - entity: Telegram:$telegram
+              field: text
+              equals: >-
+                The First Desk sends no instruction on docket DKT-0417. An
+                instruction will reach you by wire from the cipher room.
+            - entity: Telegram:$telegram
+              field: origin
+              equals: Office:$office
+        ruledOut: |
+          The First Desk's telegram to the station says that the First
+          Desk sends no instruction on docket DKT-0417, and that the
+          instruction will come from the cipher room.
+
+    resolved: |
+      Deduction accepted. The Cipher Room sent Valparaíso Station the
+      instruction to draft the minute.
+
+    referenceSolution:
+      - |
+        query {
+          caseFile(reference: "CF-0044") {
+            documents(city: "Valparaíso", sealed: true) {
+              reference
+              ... on Telegram { text origin { name register { note } } }
+            }
+          }
+        }
+      - |
+        query {
+          caseFile(reference: "CF-0044") {
+            documents {
+              reference
+              ... on Telegram { text origin { name } }
+            }
+          }
+        }

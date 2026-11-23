@@ -119,3 +119,29 @@
   payoff: >
     A part of the archive with no documentation still tells you what it
     holds, what each field means, and what each field returns.
+- id: interfaces
+  title: Interfaces and inline fragments
+  clearance: 7
+  summary: >
+    An interface is a type that lists the fields several kinds of record
+    share. In the example, `documents` returns the interface `Document`, so
+    the list holds telegrams, memoranda, and minutes together. The fields
+    `reference` and `stamp` belong to `Document`, so they come back for
+    every document. The field `text` belongs only to `Telegram`, so the
+    example asks for it inside `... on Telegram`, an inline fragment. The
+    argument `city` on `documents` narrows the list to the documents filed
+    in one city.
+  example: |
+    query {
+      caseFile(reference: "CF-0417") {
+        documents(city: "Lisbon") {
+          __typename
+          reference
+          stamp
+          ... on Telegram { text }
+        }
+      }
+    }
+  payoff: >
+    One query reads a file of mixed papers, and asks each kind of paper for
+    the fields that only that kind has.

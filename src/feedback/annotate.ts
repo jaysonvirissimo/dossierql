@@ -60,6 +60,26 @@ const RULES: Rule[] = [
       "A fragment is not a field, so you cannot define one inside the query's braces. You define a fragment after the query's closing brace, and you use the fragment inside the braces.",
   },
   {
+    // Only an interface or a union gets this suggestion, so only from
+    // clearance 7 does the note speak of a kind of record.
+    test: /^Cannot query field "(\w+)" on type "(\w+)"\. Did you mean to use an inline fragment on (.+)\?$/,
+    note: (m) => {
+      const kinds = [...String(m[3]).matchAll(/"(\w+)"/g)].map((k) =>
+        String(k[1]),
+      );
+      const which =
+        kinds.length === 1
+          ? `${String(kinds[0])} has it`
+          : `${kinds.join(" and ")} have it`;
+      return `Not every kind of ${String(m[2])} has "${String(m[1])}". ${which}. To ask for a field that belongs to one kind, put the field inside an inline fragment for that kind. The glossary entry for an inline fragment shows how.`;
+    },
+  },
+  {
+    test: /^Fragment cannot be spread here as objects of type "(\w+)" can never be of type "(\w+)"/,
+    note: (m) =>
+      `The inline fragment for ${String(m[2])} stands inside a field that returns ${String(m[1])} records, and a record of type ${String(m[1])} is never of type ${String(m[2])}. An inline fragment goes inside a field that can return ${String(m[2])} records. The documentation panel lists the kinds of record that each interface stands for.`,
+  },
+  {
     test: /^Cannot query field "(\w+)" on type "(\w+)"/,
     note: (m) =>
       isUndocumented(String(m[2]))

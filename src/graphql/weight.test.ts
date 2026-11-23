@@ -55,4 +55,20 @@ describe("request weight", () => {
     const after = transmit(store, { operation, clearance: 6 });
     expect(after.result.extensions).toEqual({ weight: 2 });
   });
+
+  it("counts a list of an interface, and the records inside its inline fragments", () => {
+    const most = Math.max(
+      ...store.all("CaseFile").map((c) => (c.documents as string[]).length),
+    );
+    const at7 = (query: string) =>
+      requestWeight(schemaFor(7), store, parse(query));
+    expect(
+      at7(`{ caseFile(reference: "CF-0417") { documents { reference } } }`),
+    ).toBe(1 + most);
+    expect(
+      at7(
+        `{ caseFile(reference: "CF-0417") { documents { ... on Telegram { origin { name } } } } }`,
+      ),
+    ).toBe(1 + most * 2);
+  });
 });

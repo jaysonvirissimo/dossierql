@@ -1,8 +1,11 @@
 import {
   getNamedType,
+  isInterfaceType,
   isObjectType,
   Kind,
   type DocumentNode,
+  type GraphQLInterfaceType,
+  type GraphQLNamedType,
   type GraphQLObjectType,
   type GraphQLSchema,
   type SelectionSetNode,
@@ -11,6 +14,14 @@ import { fieldShape, type Store } from "./store.ts";
 
 /** The clearance from which every result states its weight (SDD 3.3). */
 export const WEIGHT_REPORTED_FROM = 6;
+
+type RecordType = GraphQLObjectType | GraphQLInterfaceType;
+
+function isRecordType(
+  type: GraphQLNamedType | undefined | null,
+): type is RecordType {
+  return isObjectType(type) || isInterfaceType(type);
+}
 
 const longest = new WeakMap<Store, Map<string, number>>();
 
@@ -58,7 +69,7 @@ export function requestWeight(
 
   const weigh = (
     set: SelectionSetNode,
-    type: GraphQLObjectType,
+    type: RecordType,
     seen: ReadonlySet<string>,
   ): number => {
     let total = 0;
@@ -69,7 +80,7 @@ export function requestWeight(
         const field = type.getFields()[name];
         if (!field || !selection.selectionSet) continue;
         const named = getNamedType(field.type);
-        if (!isObjectType(named)) continue;
+        if (!isRecordType(named)) continue;
         const root = type === query;
         const shape = fieldShape(field.type);
         const count = shape.list
@@ -82,7 +93,7 @@ export function requestWeight(
         const condition = selection.typeCondition
           ? schema.getType(selection.typeCondition.name.value)
           : type;
-        if (isObjectType(condition)) {
+        if (isRecordType(condition)) {
           total += weigh(selection.selectionSet, condition, seen);
         }
       } else {
@@ -90,7 +101,7 @@ export function requestWeight(
         const fragment = fragments.get(name);
         if (!fragment || seen.has(name)) continue;
         const condition = schema.getType(fragment.typeCondition.name.value);
-        if (isObjectType(condition)) {
+        if (isRecordType(condition)) {
           total += weigh(
             fragment.selectionSet,
             condition,

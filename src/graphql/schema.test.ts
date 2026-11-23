@@ -1,4 +1,5 @@
 import {
+  isInterfaceType,
   getIntrospectionQuery,
   isObjectType,
   type IntrospectionQuery,
@@ -67,6 +68,15 @@ const ADDED: Record<number, string[]> = {
     "TransferOrder.registerEntry",
   ],
   6: ["Docket", "Drawer", "Slip", "Query.cabinet", "Query.exchangeBook"],
+  7: [
+    "CaseFile",
+    "Memorandum",
+    "Minute",
+    "Officer",
+    "Telegram",
+    "Office.officers",
+    "Query.caseFile",
+  ],
 };
 
 function surface(level: number): { types: string[]; fields: string[] } {
@@ -267,5 +277,68 @@ describe("the Fourth Desk's cabinet at clearance 6", () => {
       opened: "FS-0088",
       heldFor: { __typename: "Operative", codename: "GILT_MAGPIE" },
     });
+  });
+
+  it("has no interface below clearance 7, and Document with three kinds at 7", () => {
+    expect(schemaFor(6).getType("Document")).toBeUndefined();
+    const document = schemaFor(7).getType("Document");
+    expect(isInterfaceType(document)).toBe(true);
+    if (!isInterfaceType(document)) return;
+    expect(
+      schemaFor(7)
+        .getPossibleTypes(document)
+        .map((t) => t.name)
+        .sort(),
+    ).toEqual(["Memorandum", "Minute", "Telegram"]);
+  });
+
+  it("answers each document as its own kind, and records facts by that kind", () => {
+    const sent = transmit(catalog.store, {
+      operation: `{
+        caseFile(reference: "CF-0417") {
+          documents { __typename reference ... on Telegram { text } }
+        }
+      }`,
+      clearance: 7,
+    });
+    expect(sent.result.errors).toBeUndefined();
+    const documents = (
+      sent.result.data as {
+        caseFile: { documents: Record<string, string>[] };
+      }
+    ).caseFile.documents;
+    expect(documents[0]).toEqual({
+      __typename: "Minute",
+      reference: "MIN-0088",
+    });
+    expect(documents[1]?.__typename).toBe("Telegram");
+    expect(documents[1]?.text).toMatch(/draft of the minute/);
+    expect(documents.some((d) => d.reference === "MEM-0044")).toBe(false);
+    const keys = sent.facts.map((f) => f.fact.key);
+    expect(keys).toContain("Telegram:TEL-0089.text");
+    expect(keys).toContain("Minute:MIN-0088.reference");
+  });
+
+  it("filters a list inside a query by a city's name and by a seal", () => {
+    const references = (args: string) => {
+      const sent = transmit(catalog.store, {
+        operation: `{ caseFile(reference: "CF-0417") { documents${args} { reference } } }`,
+        clearance: 7,
+      });
+      expect(sent.result.errors).toBeUndefined();
+      return (
+        sent.result.data as { caseFile: { documents: { reference: string }[] } }
+      ).caseFile.documents.map((d) => d.reference);
+    };
+    expect(references(`(city: "Valparaíso")`)).toEqual([
+      "MEM-0040",
+      "MEM-0042",
+      "MEM-0043",
+    ]);
+    expect(references(`(city: "valparaiso")`)).toHaveLength(3);
+    expect(references(`(city: "Valparaíso", sealed: true)`)).toEqual([
+      "MEM-0044",
+    ]);
+    expect(references(`(sealed: false)`)).toEqual(references(""));
   });
 });

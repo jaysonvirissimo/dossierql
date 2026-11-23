@@ -117,4 +117,28 @@ describe("annotate", () => {
     const [documented] = notes(`{ cities { population } }`, 6);
     expect(documented).toContain("The documentation panel lists");
   });
+
+  it("points to an inline fragment for a field that only one kind has", () => {
+    const [note] = notes(
+      `{ caseFile(reference: "CF-0417") { documents { text } } }`,
+      7,
+    );
+    expect(note).toContain('Not every kind of Document has "text"');
+    expect(note).toContain("Telegram has it");
+    expect(note).toContain("glossary entry for an inline fragment");
+    expect(note).not.toMatch(/[{}]/);
+    expect(styleIssues(note!)).toEqual([]);
+  });
+
+  it("explains an inline fragment that can never apply", () => {
+    const [note] = notes(
+      `{ caseFile(reference: "CF-0417") { documents { ... on Officer { name } } } }`,
+      7,
+    );
+    expect(note).toContain(
+      "a record of type Document is never of type Officer",
+    );
+    expect(note).not.toMatch(FALLBACK);
+    expect(styleIssues(note!)).toEqual([]);
+  });
 });

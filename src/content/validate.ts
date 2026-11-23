@@ -1,9 +1,18 @@
 import {
+  getNamedType,
+  isAbstractType,
+  isInterfaceType,
   isObjectType,
   Kind,
   parse,
+  TypeInfo,
   TypeKind,
   visit,
+  visitWithTypeInfo,
+  type GraphQLInterfaceType,
+  type GraphQLNamedType,
+  type GraphQLObjectType,
+  type DocumentNode,
   type GraphQLSchema,
 } from "graphql";
 import {
@@ -28,6 +37,7 @@ import {
 import { check, transmit } from "../graphql/execute.ts";
 import { factKey, type Fact } from "../graphql/facts.ts";
 import { fieldClearance, fullSchema, schemaFor } from "../graphql/schema.ts";
+import { MAX_CLEARANCE } from "../graphql/sdl.ts";
 import {
   fieldShape,
   parseRef,
@@ -70,6 +80,13 @@ type Report = (path: string, code: string, message: string) => void;
 
 // ---------------------------------------------------------------- facts
 
+/** A type whose fields can be asked for: an object type or an interface. */
+function isRecordType(
+  type: GraphQLNamedType | undefined | null,
+): type is GraphQLObjectType | GraphQLInterfaceType {
+  return isObjectType(type) || isInterfaceType(type);
+}
+
 /** Every fact the archive holds, as a complete retrieval would record it. */
 export function allFacts(store: Store, schema: GraphQLSchema): Fact[] {
   const facts: Fact[] = [];
@@ -98,7 +115,7 @@ export function allFacts(store: Store, schema: GraphQLSchema): Fact[] {
             value: {
               kind: "list",
               refs: ((raw as string[] | undefined) ?? []).map((id) =>
-                refOf(target, id),
+                store.refFor(target, id),
               ),
               complete: true,
             },
@@ -110,7 +127,10 @@ export function allFacts(store: Store, schema: GraphQLSchema): Fact[] {
             field: field.name,
             value: {
               kind: "ref",
-              ref: typeof raw === "string" ? refOf(shape.target, raw) : null,
+              ref:
+                typeof raw === "string"
+                  ? store.refFor(shape.target, raw)
+                  : null,
             },
           });
         }
@@ -153,7 +173,7 @@ function reach(
   let type: string | null = parseRef(start).type;
   for (const fieldName of path) {
     const objectType = type ? schema.getType(type) : undefined;
-    if (!objectType || !isObjectType(objectType)) return [];
+    if (!objectType || !isRecordType(objectType)) return [];
     const field = objectType.getFields()[fieldName];
     if (!field) throw new Error(`${String(type)} has no field ${fieldName}.`);
     const shape = fieldShape(field.type);
@@ -168,7 +188,7 @@ function reach(
         if (value === undefined || value === null) continue;
         next.push(
           shape.target
-            ? refOf(shape.target, value as string)
+            ? store.refFor(shape.target, value as string)
             : (value as Reached),
         );
       }
@@ -271,6 +291,28 @@ export function solve(
 
 // ------------------------------------------------------------- concepts
 
+/**
+ * Whether a request opens a field that returns an interface, and so asks for
+ * records of several kinds at once.
+ */
+function asksThroughInterface(document: DocumentNode): boolean {
+  const schema = schemaFor(MAX_CLEARANCE);
+  const info = new TypeInfo(schema);
+  let found = false;
+  visit(
+    document,
+    visitWithTypeInfo(info, {
+      Field(node) {
+        const type = info.getType();
+        if (node.selectionSet && type && isAbstractType(getNamedType(type))) {
+          found = true;
+        }
+      },
+    }),
+  );
+  return found;
+}
+
 /** The concepts an operation's text makes use of. */
 export function conceptsUsed(operation: string): Set<Concept> {
   const used = new Set<Concept>();
@@ -294,6 +336,7 @@ export function conceptsUsed(operation: string): Set<Concept> {
     VariableDefinition: () => void used.add("variables"),
   });
   if (usesIntrospection(document)) used.add("introspection");
+  if (asksThroughInterface(document)) used.add("interfaces");
   return used;
 }
 
@@ -389,6 +432,8 @@ const VOCABULARY = [
   "operation",
   "introspection",
   "scalar",
+  "interface",
+  "inline fragment",
 ];
 
 // ------------------------------------------------------------ the checks
@@ -1338,6 +1383,7 @@ function checkCurriculum(
     "fragments",
     "variables",
     "introspection",
+    "interfaces",
   ] as const) {
     if (used.has(concept) && !declared.has(concept)) {
       report(
@@ -1721,7 +1767,7 @@ function checkHintsAndText(
       const type = schema.getType(typeName as string);
       if (
         !type ||
-        !isObjectType(type) ||
+        !isRecordType(type) ||
         !type.getFields()[fieldName as string]
       ) {
         report(

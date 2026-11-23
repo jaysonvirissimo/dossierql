@@ -276,6 +276,7 @@ input {
 .motif--ledger,
 .motif--seal,
 .motif--lamp,
+.motif--wire,
 .motif--route {
   background: repeating-linear-gradient(
     90deg,

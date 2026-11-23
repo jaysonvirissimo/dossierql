@@ -1,9 +1,15 @@
 import {
   getNamedType,
   getNullableType,
+  isAbstractType,
+  isInterfaceType,
   isListType,
   isObjectType,
+  print,
+  type GraphQLArgument,
+  type GraphQLInterfaceType,
   type GraphQLObjectType,
+  type GraphQLSchema,
 } from "graphql";
 import { useMemo } from "react";
 import { isUndocumented, schemaFor } from "../graphql/schema.ts";
@@ -12,20 +18,54 @@ import { isUndocumented, schemaFor } from "../graphql/schema.ts";
  * The archive as it describes itself at one clearance. Read from the schema,
  * so it always agrees with what a query may ask for.
  */
+/** An argument as the entry shows it, with its default value if it has one. */
+function argumentText(argument: GraphQLArgument): string {
+  const text = `${argument.name}: ${String(argument.type)}`;
+  const value = argument.astNode?.defaultValue;
+  return value ? `${text} = ${print(value)}` : text;
+}
+
+/** The kinds of record that an interface stands for, as a phrase. */
+/**
+ * An inline fragment for the first kind of an interface, asking for one
+ * field that only that kind has, as in `... on Telegram { text }`.
+ */
+function exampleFragment(
+  schema: GraphQLSchema,
+  type: GraphQLInterfaceType,
+): string {
+  const [kind] = schema.getPossibleTypes(type);
+  if (!kind) return "";
+  const shared = new Set(Object.keys(type.getFields()));
+  const own = Object.values(kind.getFields()).find(
+    (field) =>
+      !shared.has(field.name) &&
+      !isObjectType(getNamedType(field.type)) &&
+      !isAbstractType(getNamedType(field.type)),
+  );
+  return own ? `... on ${kind.name} { ${own.name} }` : "";
+}
+
+function kindsOf(schema: GraphQLSchema, type: GraphQLInterfaceType): string {
+  const names = schema.getPossibleTypes(type).map((kind) => kind.name);
+  if (names.length < 2) return names.join("");
+  return `${names.slice(0, -1).join(", ")} or ${names[names.length - 1] ?? ""}`;
+}
+
 export function SchemaDocs({ clearance }: { clearance: number }) {
+  const schema = schemaFor(clearance);
   const types = useMemo(() => {
-    const schema = schemaFor(clearance);
     const query = schema.getQueryType();
     const all = Object.values(schema.getTypeMap()).filter(
-      (t): t is GraphQLObjectType =>
-        isObjectType(t) &&
+      (t): t is GraphQLObjectType | GraphQLInterfaceType =>
+        (isObjectType(t) || isInterfaceType(t)) &&
         !t.name.startsWith("__") &&
         t !== query &&
         !isUndocumented(t.name),
     );
     all.sort((a, b) => a.name.localeCompare(b.name));
     return query ? [query, ...all] : all;
-  }, [clearance]);
+  }, [schema]);
   const seized = types.some((type) =>
     Object.keys(type.getFields()).some((field) =>
       isUndocumented(type.name, field),
@@ -113,6 +153,26 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
             <code>{type.name}</code>
             {index === 0 && <span> · where every query starts</span>}
             {type.description && <span> · {type.description}</span>}
+            {isInterfaceType(type) && (
+              <span>
+                {" "}
+                · An interface. Each record is a {kindsOf(schema, type)}, and
+                has the fields below. Ask for a field that only one kind has
+                inside an inline fragment for that kind, as in{" "}
+                <code>{exampleFragment(schema, type)}</code>.
+              </span>
+            )}
+            {isObjectType(type) && type.getInterfaces().length > 0 && (
+              <span>
+                {" "}
+                · Has every field of{" "}
+                {type
+                  .getInterfaces()
+                  .map((i) => i.name)
+                  .join(" and ")}
+                , and the fields after them.
+              </span>
+            )}
           </summary>
           <dl className="doc__fields">
             {Object.values(type.getFields())
@@ -123,15 +183,14 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
                     <code>
                       {field.name}
                       {field.args.length > 0 &&
-                        `(${field.args
-                          .map((a) => `${a.name}: ${String(a.type)}`)
-                          .join(", ")})`}
+                        `(${field.args.map(argumentText).join(", ")})`}
                       : {String(field.type)}
                     </code>
                   </dt>
                   <dd>
                     {field.description ?? ""}
-                    {!isObjectType(getNamedType(field.type))
+                    {!isObjectType(getNamedType(field.type)) &&
+                    !isAbstractType(getNamedType(field.type))
                       ? " Holds a single value, so this field takes no braces."
                       : isListType(getNullableType(field.type))
                         ? ` Returns a list of ${String(getNamedType(field.type))} records, so this field needs braces after it. The fields inside the braces come back once for each record in the list.`

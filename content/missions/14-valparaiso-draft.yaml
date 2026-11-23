@@ -1,0 +1,544 @@
+id: valparaiso-draft
+title: The Valparaíso Draft
+campaign: fourth-desk
+order: 3
+clearance: 7
+kind: teaching
+teaches: interfaces
+practises: [nested-selections, arguments]
+requires: [nested-selections, arguments]
+summary: >
+  The First Desk entered the minute that let the museum's tiles go under its
+  own serial. The inquiry has made a file of the minute and of every paper
+  that mentions it, and the papers are not all of one kind.
+motif: wire
+clock:
+  countdown: The inquiry closes the file in {remaining}
+  expired: The inquiry has closed the file
+  onExpiry: end
+startingStage: minute
+
+debrief:
+  onTime: |
+    The First Desk did not write the minute on docket DKT-0417. Tomás
+    Eyzaguirre, the second secretary at Valparaíso Station, drafted it.
+    The head of station sent the draft to Lisbon in the bag, and the
+    First Desk copied it out under its own serial, FS-0088. The inquiry
+    reads the foot of the minute, where the initials are T.E.
+
+    Eyzaguirre wrote the minute to an instruction that reached the
+    station by telegram. He did not choose its words, and his
+    memorandum does not say who did. Valparaíso Station keeps its own
+    file on the draft.
+
+    The inquiry notes one unsigned memorandum in Lisbon. It orders the
+    First Desk to copy the draft out and to send the draft back under
+    seal.
+  stampOnTime: DRAFT TRACED
+  comparison: >
+    The reference solution asks for `documents` from file CF-0417. The
+    field `documents` returns the interface `Document`, so its entries
+    are telegrams, memoranda, and minutes together. Every kind has the
+    fields that `Document` lists, such as `reference` and `stamp`, and
+    the solution asks for those fields directly. For the fields of one
+    kind it writes an inline fragment, as in `... on Telegram { text }`.
+    It narrows the list with arguments on `documents`:
+    `city: "Valparaíso"` for the station's papers, and `sealed: true`
+    for the papers under seal.
+  geography: >
+    Valparaíso is Chile's oldest working port on the Pacific. Its old
+    quarter is built on a ring of steep hills, and the city has kept
+    the funicular lifts that carry people up them.
+
+stages:
+  minute:
+    location: PT
+    objective: Identify the document in file CF-0417 that the First Desk entered as FS-0088.
+
+    briefing: |
+      You read this case at a desk in Lisbon. The inquiry has made a file
+      of the minute on docket DKT-0417, and of every paper that mentions
+      the minute. The file's reference is
+      CF-0417. Ask for it with `caseFile(reference: "CF-0417")`. Inside
+      the file, the field `documents` lists the papers.
+
+      The papers are of three kinds: telegrams, memoranda, and minutes.
+      Look up `CaseFile` in the Documentation tab. The field `documents`
+      returns `[Document!]!`, a list of `Document` records. `Document` is
+      not one kind of record. It is an
+      [interface](glossary:interface): a type that lists the fields every
+      kind of document shares. The types `Telegram`, `Memorandum`, and
+      `Minute` each have every field of `Document`, and fields of their
+      own besides.
+
+      Inside `documents`, you can ask for any field that `Document`
+      lists, and it comes back for every document, whatever its kind.
+      The field `stamp` is one of those fields. It holds the serial each
+      office entered the document under. The First Desk's serials start
+      with FS.
+
+      In the Findings, the heading of each document gives its kind. The
+      response itself does not say which kind a document is unless you
+      ask for `__typename`, which every type has. You need it when the
+      response is all you have, as in the Raw response tab.
+
+      Docket DKT-0417 was opened on the entry FS-0088 in the register of
+      the First Desk. Identify the document that the First Desk entered
+      as FS-0088.
+
+    clues:
+      - text: >
+          The First Desk entered the document as FS-0088.
+        constraint:
+          $document.stamp: FS-0088
+
+    scaffold:
+      level: guided
+      starterQuery: |
+        query {
+          caseFile(reference: "CF-0417") {
+            documents {
+              reference
+              # Ask for more fields of Document here, such as stamp
+              # and title. Every field that the Documentation tab
+              # lists under Document comes back for every document.
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        Two documents in the file carry the same instruction. Compare their
+        stamps.
+      concept: >
+        The field documents returns Document, an interface. Inside
+        documents, ask for any field that the Documentation tab lists under
+        Document, such as reference, title, and stamp. Each one comes back
+        for every document in the list.
+      schema: >
+        Look at Query.caseFile, CaseFile.documents, Document.reference, and
+        Document.stamp.
+      skeleton: |
+        caseFile(reference: "CF-0417") { documents { reference title stamp } }
+
+    solution:
+      type: deduction
+      document: MIN-0088
+    labels:
+      document: Document
+
+    claims:
+      - id: entered
+        prompt: The First Desk entered this document as FS-0088.
+        evidenceSets:
+          - facts:
+              - entity: Minute:$document
+                field: stamp
+                equals: FS-0088
+          - facts:
+              - entity: Minute:$document
+                field: title
+                equals: Minute issued
+
+    leadOutcomes:
+      MIN-0309:
+        refutation:
+          claim: entered
+          facts:
+            - entity: Minute:$document
+              field: stamp
+              equals: LX-0309
+        ruledOut: |
+          Minute MIN-0309 is stamped LX-0309. Lusaka Exchange Control
+          entered its copy of the minute under that serial. The First
+          Desk's serials start with FS.
+
+    resolved: |
+      Deduction accepted. The First Desk entered minute MIN-0088 as
+      FS-0088. Each kind of document in the file has fields that the
+      others do not, and you have not yet asked for any of them.
+
+    referenceSolution:
+      - |
+        query {
+          caseFile(reference: "CF-0417") {
+            documents { reference title stamp }
+          }
+        }
+
+    next: wire
+
+  wire:
+    location: PT
+    step: inline-fragment
+    objective: Identify the office that sent the First Desk the draft of the minute.
+
+    briefing: |
+      The First Desk did not write the minute alone. A draft reached the
+      desk from another office, and one of the telegrams in the file says
+      so. The words of a telegram are in the field `text`, which only the
+      type `Telegram` has. `Document` does not list `text`, so asking for
+      `text` directly inside `documents` returns an error.
+
+      To ask for a field that only one kind of document has, write three
+      dots, the word `on`, and the kind's name, then braces with the
+      field inside. For example, `... on Telegram { text }` inside
+      `documents` asks for the text of each telegram. The archive leaves
+      out those fields for a document that is not a telegram. This is
+      called an [inline fragment](glossary:inline-fragment). The three
+      dots are the dots you wrote to spread a fragment. A fragment you
+      define has a name of its own, and you write its fields once, after
+      the query. An inline fragment has no name, and you write its fields
+      where it is used. The words `on Telegram` say which kind of record
+      the fields are for, as they do in a fragment you define.
+      A telegram's field `origin` returns the office that sent the
+      telegram.
+
+      Identify the office that sent the First Desk the draft of the
+      minute.
+
+    clues:
+      - text: >
+          A telegram from the office says that the draft of the minute is on
+          its way to the First Desk.
+        constraint:
+          $telegram.text: The draft of the minute on docket DKT-0417 follows to the First Desk in the bag.
+          $telegram.origin: $office
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          caseFile(reference: "CF-0417") {
+            documents {
+              reference
+              # Ask for text and origin here, inside an inline
+              # fragment for Telegram, with the name of the office
+              # inside origin.
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        Three telegrams are in the file. Only one of them is about the
+        draft.
+      concept: >
+        A field that only one kind of document has goes inside an inline
+        fragment for that kind: three dots, on, the kind's name, and braces
+        with the field inside.
+      schema: >
+        Look at Telegram.text, Telegram.origin, and Office.name.
+      skeleton: |
+        documents { reference ... on Telegram { text origin { name } } }
+
+    solution:
+      type: deduction
+      office: valparaiso-station
+    labels:
+      office: Office
+
+    claims:
+      - id: draft
+        prompt: This office sent the First Desk the draft of the minute.
+        evidenceSets:
+          - facts:
+              - entity: Telegram:$telegram
+                field: text
+                equals: The draft of the minute on docket DKT-0417 follows to the First Desk in the bag.
+              - entity: Telegram:$telegram
+                field: origin
+                equals: Office:$office
+          - facts:
+              - entity: Office:$office
+                field: register
+                includes: RegisterEntry:$entry
+              - entity: RegisterEntry:$entry
+                field: note
+                equals: >-
+                  Draft of the minute on docket DKT-0417 sent to the First
+                  Desk in the bag.
+
+    leadOutcomes:
+      lusaka-exchange:
+        refutation:
+          claim: draft
+          facts:
+            - entity: Telegram:$telegram
+              field: text
+              equals: The copy of the minute on docket DKT-0417 has reached this office.
+            - entity: Telegram:$telegram
+              field: origin
+              equals: Office:$office
+        ruledOut: |
+          Lusaka Exchange Control sent the First Desk a telegram about the
+          minute, but the telegram says that a copy of the minute reached
+          the exchange. The exchange received the minute. It did not send
+          a draft.
+
+    resolved: |
+      Deduction accepted. Valparaíso Station sent the First Desk the draft
+      of the minute, in the bag. The file holds papers filed at the
+      station as well.
+
+    referenceSolution:
+      - |
+        query {
+          caseFile(reference: "CF-0417") {
+            documents {
+              reference
+              ... on Telegram { text origin { name } }
+            }
+          }
+        }
+
+    next: station
+
+  station:
+    location: PT
+    step: field-argument
+    objective: Identify the officer at Valparaíso Station who sent the draft of the minute to the First Desk.
+
+    briefing: |
+      File CF-0417 holds papers filed in Lisbon, in Lusaka, and in
+      Valparaíso. You want only the papers filed in Valparaíso. Look up
+      `CaseFile` in the Documentation tab. The field `documents` takes
+      arguments of its own:
+      `documents(city: String, sealed: Boolean = false)`.
+
+      You have written arguments on the first field of a query, as in
+      `caseFile(reference: "CF-0417")`. An argument on a field inside the
+      query is written the way you wrote `reference`: in parentheses,
+      right after the name of the field it belongs to. `documents(city: "Valparaíso")` lists only the
+      documents filed in Valparaíso. Leave out `sealed` for now.
+
+      The station's papers are memoranda. A memorandum's field `author`
+      returns the officer who wrote and signed it, and the field `body`
+      holds its words. Identify the officer at Valparaíso Station who
+      sent the draft of the minute to the First Desk.
+
+    clues:
+      - text: >
+          The officer wrote a memorandum saying that the officer sent the
+          draft to the First Desk.
+        constraint:
+          $memorandum.author: $officer
+          $memorandum.body: I sent the draft of the minute on docket DKT-0417 to the First Desk in the bag. I did not write the draft. The officer who wrote it signed a memorandum, and I filed that memorandum under seal.
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          caseFile(reference: "CF-0417") {
+            # Put the argument city: "Valparaíso" in parentheses
+            # after documents.
+            documents {
+              reference
+              # Ask for body and author here, inside an inline
+              # fragment for Memorandum, with the name and post of
+              # the officer inside author.
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        Three officers at the station wrote memoranda. Read what each one
+        says about the bag.
+      concept: >
+        An argument on a field inside a query goes in parentheses after that
+        field's name, as an argument on the first field does.
+      schema: >
+        Look at CaseFile.documents, Memorandum.author, Memorandum.body, and
+        Officer.post.
+      skeleton: |
+        documents(city: "Valparaíso") { reference ... on Memorandum { body author { name post } } }
+
+    solution:
+      type: deduction
+      officer: rosa-achaval
+    labels:
+      officer: Officer
+
+    claims:
+      - id: sent
+        prompt: This officer sent the draft of the minute to the First Desk.
+        evidenceSets:
+          - facts:
+              - entity: Memorandum:$memorandum
+                field: author
+                equals: Officer:$officer
+              - entity: Memorandum:$memorandum
+                field: body
+                equals: >-
+                  I sent the draft of the minute on docket DKT-0417 to the
+                  First Desk in the bag. I did not write the draft. The
+                  officer who wrote it signed a memorandum, and I filed that
+                  memorandum under seal.
+          - facts:
+              - entity: Memorandum:$memorandum
+                field: body
+                equals: >-
+                  I closed the bag for Lisbon. The head of station sealed
+                  its one enclosure, and the head of station sent it.
+              - entity: Officer:$officer
+                field: post
+                equals: Head of station
+
+    leadOutcomes:
+      ignacio-prieto:
+        refutation:
+          claim: sent
+          facts:
+            - entity: Memorandum:$memorandum
+              field: author
+              equals: Officer:$officer
+            - entity: Memorandum:$memorandum
+              field: body
+              equals: >-
+                I closed the bag for Lisbon. The head of station sealed
+                its one enclosure, and the head of station sent it.
+        ruledOut: |
+          Ignacio Prieto closed the bag for Lisbon. His memorandum says
+          that the head of station sealed the enclosure and sent it.
+
+    resolved: |
+      Deduction accepted. Rosa Achával, the head of station, sent the
+      draft to the First Desk. She says that she did not write it, and
+      that she filed the memorandum of the officer who wrote it under
+      seal.
+
+    referenceSolution:
+      - |
+        query {
+          caseFile(reference: "CF-0417") {
+            documents(city: "Valparaíso") {
+              reference
+              ... on Memorandum { body author { name post } }
+            }
+          }
+        }
+
+    next: sealed
+
+  sealed:
+    location: PT
+    step: boolean-value
+    objective: Identify the officer who drafted the minute on docket DKT-0417.
+
+    briefing: |
+      Rosa Achával filed a memorandum under seal. The list from
+      `documents` leaves out every sealed document unless you ask for
+      sealed documents. The Documentation tab shows the argument as
+      `sealed: Boolean = false`. `Boolean` means that the value is true
+      or false. The `= false` means that the archive uses false when you
+      leave the argument out, and false lists only the documents that
+      are not sealed.
+
+      A true-or-false value is written as the word `true` or `false`,
+      with no quotation marks. `documents(sealed: true)` lists only the
+      sealed documents. You can give two arguments in the same
+      parentheses, with a comma between them, as in
+      `documents(city: "Valparaíso", sealed: true)`.
+
+      Identify the officer who drafted the minute on docket DKT-0417.
+
+    clues:
+      - text: >
+          The officer wrote a memorandum saying that the officer drafted the
+          minute.
+        constraint:
+          $memorandum.author: $officer
+          $memorandum.body: I drafted the minute on docket DKT-0417. I wrote it to an instruction that reached this station by telegram, and I did not choose its words.
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          caseFile(reference: "CF-0417") {
+            # Add the argument sealed: true beside city.
+            documents(city: "Valparaíso") {
+              reference
+              ... on Memorandum { body author { name } }
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        One memorandum filed in Valparaíso is sealed. Its author says who
+        drafted the minute.
+      concept: >
+        A true-or-false argument takes the word true or false, with no
+        quotation marks. Put sealed: true in the parentheses after
+        documents, beside city.
+      schema: >
+        Look at CaseFile.documents, Document.sealed, Memorandum.author, and
+        Minute.initials.
+      skeleton: |
+        documents(city: "Valparaíso", sealed: true) { reference ... on Memorandum { body author { name } } }
+
+    solution:
+      type: deduction
+      officer: tomas-eyzaguirre
+    labels:
+      officer: Officer
+
+    claims:
+      - id: drafted
+        prompt: This officer drafted the minute on docket DKT-0417.
+        evidenceSets:
+          - facts:
+              - entity: Memorandum:$memorandum
+                field: author
+                equals: Officer:$officer
+              - entity: Memorandum:$memorandum
+                field: body
+                equals: >-
+                  I drafted the minute on docket DKT-0417. I wrote it to an
+                  instruction that reached this station by telegram, and I
+                  did not choose its words.
+          - facts:
+              - entity: Minute:$minute
+                field: stamp
+                equals: FS-0088
+              - entity: Minute:$minute
+                field: initials
+                equals: T.E.
+              - entity: Officer:$officer
+                field: initials
+                equals: T.E.
+
+    leadOutcomes:
+      rosa-achaval:
+        refutation:
+          claim: drafted
+          facts:
+            - entity: Memorandum:$memorandum
+              field: author
+              equals: Officer:$officer
+            - entity: Memorandum:$memorandum
+              field: body
+              equals: >-
+                I sent the draft of the minute on docket DKT-0417 to the
+                First Desk in the bag. I did not write the draft. The
+                officer who wrote it signed a memorandum, and I filed that
+                memorandum under seal.
+        ruledOut: |
+          Rosa Achával sent the draft, and her memorandum says that she
+          did not write it.
+
+    resolved: |
+      Deduction accepted. Tomás Eyzaguirre drafted the minute on docket
+      DKT-0417, to an instruction that reached the station by telegram.
+
+    referenceSolution:
+      - |
+        query {
+          caseFile(reference: "CF-0417") {
+            documents(city: "Valparaíso", sealed: true) {
+              reference
+              ... on Memorandum { body author { name } }
+            }
+          }
+        }

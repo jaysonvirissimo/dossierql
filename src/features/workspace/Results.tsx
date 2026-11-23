@@ -1,4 +1,4 @@
-import { getNamedType, isObjectType } from "graphql";
+import { getNamedType, isAbstractType, isObjectType } from "graphql";
 import { Fragment, useState, type ReactNode } from "react";
 import { useGame } from "../../app/GameProvider.tsx";
 import type { ResultError, TransmissionRecord } from "../../engine/mission.ts";
@@ -200,7 +200,9 @@ function Findings({
     const links = Object.values(type.getFields())
       .filter(
         (field) =>
-          isObjectType(getNamedType(field.type)) && !asked.has(field.name),
+          (isObjectType(getNamedType(field.type)) ||
+            isAbstractType(getNamedType(field.type))) &&
+          !asked.has(field.name),
       )
       .map((field) => field.name);
     if (links.length === 0) return null;

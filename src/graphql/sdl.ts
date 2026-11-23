@@ -7,7 +7,9 @@
  * them.
  */
 export const SDL = /* GraphQL */ `
-  directive @clearance(level: Int!) on OBJECT | SCALAR | FIELD_DEFINITION
+  directive @clearance(
+    level: Int!
+  ) on OBJECT | INTERFACE | SCALAR | FIELD_DEFINITION
   directive @inverse(of: String!) on FIELD_DEFINITION
   directive @undocumented on OBJECT | SCALAR | FIELD_DEFINITION
 
@@ -44,6 +46,8 @@ export const SDL = /* GraphQL */ `
     cabinet: [Drawer!]! @clearance(level: 6) @undocumented
     "Every slip in the book that Lusaka Exchange Control kept apart from its register."
     exchangeBook: [Slip!]! @clearance(level: 6) @undocumented
+    "One case file, by the reference on its cover."
+    caseFile(reference: ID!): CaseFile @clearance(level: 7)
   }
 
   "A sovereign state."
@@ -258,6 +262,8 @@ export const SDL = /* GraphQL */ `
     city: City
     "The entries in the office's register, in the order they were made."
     register: [RegisterEntry!]! @inverse(of: "office")
+    "The officers who work at the office."
+    officers: [Officer!]! @inverse(of: "office") @clearance(level: 7)
   }
 
   "One numbered entry in an office's register."
@@ -364,6 +370,98 @@ export const SDL = /* GraphQL */ `
     "The party who sent the slip to the exchange. That party did not carry the money."
     sender: Operative
   }
+
+  "A case file: the papers an office keeps together on one matter. The documents in it are of several kinds."
+  type CaseFile @clearance(level: 7) {
+    "The reference on the file's cover."
+    reference: ID!
+    "The matter, as written on the cover."
+    title: String!
+    "The documents in the file that were filed in the city given, or in any city if none is given. Without the argument sealed, or with sealed: false, only the open documents are listed. With sealed: true, only the sealed documents are listed, and the open ones are left out."
+    documents(city: String, sealed: Boolean = false): [Document!]!
+  }
+
+  "A document in a case file. Every kind of document carries the same filing stamp: the fields listed here. A telegram, a memorandum, and a minute each have fields of their own as well."
+  interface Document @clearance(level: 7) {
+    "The reference written on the document."
+    reference: ID!
+    "What the document is, as the filing clerk wrote it on the stamp."
+    title: String!
+    "The serial the document was filed under, in the register of the office that filed it, such as FS-0088."
+    stamp: String!
+    "The city where the document was filed. An office files a telegram it receives in its own city."
+    city: City!
+    "Whether the document is under seal."
+    sealed: Boolean!
+  }
+
+  "A telegram: a short message sent by wire from one office to another."
+  type Telegram implements Document @clearance(level: 7) {
+    "The reference written on the document."
+    reference: ID!
+    "What the document is, as the filing clerk wrote it on the stamp."
+    title: String!
+    "The serial the document was filed under, in the register of the office that filed it, such as FS-0088."
+    stamp: String!
+    "The city where the document was filed. An office files a telegram it receives in its own city."
+    city: City!
+    "Whether the document is under seal."
+    sealed: Boolean!
+    "The words of the telegram."
+    text: String!
+    "The office that sent the telegram."
+    origin: Office
+  }
+
+  "A memorandum: a note that one officer wrote and signed."
+  type Memorandum implements Document @clearance(level: 7) {
+    "The reference written on the document."
+    reference: ID!
+    "What the document is, as the filing clerk wrote it on the stamp."
+    title: String!
+    "The serial the document was filed under, in the register of the office that filed it, such as FS-0088."
+    stamp: String!
+    "The city where the document was filed. An office files a telegram it receives in its own city."
+    city: City!
+    "Whether the document is under seal."
+    sealed: Boolean!
+    "The officer who wrote and signed the memorandum."
+    author: Officer
+    "The words of the memorandum."
+    body: String!
+  }
+
+  "A minute: a written instruction from one office to another."
+  type Minute implements Document @clearance(level: 7) {
+    "The reference written on the document."
+    reference: ID!
+    "What the document is, as the filing clerk wrote it on the stamp."
+    title: String!
+    "The serial the document was filed under, in the register of the office that filed it, such as FS-0088."
+    stamp: String!
+    "The city where the document was filed. An office files a telegram it receives in its own city."
+    city: City!
+    "Whether the document is under seal."
+    sealed: Boolean!
+    "The office the minute instructs."
+    addressedTo: Office
+    "The instruction, as the minute words it."
+    instruction: String!
+    "The initials at the foot of the minute. They are the initials of the officer who drafted it."
+    initials: String
+  }
+
+  "An officer of the agency."
+  type Officer @clearance(level: 7) {
+    "The officer's name."
+    name: String!
+    "The officer's post at the office."
+    post: String!
+    "The officer's initials, as the officer writes them."
+    initials: String!
+    "The office where the officer works."
+    office: Office
+  }
 `;
 
-export const MAX_CLEARANCE = 6;
+export const MAX_CLEARANCE = 7;

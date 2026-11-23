@@ -196,3 +196,29 @@
     introspection, weighs nothing. From
     clearance 6, every result states the weight of its request under
     `extensions`, beside `data`. Nothing depends on the weight yet.
+- id: interface
+  term: interface
+  clearance: 7
+  matches: [interfaces]
+  definition: >
+    A type that lists the fields several kinds of record share. In the
+    Documentation tab, `Document` is an interface, and every document is a
+    `Telegram`, a `Memorandum`, or a `Minute`. Each of those three types
+    has every field that `Document` lists. A field that returns
+    `Document`, such as `documents`, can return records of all three kinds
+    in one list. Inside it, you ask for the fields that `Document` lists
+    directly, and each one comes back for every record. For a field that
+    only one kind has, you write an inline fragment. To learn which kind
+    a record is, ask for `__typename`.
+- id: inline-fragment
+  term: inline fragment
+  clearance: 7
+  matches: [inline fragments]
+  definition: >
+    Three dots, the word `on`, a type's name, and braces with fields
+    inside, as in `... on Telegram { text }`. You write it inside a field
+    that returns an interface, beside the other fields you ask for. The
+    fields inside the braces come back only for records of that type. A
+    record of another type comes back without them, and with no error.
+    An inline fragment is written where it is used, and it has no name of
+    its own.

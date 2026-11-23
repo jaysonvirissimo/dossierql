@@ -1,0 +1,171 @@
+# Records for clearance 7: two case files whose documents are of several
+# kinds that share one filing stamp (SDD 3.7). CF-0417 is the file the
+# inquiry made of the minute on docket DKT-0417. CF-0044 is Valparaíso
+# Station's own file on the draft.
+Office:
+  valparaiso-station: { name: Valparaíso Station, city: valparaiso }
+  cipher-room: { name: Cipher Room, city: lisbon }
+
+Officer:
+  rosa-achaval:
+    name: Rosa Achával
+    post: Head of station
+    initials: R.A.
+    office: valparaiso-station
+  ignacio-prieto:
+    name: Ignacio Prieto
+    post: Bag clerk
+    initials: I.P.
+    office: valparaiso-station
+  tomas-eyzaguirre:
+    name: Tomás Eyzaguirre
+    post: Second secretary
+    initials: T.E.
+    office: valparaiso-station
+
+RegisterEntry:
+  vs-0041:
+    serial: 41
+    office: valparaiso-station
+    note: Draft of the minute on docket DKT-0417 sent to the First Desk in the bag.
+  cr-0112:
+    serial: 112
+    office: cipher-room
+    note: Instruction to draft a minute on docket DKT-0417, sent to Valparaíso Station by wire. Handed in at the counter, with no name given.
+
+CaseFile:
+  CF-0417:
+    reference: CF-0417
+    title: The minute on docket DKT-0417, with the papers the inquiry called in
+    documents:
+      - MIN-0088
+      - TEL-0089
+      - TEL-0092
+      - MEM-0093
+      - TEL-0094
+      - MIN-0309
+      - MEM-0040
+      - MEM-0042
+      - MEM-0043
+      - MEM-0044
+  CF-0044:
+    reference: CF-0044
+    title: Valparaíso Station, the draft for the First Desk
+    documents:
+      - TEL-0038
+      - TEL-0039
+      - MEM-0045
+      - MEM-0042
+      - MEM-0044
+      - TEL-0089
+
+Minute:
+  MIN-0088:
+    reference: MIN-0088
+    title: Minute issued
+    stamp: FS-0088
+    city: lisbon
+    sealed: false
+    addressedTo: fourth-desk
+    instruction: Release the museum's tiles under order REL-0417.
+    initials: T.E.
+  MIN-0309:
+    reference: MIN-0309
+    title: Minute received
+    stamp: LX-0309
+    city: lusaka
+    sealed: false
+    addressedTo: fourth-desk
+    instruction: Release the museum's tiles under order REL-0417.
+    initials: T.E.
+
+Telegram:
+  TEL-0089:
+    reference: TEL-0089
+    title: Telegram received
+    stamp: FS-0089
+    city: lisbon
+    sealed: false
+    origin: valparaiso-station
+    text: The draft of the minute on docket DKT-0417 follows to the First Desk in the bag.
+  TEL-0092:
+    reference: TEL-0092
+    title: Telegram received
+    stamp: FS-0092
+    city: lisbon
+    sealed: false
+    origin: fourth-desk
+    text: The museum's tiles have left the Lisbon store under order REL-0417.
+  TEL-0094:
+    reference: TEL-0094
+    title: Telegram received
+    stamp: FS-0094
+    city: lisbon
+    sealed: false
+    origin: lusaka-exchange
+    text: The copy of the minute on docket DKT-0417 has reached this office.
+  TEL-0038:
+    reference: TEL-0038
+    title: Telegram received
+    stamp: VS-0038
+    city: valparaiso
+    sealed: false
+    origin: first-desk
+    text: The First Desk sends no instruction on docket DKT-0417. An instruction will reach you by wire from the cipher room.
+  TEL-0039:
+    reference: TEL-0039
+    title: Telegram received
+    stamp: VS-0039
+    city: valparaiso
+    sealed: true
+    origin: cipher-room
+    text: Draft a minute to the Fourth Desk for the release of the museum's tiles under order REL-0417. Send the draft to the First Desk in the bag, under seal.
+
+Memorandum:
+  MEM-0093:
+    reference: MEM-0093
+    title: Memorandum
+    stamp: FS-0093
+    city: lisbon
+    sealed: false
+    body: The draft from Valparaíso is to be copied out under the serial of this desk, and the draft is to go back to Valparaíso under seal.
+  MEM-0040:
+    reference: MEM-0040
+    title: Memorandum
+    stamp: VS-0040
+    city: valparaiso
+    sealed: false
+    author: ignacio-prieto
+    body: I closed the bag for Lisbon. The head of station sealed its one enclosure, and the head of station sent it.
+  MEM-0042:
+    reference: MEM-0042
+    title: Memorandum
+    stamp: VS-0042
+    city: valparaiso
+    sealed: false
+    author: rosa-achaval
+    body: I sent the draft of the minute on docket DKT-0417 to the First Desk in the bag. I did not write the draft. The officer who wrote it signed a memorandum, and I filed that memorandum under seal.
+  MEM-0043:
+    reference: MEM-0043
+    title: Memorandum
+    stamp: VS-0043
+    city: valparaiso
+    sealed: false
+    author: tomas-eyzaguirre
+    body: I ask for two days of leave. Granted by the head of station.
+  MEM-0044:
+    reference: MEM-0044
+    title: Memorandum
+    stamp: VS-0044
+    city: valparaiso
+    sealed: true
+    author: tomas-eyzaguirre
+    body: I drafted the minute on docket DKT-0417. I wrote it to an instruction that reached this station by telegram, and I did not choose its words.
+  MEM-0045:
+    reference: MEM-0045
+    title: Memorandum
+    stamp: VS-0045
+    city: valparaiso
+    sealed: false
+    author: tomas-eyzaguirre
+    body: The instruction for the draft came by telegram. The head of station filed the telegram under seal.

@@ -1,5 +1,6 @@
 import {
   getNamedType,
+  isAbstractType,
   isListType,
   isNonNullType,
   isObjectType,
@@ -31,7 +32,11 @@ export function parseRef(ref: RecordRef): { type: string; id: string } {
 }
 
 export interface FieldShape {
-  /** The record type the field points at, or null for a scalar. */
+  /**
+   * The record type the field points at, or null for a scalar. For a field
+   * that returns an interface, this is the interface, and each record keeps
+   * the type it was filed as.
+   */
   target: string | null;
   list: boolean;
 }
@@ -40,7 +45,7 @@ export function fieldShape(type: GraphQLOutputType): FieldShape {
   const named = getNamedType(type);
   const inner = isNonNullType(type) ? type.ofType : type;
   return {
-    target: isObjectType(named) ? named.name : null,
+    target: isObjectType(named) || isAbstractType(named) ? named.name : null,
     list: isListType(inner),
   };
 }
@@ -51,6 +56,8 @@ export function fieldShape(type: GraphQLOutputType): FieldShape {
  */
 export class Store {
   private readonly byType = new Map<string, Map<string, RawRecord>>();
+  /** The types that implement each interface. */
+  private readonly kinds = new Map<string, string[]>();
 
   constructor(records: readonly RawRecord[], fullSchema: GraphQLSchema) {
     for (const record of records) {
@@ -71,6 +78,14 @@ export class Store {
             }
           : { ...record },
       );
+    }
+    for (const type of Object.values(fullSchema.getTypeMap())) {
+      if (isAbstractType(type)) {
+        this.kinds.set(
+          type.name,
+          fullSchema.getPossibleTypes(type).map((kind) => kind.name),
+        );
+      }
     }
     this.fillInverses(fullSchema);
   }
@@ -98,12 +113,33 @@ export class Store {
     }
   }
 
+  /** Every record of a type, or of every type that implements an interface. */
   all(type: string): RawRecord[] {
+    const kinds = this.kinds.get(type);
+    if (kinds) return kinds.flatMap((kind) => this.all(kind));
     return [...(this.byType.get(type)?.values() ?? [])];
   }
 
+  /** One record, looked up by a type or by an interface it implements. */
   get(type: string, id: string): RawRecord | undefined {
+    const kinds = this.kinds.get(type);
+    if (kinds) {
+      for (const kind of kinds) {
+        const found = this.get(kind, id);
+        if (found) return found;
+      }
+      return undefined;
+    }
     return this.byType.get(type)?.get(id);
+  }
+
+  /**
+   * The reference to a record that a field of type `type` points at. A
+   * record reached through an interface is referred to by its own type.
+   */
+  refFor(type: string, id: string): RecordRef {
+    const found = this.get(type, id);
+    return found ? refOf(found.type, found.id) : refOf(type, id);
   }
 
   getRef(ref: RecordRef): RawRecord | undefined {

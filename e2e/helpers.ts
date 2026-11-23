@@ -133,6 +133,13 @@ export const TO_CAMPAIGN_END = [
   "forwarding-address",
   "registrars-return",
 ] as const;
+/** Every case through the clearance 6 assessment, and the first coda. */
+export const TO_CLEARANCE_7 = [
+  ...TO_CAMPAIGN_END,
+  "the-receipt",
+  "sealed-cabinet",
+  "exchange-book",
+] as const;
 
 /** Sends the query from inside the editor with the keyboard shortcut. */
 export async function transmit(page: Page): Promise<void> {
