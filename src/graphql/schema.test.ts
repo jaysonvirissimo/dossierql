@@ -53,7 +53,19 @@ const ADDED: Record<number, string[]> = {
     "Query.organization",
   ],
   4: ["Company.auditor", "Operative.audits"],
-  5: [],
+  5: [
+    "Office",
+    "PaymentOrder",
+    "Receipt",
+    "RegisterEntry",
+    "TravelOrder",
+    "Query.office",
+    "Query.paymentOrders",
+    "Query.receipt",
+    "Query.travelOrders",
+    "TransferOrder.clearedBy",
+    "TransferOrder.registerEntry",
+  ],
 };
 
 function surface(level: number): { types: string[]; fields: string[] } {
@@ -140,6 +152,35 @@ describe("the schema at each clearance", () => {
         handler: { codename: "GILT_MAGPIE" },
       },
     });
+  });
+
+  it("files the receipt for the tiles at clearance 5, with nobody to release it", () => {
+    const query = `{
+      receipt(id: "RCT-0417") {
+        releasedBy
+        releaseOrder { registerEntry { serial office { name } } }
+        lossReport { serial office { name register { serial } } }
+      }
+    }`;
+    expect(
+      transmit(catalog.store, { operation: query, clearance: 4 }).transmitted,
+    ).toBe(false);
+    const sent = transmit(catalog.store, { operation: query, clearance: 5 });
+    const receipt = (sent.result.data as { receipt: Record<string, unknown> })
+      .receipt;
+    expect(receipt).toMatchObject({
+      releasedBy: null,
+      releaseOrder: {
+        registerEntry: { serial: 4126, office: { name: "Fourth Desk" } },
+      },
+      lossReport: { serial: 4128, office: { name: "Fourth Desk" } },
+    });
+    // The register lists its entries in serial order.
+    const serials = (
+      receipt.lossReport as { office: { register: { serial: number }[] } }
+    ).office.register.map((e) => e.serial);
+    expect(serials).toEqual([...serials].sort((a, b) => a - b));
+    expect(serials.slice(0, 3)).toEqual([4126, 4127, 4128]);
   });
 
   it("returns a request that passes an argument the schema does not define", () => {

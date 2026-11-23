@@ -25,7 +25,14 @@ describe("the authored course", () => {
   });
 
   it("covers clearance 1 to 5 with a teaching mission and an assessment each", () => {
-    expect(raw.missions).toHaveLength(10);
+    const cases = raw.missions.filter((m) => m.kind !== "coda");
+    expect(cases).toHaveLength(10);
+  });
+
+  it("ends the campaign with one coda", () => {
+    expect(
+      raw.missions.filter((m) => m.kind === "coda").map((m) => m.id),
+    ).toEqual(["the-receipt"]);
   });
 });
 
@@ -192,6 +199,52 @@ describe("validation fails the build when", () => {
     expect(
       codes(mutated(azulejos, (m) => m.requires.push("aliases"))),
     ).toContain("curriculum");
+  });
+
+  describe("a coda", () => {
+    const coda = "the-receipt";
+    const issues = (change: (mission: Mission) => void) =>
+      validateContent(mutated(coda, change))
+        .filter((issue) => issue.path === coda && issue.code === "course")
+        .map((issue) => issue.message);
+
+    it("has a second stage", () => {
+      expect(
+        issues((m) => {
+          m.stages.again = structuredClone(m.stages.lisbon!);
+        }),
+      ).toContain("A coda has exactly one stage.");
+    });
+
+    it("has a clock", () => {
+      expect(
+        issues((m) => {
+          m.clock = {
+            countdown: "The gallery opens in {remaining}",
+            expired: "The gallery has opened",
+            onExpiry: "end",
+          };
+        }),
+      ).toContain("A coda has no clock.");
+    });
+
+    it("teaches a concept", () => {
+      expect(
+        issues((m) => {
+          m.teaches = "variables";
+        }),
+      ).toContain("A coda teaches nothing new.");
+    });
+
+    it("comes before the last case of its campaign", () => {
+      expect(
+        issues((m) => {
+          m.clearance = 4;
+        }),
+      ).toContain(
+        "A coda comes last in its campaign, at the clearance of its last case.",
+      );
+    });
   });
 
   it("a clearance level has no assessment", () => {

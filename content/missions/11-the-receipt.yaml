@@ -1,0 +1,292 @@
+id: the-receipt
+title: The Receipt
+campaign: shadow-network
+order: 11
+clearance: 5
+kind: coda
+teaches: null
+practises: []
+requires: [nested-selections, arguments]
+summary: >
+  The tiles are back in Lisbon. The museum cannot reopen the gallery
+  until someone signs the receipt.
+motif: tilework
+startingStage: lisbon
+
+debrief:
+  onTime: |
+    The museum registrar reads the Fourth Desk's register in order.
+    Entry 4126 lets the tiles go. Entry 4127 is the registrar's
+    objection, noted and overruled. Entry 4128 is the registrar's
+    report that the tiles were missing. A loss from a Lisbon store is
+    reported to the office that clears goods out of Lisbon, so the
+    report went to the desk that had already let the tiles go.
+
+    The desk had its reason. The crate led you to the Parallax
+    Circle's ledgers, its letter book, and its paymaster, and no other
+    route reached them. The tiles were the museum's all the same.
+
+    Every entry carries the countersignature of the records clerk, who
+    countersigns whatever the desk sends down and files it. Your travel
+    orders are in that register too, between the Circle's payments.
+
+    The gallery stays shut. On the receipt, the box marked *Released
+    by* is still empty.
+  stampOnTime: UNSIGNED
+  comparison: >
+    The reference solution asks for the receipt and the list of travel
+    orders in one transmission. Inside `receipt` it opens
+    `releaseOrder` and its `registerEntry`, and beside them
+    `lossReport`, so the two serial numbers come back in one response.
+    Inside `lossReport` it also opens the office's `register`, which
+    lists every entry the Fourth Desk made, the objection among them.
+  geography: >
+    Lisbon stands where the Tagus widens into an estuary before it
+    meets the Atlantic. Portugal has covered walls with azulejos for
+    five centuries, and in Lisbon they line churches, railway stations,
+    and the fronts of houses.
+
+stages:
+  lisbon:
+    location: PT
+    objective: Identify the office that cleared the crate's orders and issued your travel orders.
+
+    briefing: |
+      The azulejos are back in the museum's store in Lisbon. The
+      museum registrar, who keeps the museum's records, has signed
+      receipt RCT-0417 for them. The museum registrar is no relation of
+      the operative who travels as The Registrar. The gallery cannot
+      reopen until someone also signs the box marked
+      *Released by*, and nobody has offered to.
+
+      M's last note claimed to hold the receipt. The archive holds a
+      copy. The receipt points to two papers: the order under which
+      the tiles first left the museum, and the museum registrar's
+      report that the tiles were missing. Each paper has an entry in
+      the register of an office: the office that cleared the order, and
+      the office the report was sent to. A register numbers
+      its entries in the order they are made, so a lower serial number
+      was entered earlier.
+
+      Nothing here is timed. Identify the office that cleared the
+      crate's orders and issued your travel orders.
+
+    clues:
+      - text: >
+          Receipt RCT-0417 is for the crate you followed out of Lisbon,
+          LIS-0417.
+        constraint:
+          $receipt: Receipt:RCT-0417
+          $receipt.shipment: Shipment:LIS-0417
+      - text: >
+          In Luanda, two transfer orders were written for that crate,
+          and two different offices cleared them. The office you want
+          cleared one of the two.
+        constraint:
+          $receipt.shipment.transferOrders: $order
+          $order.clearedBy: $office
+      - text: >
+          GREY_PETREL lodged three payments at a Lusaka bank. The
+          office cleared the payment to Kafue Ceramics Trust.
+        constraint:
+          $payment.payee: Company:MZ-KAFUE
+          $payment.clearedBy: $office
+      - text: >
+          The office issued the travel order that sent you from Lisbon
+          to Luanda.
+        constraint:
+          $travel.from: City:lisbon
+          $travel.to: City:luanda
+          $travel.issuedBy: $office
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          receipt(id: "RCT-0417") {
+            receivedBy
+            releasedBy
+            # The receipt points to two papers. releaseOrder is an
+            # order: open it, then open its registerEntry. lossReport
+            # is already a register entry: open it and ask for its
+            # serial.
+          }
+        }
+
+    hints:
+      nudge: >
+        The receipt leads to two papers: the order that let the tiles
+        leave, and the museum registrar's report that they were
+        missing. For each paper, find its register entry, the entry's
+        serial number, and the office that keeps the register. Then
+        check which office cleared a Parallax Circle order and issued
+        your travel order to Luanda.
+      concept: >
+        Inside receipt, open releaseOrder, and inside releaseOrder open
+        registerEntry. Ask for the entry's serial and note, and open its
+        office to ask for the office's name. The lossReport field holds
+        a register entry too, so ask for serial, note, and office inside
+        lossReport as well. Travel orders are a list at the top level of
+        the schema, like cities. You can ask for travelOrders in the
+        query that asks for receipt, beside receipt, inside the outer
+        braces.
+      schema: >
+        Look at Receipt.releaseOrder, Receipt.lossReport,
+        Receipt.shipment, TransferOrder.registerEntry,
+        TransferOrder.clearedBy, PaymentOrder.clearedBy,
+        RegisterEntry.serial, RegisterEntry.office, and
+        TravelOrder.issuedBy.
+      skeleton: |
+        receipt(id: "RCT-0417") {
+          releaseOrder { registerEntry { serial note office { name } } }
+          lossReport { serial note office { name } }
+        }
+        travelOrders { id from { name } to { name } issuedBy { name } }
+
+    solution:
+      type: deduction
+      office: fourth-desk
+    labels:
+      office: Office
+
+    claims:
+      - id: circle
+        prompt: >-
+          This office cleared an order for the Parallax Circle: the
+          payment to Kafue Ceramics Trust, or the crate's transfer to
+          Parallax Freight.
+        evidenceSets:
+          - facts:
+              - entity: TransferOrder:$order
+                field: consignee
+                equals: Company:LUA-PARALLAX
+              - entity: TransferOrder:$order
+                field: clearedBy
+                equals: Office:$office
+          - facts:
+              - entity: TransferOrder:$order
+                field: consignee
+                equals: Company:LUA-PARALLAX
+              - entity: TransferOrder:$order
+                field: registerEntry
+                equals: RegisterEntry:$entry
+              - entity: RegisterEntry:$entry
+                field: office
+                equals: Office:$office
+          - facts:
+              - entity: PaymentOrder:$payment
+                field: payee
+                equals: Company:MZ-KAFUE
+              - entity: PaymentOrder:$payment
+                field: clearedBy
+                equals: Office:$office
+          - facts:
+              - entity: PaymentOrder:$payment
+                field: payee
+                equals: Company:MZ-KAFUE
+              - entity: PaymentOrder:$payment
+                field: registerEntry
+                equals: RegisterEntry:$entry
+              - entity: RegisterEntry:$entry
+                field: office
+                equals: Office:$office
+      - id: travel
+        prompt: >-
+          This office issued the travel order that sent you from Lisbon
+          to Luanda.
+        evidenceSets:
+          - facts:
+              - entity: TravelOrder:$travel
+                field: from
+                equals: City:lisbon
+              - entity: TravelOrder:$travel
+                field: to
+                equals: City:luanda
+              - entity: TravelOrder:$travel
+                field: issuedBy
+                equals: Office:$office
+          - facts:
+              - entity: TravelOrder:$travel
+                field: from
+                equals: City:lisbon
+              - entity: TravelOrder:$travel
+                field: to
+                equals: City:luanda
+              - entity: TravelOrder:$travel
+                field: registerEntry
+                equals: RegisterEntry:$entry
+              - entity: RegisterEntry:$entry
+                field: office
+                equals: Office:$office
+      - id: sequence
+        prompt: >-
+          In this office's register, the order that released the tiles
+          has a lower serial number than the museum registrar's report
+          that they were missing.
+        evidenceSets:
+          - facts:
+              - entity: Receipt:$receipt
+                field: releaseOrder
+                equals: TransferOrder:$release
+              - entity: TransferOrder:$release
+                field: registerEntry
+                equals: RegisterEntry:$first
+              - entity: RegisterEntry:$first
+                field: office
+                equals: Office:$office
+              - entity: RegisterEntry:$first
+                field: serial
+                equals: 4126
+              - entity: Receipt:$receipt
+                field: lossReport
+                equals: RegisterEntry:$second
+              - entity: RegisterEntry:$second
+                field: office
+                equals: Office:$office
+              - entity: RegisterEntry:$second
+                field: serial
+                equals: 4128
+          - facts:
+              - entity: Office:$office
+                field: register
+                includes: RegisterEntry:$first
+              - entity: RegisterEntry:$first
+                field: serial
+                equals: 4126
+              - entity: RegisterEntry:$first
+                field: note
+                equals: >-
+                  Order REL-0417 cleared. The museum's tiles go to Tagus
+                  Sample Agency, to be shipped as samples, so that the
+                  Parallax Circle's accounts can be followed to whoever
+                  keeps them.
+              - entity: Office:$office
+                field: register
+                includes: RegisterEntry:$second
+              - entity: RegisterEntry:$second
+                field: serial
+                equals: 4128
+              - entity: RegisterEntry:$second
+                field: note
+                equals: >-
+                  Report from the museum registrar. The tiles are
+                  missing from the museum.
+
+    resolved: |
+      Deduction accepted. The museum registrar copies out both serial
+      numbers and asks who at the Fourth Desk will sign.
+
+    referenceSolution: |
+      query {
+        receipt(id: "RCT-0417") {
+          releasedBy
+          shipment { transferOrders { id consignee { name } clearedBy { name } } }
+          releaseOrder { id registerEntry { serial note office { name } } }
+          lossReport {
+            serial
+            note
+            office { name register { serial note } }
+          }
+        }
+        travelOrders { id from { name } to { name } issuedBy { name } }
+      }

@@ -247,6 +247,8 @@ An assessment is passed in any completion mode (Section 3.9) when the player hol
 
 A placement pass shows that the player solved the case. It does not show which technique they used, because the game accepts any query that yields sufficient evidence (Section 3.7). A player can pass the aliases assessment with three separate requests. When a placement is passed without the technique its level teaches, the debrief says so plainly and offers that level's kata (Section 3.11). The promotion stands.
 
+A campaign's coda (Section 2.3) is neither a teaching mission nor an assessment. It stays hidden until the last case of its campaign is resolved, in any mode and by any route, placement included. Completing it grants no clearance and no concept card.
+
 The clearance in force during a mission is the higher of the player's clearance and the mission's, and the terminal uses the schema for it. An assessment attempted early therefore has every type and field it needs.
 
 Separately, individual records may be classified above the player's clearance. A field on such a record returns `null` with an error, alongside the rest of the data. This teaches GraphQL's partial-result behavior and gives the player a reason to come back after a promotion.
@@ -489,7 +491,7 @@ Every entity has a stable identifier so that evidence can refer to it.
 
 The intelligence graph should support increasingly sophisticated investigations without requiring a fundamentally different GraphQL interface.
 
-The coda (Section 2.3) adds the records its chain needs: the office that authorized an order, the agency's travel orders, a register serial number that puts orders in sequence, the registrar's objection, and the person who released a receipt, which is empty on the receipt for the tiles. The archive is fixed, so the travel orders describe the route the campaign's cases follow and not the journeys of a particular player. The new types and fields are visible at clearance 5, where a player may notice them in the schema documentation before the coda. Their names and descriptions are plain, so that the documentation does not announce what the coda reveals. Every earlier case must still validate after the records are added.
+The coda (Section 2.3) adds the records its chain needs: the office that authorized an order, the agency's travel orders, a register serial number that puts orders in sequence, the registrar's objection, and the person who released a receipt, which is empty on the receipt for the tiles. The archive is fixed, so the travel orders describe the route the campaign's cases follow and not the journeys of a particular player. In *The Receipt*, an office keeps a register whose entries carry a serial number and a note. Travel orders, payment orders, and the crate's transfer orders each have an office that cleared or issued them and an entry in that office's register, so the office can be reached by two routes, as a transfer order's signer can (Section 5.4). A receipt leads to the order that released the goods and to the register entry of the report that they were missing. Two decoy offices in Luanda and Lusaka cleared other orders for the crate and for the payments in Lusaka. The new types and fields are visible at clearance 5, where a player may notice them in the schema documentation before the coda. Their names and descriptions are plain, so that the documentation does not announce what the coda reveals. Every earlier case must still validate after the records are added.
 
 ### 5.3 GraphQL Schema
 
@@ -1072,7 +1074,7 @@ Every starter query supplies the `name` argument. The first Lisbon query leaves 
 
 The content model should eventually support branching investigations, multiple acceptable solutions, variant pools (Section 3.12), and connections between missions.
 
-A mission's `kind` is teaching, assessment, or coda. A coda has one stage and no clock. It grants no clearance and no concept card, and the count of resolved cases leaves it out. It becomes available when the last case of its campaign is resolved. Its claims meet the same standard as any other stage's, including two evidence sets for each claim.
+A mission's `kind` is teaching, assessment, or coda. A coda has one stage and no clock. It grants no clearance and no concept card, and the count of resolved cases leaves it out. It becomes available when the last case of its campaign is resolved. It is the last mission of its campaign, at the clearance of the campaign's last case, and it introduces no casework mechanic. A campaign has at most one. Its claims meet the same standard as any other stage's, including two evidence sets for each claim.
 
 A mission is a single YAML file. Its prose is written in YAML block scalars and may use a small inline subset of Markdown: emphasis, code, and links to glossary entries. Mission text is brief (Sections 5.6 and 5.7) and does not need files of its own.
 
@@ -1092,7 +1094,7 @@ A build-time validation process should check:
 - **Solvability:** The reference solution executes without error and yields the required evidence. The time it spends sets the mission's budget (Section 3.3).
 - **Request weight:** Every reference solution fits under the weight limit. In the mission that teaches pagination, the logs requested whole exceed the limit, and the reference solution pages through them under it.
 - **Curriculum order:** A mission requires only concepts taught at or below its clearance, and its reference solution uses the concept it claims to teach.
-- **Course shape:** The rules of Section 3.7 hold. Every taught concept is practised later, every clearance level ends with an assessment mission, and every mission file in the content directory is part of the course.
+- **Course shape:** The rules of Section 3.7 hold. Every taught concept is practised later, every clearance level ends with an assessment mission, and every mission file in the content directory is part of the course. A coda is left out of these rules about levels and out of the check that the course order promotes the player to each mission's clearance. It has one stage, no clock, teaches nothing, introduces no mechanic, and is the only coda and the last mission of its campaign, at the clearance of the campaign's last case.
 - **Starter queries:** A stage's starter query does not, unchanged, yield the required evidence.
 - **Training drills:** Each drill's reference transmits without error at clearance 1 and returns the expected facts, and its starter query does not.
 - **Katas:** Each kata's clearance is that of its concept's card. Its reference, sent with its reference variables, transmits without error at that clearance, returns the expected facts, and has the structure of the kata's technique (Section 3.11). Its starter, sent with its starting variables, does not pass. Every case at a kata's level has a reference solution that shows the kata's technique as the debrief reads it (Section 3.10), so the debrief never faults a player for doing what the reference does.
@@ -1293,7 +1295,7 @@ The screens support the gameplay loop described in Section 3.1.
 
 **Orientation:** The optional introduction to the terminal and its tools (Section 3.13).
 
-**Mission Selection:** Available assignments, the clearance each requires, the concept each teaches, and campaign progress. For completed assignments, show the help used. An assessment that the player would attempt as a placement is marked as one. One assignment is emphasized: the next case in the story. It is the first case in course order that the player has not completed, can open, and would not attempt as a placement. A case at or above the player's clearance comes before an earlier one, so a player promoted by placement is pointed at their new level and not back at the first case. Placements are grouped under a single entry, closed until the player opens it, so that a new player sees one way forward and a returning player can still skip ahead. A placement already in progress stays with its level, where the player can see it, and a completed placement returns to its level. A campaign's coda appears once its last case is resolved.
+**Mission Selection:** Available assignments, the clearance each requires, the concept each teaches, and campaign progress. For completed assignments, show the help used. An assessment that the player would attempt as a placement is marked as one. One assignment is emphasized: the next case in the story. It is the first case in course order that the player has not completed, can open, and would not attempt as a placement. A case at or above the player's clearance comes before an earlier one, so a player promoted by placement is pointed at their new level and not back at the first case. Placements are grouped under a single entry, closed until the player opens it, so that a new player sees one way forward and a returning player can still skip ahead. A placement already in progress stays with its level, where the player can see it, and a completed placement returns to its level. A campaign's coda appears once its last case is resolved. Until then it is not shown at all, not even as locked, and its address answers as if nothing were filed there, so that its title gives nothing away. The count of resolved cases leaves it out. Once it appears, it is the assignment emphasized.
 
 **Mission Briefing:** Classified narrative introduction, objectives, and initial intelligence.
 
@@ -1307,7 +1309,7 @@ The **Evidence Board** holds the evidence ledger and pinned facts, with links ba
 
 **Operative Dossiers:** Displays known suspects, aliases, and associations. A dossier shows only what the player's queries have retrieved.
 
-**Debrief:** Displays the outcome, the comparison with the reference solution, the geographical fact, and the new concept card.
+**Debrief:** Displays the outcome, the comparison with the reference solution, the geographical fact, and the new concept card. A coda's debrief shows no promotion and no card. It says that the campaign ends there, and offers the training range beside the assignments desk.
 
 **Tradecraft Manual:** The glossary and the concept cards the player has earned, available for reference at any time.
 
@@ -1411,7 +1413,7 @@ To complete this milestone, a player must be able to compare and cite query find
 
 ### Milestone 5 — 1.0: Evidence the Player Can Follow
 
-This milestone finishes clearance levels 1 through 5. It adds no clearance level. Its tasks are in priority order. The order puts the opening of the game first: a beginner who is lost in the first case does not reach anything built after it. The first six tasks, the columns in the findings, the debrief's reading of the parsed query, the katas, the variables label, and the Vim keybindings switch are built. The beginner sessions of the seventh task are still to be held.
+This milestone finishes clearance levels 1 through 5. It adds no clearance level. Its tasks are in priority order. The order puts the opening of the game first: a beginner who is lost in the first case does not reach anything built after it. The first six tasks, the columns in the findings, the debrief's reading of the parsed query, the katas, the coda, the variables label, and the Vim keybindings switch are built. The beginner sessions of the seventh task and the playtests and sessions of the last task are still to be held.
 
 - Make a citation carry every fact on its path that an evidence set can use (Section 3.2), and test the code that builds citations. Add the validation check that every evidence set can be assembled from Cite controls (Section 5.5).
 - Show under each claim the cited facts that count toward it, show on the Cite control which lead's draft it feeds, and distinguish facts that do not connect from a fact that is missing.

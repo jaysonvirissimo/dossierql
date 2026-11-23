@@ -127,6 +127,12 @@ export const TO_CLEARANCE_5 = [
   "the-paymaster",
   "lantern-export",
 ] as const;
+/** Every case of the first campaign, so that its coda is open. */
+export const TO_CAMPAIGN_END = [
+  ...TO_CLEARANCE_5,
+  "forwarding-address",
+  "registrars-return",
+] as const;
 
 /** Sends the query from inside the editor with the keyboard shortcut. */
 export async function transmit(page: Page): Promise<void> {

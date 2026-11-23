@@ -109,7 +109,7 @@ export interface Mission {
   /** Where the mission sits in its campaign. */
   order: number;
   clearance: number;
-  kind: "teaching" | "assessment";
+  kind: "teaching" | "assessment" | "coda";
   teaches: Concept | null;
   practises: Concept[];
   requires: Concept[];

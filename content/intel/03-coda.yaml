@@ -1,0 +1,179 @@
+# Records for The Receipt, the coda of The Shadow Network. They are visible
+# from clearance 5. Every entry in a register is listed in serial order.
+Office:
+  fourth-desk: { name: Fourth Desk, city: lisbon }
+  luanda-port: { name: Luanda Port Office, city: luanda }
+  lusaka-exchange: { name: Lusaka Exchange Control, city: lusaka }
+
+Receipt:
+  RCT-0417:
+    shipment: LIS-0417
+    receivedBy: The museum registrar
+    releaseOrder: REL-0417
+    lossReport: fd-4128
+
+TransferOrder:
+  REL-0417:
+    consignee: LIS-TAGUS
+    clearedBy: fourth-desk
+    registerEntry: fd-4126
+  LUA-009: { clearedBy: luanda-port, registerEntry: lp-0871 }
+  LUA-011: { clearedBy: luanda-port, registerEntry: lp-0874 }
+  LUA-012: { clearedBy: fourth-desk, registerEntry: fd-4129 }
+
+PaymentOrder:
+  PAY-0501:
+    payee: MZ-KAFUE
+    clearedBy: fourth-desk
+    registerEntry: fd-4133
+  PAY-0502:
+    payee: ZM-COPPERBELT
+    clearedBy: fourth-desk
+    registerEntry: fd-4134
+  PAY-0503:
+    payee: MZ-BEIRA
+    clearedBy: lusaka-exchange
+    registerEntry: lx-0311
+
+TravelOrder:
+  TRV-101:
+    { from: lisbon, to: luanda, issuedBy: fourth-desk, registerEntry: fd-4130 }
+  TRV-102:
+    {
+      from: luanda,
+      to: zanzibar-city,
+      issuedBy: fourth-desk,
+      registerEntry: fd-4131,
+    }
+  TRV-103:
+    {
+      from: zanzibar-city,
+      to: lusaka,
+      issuedBy: fourth-desk,
+      registerEntry: fd-4132,
+    }
+  TRV-104:
+    { from: lusaka, to: zurich, issuedBy: fourth-desk, registerEntry: fd-4135 }
+  TRV-105:
+    { from: zurich, to: trieste, issuedBy: fourth-desk, registerEntry: fd-4136 }
+  TRV-106:
+    {
+      from: trieste,
+      to: istanbul,
+      issuedBy: fourth-desk,
+      registerEntry: fd-4137,
+    }
+  TRV-107:
+    { from: istanbul, to: porto, issuedBy: fourth-desk, registerEntry: fd-4138 }
+  TRV-108:
+    {
+      from: porto,
+      to: southampton,
+      issuedBy: fourth-desk,
+      registerEntry: fd-4139,
+    }
+  TRV-109:
+    {
+      from: southampton,
+      to: lisbon,
+      issuedBy: fourth-desk,
+      registerEntry: fd-4140,
+    }
+
+RegisterEntry:
+  fd-4126:
+    serial: 4126
+    office: fourth-desk
+    countersignedBy: The records clerk
+    note: >-
+      Order REL-0417 cleared. The museum's tiles go to Tagus Sample
+      Agency, to be shipped as samples, so that the Parallax Circle's
+      accounts can be followed to whoever keeps them.
+  fd-4127:
+    serial: 4127
+    office: fourth-desk
+    countersignedBy: The records clerk
+    note: >-
+      Objection from the museum registrar to order REL-0417. The tiles
+      belong to the museum and are not to leave Lisbon. Noted. The order
+      stands.
+  fd-4128:
+    serial: 4128
+    office: fourth-desk
+    countersignedBy: The records clerk
+    note: Report from the museum registrar. The tiles are missing from the museum.
+  fd-4129:
+    serial: 4129
+    office: fourth-desk
+    countersignedBy: The records clerk
+    note: Order LUA-012 cleared. Shipment LIS-0417 is to be handed to Parallax Freight in Luanda.
+  fd-4130:
+    serial: 4130
+    office: fourth-desk
+    countersignedBy: The records clerk
+    note: Travel order TRV-101 issued. Lisbon to Luanda.
+  fd-4131:
+    serial: 4131
+    office: fourth-desk
+    countersignedBy: The records clerk
+    note: Travel order TRV-102 issued. Luanda to Zanzibar City.
+  fd-4132:
+    serial: 4132
+    office: fourth-desk
+    countersignedBy: The records clerk
+    note: Travel order TRV-103 issued. Zanzibar City to Lusaka.
+  fd-4133:
+    serial: 4133
+    office: fourth-desk
+    countersignedBy: The records clerk
+    note: Payment order PAY-0501 cleared. Payee Kafue Ceramics Trust.
+  fd-4134:
+    serial: 4134
+    office: fourth-desk
+    countersignedBy: The records clerk
+    note: Payment order PAY-0502 cleared. Payee Copperbelt Clay Works.
+  fd-4135:
+    serial: 4135
+    office: fourth-desk
+    countersignedBy: The records clerk
+    note: Travel order TRV-104 issued. Lusaka to Zurich.
+  fd-4136:
+    serial: 4136
+    office: fourth-desk
+    countersignedBy: The records clerk
+    note: Travel order TRV-105 issued. Zurich to Trieste.
+  fd-4137:
+    serial: 4137
+    office: fourth-desk
+    countersignedBy: The records clerk
+    note: Travel order TRV-106 issued. Trieste to Istanbul.
+  fd-4138:
+    serial: 4138
+    office: fourth-desk
+    countersignedBy: The records clerk
+    note: Travel order TRV-107 issued. Istanbul to Porto.
+  fd-4139:
+    serial: 4139
+    office: fourth-desk
+    countersignedBy: The records clerk
+    note: Travel order TRV-108 issued. Porto to Southampton.
+  fd-4140:
+    serial: 4140
+    office: fourth-desk
+    countersignedBy: The records clerk
+    note: Travel order TRV-109 issued. Southampton to Lisbon.
+  lp-0871:
+    serial: 871
+    office: luanda-port
+    countersignedBy: The port clerk
+    note: Order LUA-009 cleared. Shipment to be handed to Lantern Export.
+  lp-0874:
+    serial: 874
+    office: luanda-port
+    countersignedBy: The port clerk
+    note: Order LUA-011 cleared. Shipment LIS-0417 to be handed to Lantern Export.
+  lx-0311:
+    serial: 311
+    office: lusaka-exchange
+    countersignedBy: The duty clerk
+    note: Payment order PAY-0503 cleared. Payee Beira Tile Agency.

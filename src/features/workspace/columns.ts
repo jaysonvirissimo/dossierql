@@ -27,6 +27,8 @@ export function headingOf(
   for (const key of ["name", "codename", "id", "code"]) {
     if (typeof value[key] === "string") return value[key];
   }
+  // An entry in a register is known by its serial number.
+  if (typeof value.serial === "number") return `Serial ${String(value.serial)}`;
   return `Entry ${String(index + 1)}`;
 }
 

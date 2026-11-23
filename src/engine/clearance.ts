@@ -70,6 +70,16 @@ export function deriveStanding(
       viewed.add(mission.id);
       continue;
     }
+    if (mission.kind === "coda") {
+      // A coda grants no clearance and no card (SDD 5.4).
+      completions[mission.id] = {
+        mode: event.mode,
+        late: event.late,
+        passed: true,
+        placement: false,
+      };
+      continue;
+    }
     if (mission.kind === "teaching") {
       if (clearance < mission.clearance) continue;
       taught.add(mission.clearance);
@@ -131,13 +141,31 @@ export function isPlacement(
   return !(standing.clearance >= mission.clearance && taught);
 }
 
-export type Availability = "available" | "locked";
+export type Availability = "available" | "locked" | "hidden";
 
-/** Assessments are always open; teaching missions wait for their clearance. */
+/** The last case of a campaign in course order, leaving out its coda. */
+export function lastCase(
+  campaign: string,
+  missions: readonly Mission[],
+): Mission | undefined {
+  return missions
+    .filter((m) => m.campaign === campaign && m.kind !== "coda")
+    .at(-1);
+}
+
+/**
+ * Assessments are always open; teaching missions wait for their clearance.
+ * A coda is hidden until the last case of its campaign is resolved.
+ */
 export function availability(
   mission: Mission,
+  missions: readonly Mission[],
   standing: Standing,
 ): Availability {
+  if (mission.kind === "coda") {
+    const last = lastCase(mission.campaign, missions);
+    return last && standing.completions[last.id] ? "available" : "hidden";
+  }
   if (mission.kind === "assessment") return "available";
   return standing.clearance >= mission.clearance ? "available" : "locked";
 }
@@ -162,8 +190,11 @@ export function nextCase(
   const open = missions.filter(
     (m) =>
       !standing.completions[m.id] &&
-      availability(m, standing) === "available" &&
+      availability(m, missions, standing) === "available" &&
       !isPlacement(m, missions, standing),
   );
-  return open.find((m) => m.clearance >= standing.clearance) ?? open[0];
+  return (
+    open.find((m) => m.kind === "coda" || m.clearance >= standing.clearance) ??
+    open[0]
+  );
 }

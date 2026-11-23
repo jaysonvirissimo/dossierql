@@ -75,6 +75,8 @@ describe("levelConcept", () => {
     expect(levelConcept(teaching, concepts)).toBe("aliases");
     expect(levelConcept(assessment, concepts)).toBe("aliases");
     expect(levelConcept(levelTwo, concepts)).toBe("arguments");
+    const coda = { ...assessment, kind: "coda" } as Mission;
+    expect(levelConcept(coda, concepts)).toBeNull();
   });
 });
 

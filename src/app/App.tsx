@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
+import { availability } from "../engine/clearance.ts";
 import { HomeRoute } from "../routes/HomeRoute.tsx";
 import { ManualRoute } from "../routes/ManualRoute.tsx";
 import { OrientationRoute } from "../routes/OrientationRoute.tsx";
@@ -50,9 +51,11 @@ function TrainingRoute({ kataId }: { kataId?: string }) {
 }
 
 function MissionRoute({ missionId }: { missionId: string }) {
-  const { course } = useGame();
+  const { course, standing } = useGame();
   const mission = course.missions.find((m) => m.id === missionId);
-  if (!mission)
+  // A coda that is not open yet answers as if nothing were filed, so that its
+  // title gives nothing away (SDD 8.2).
+  if (!mission || availability(mission, course.missions, standing) === "hidden")
     return <NotFound what={`No case is filed as "${missionId}".`} />;
   return (
     <Suspense

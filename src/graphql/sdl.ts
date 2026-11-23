@@ -29,6 +29,14 @@ export const SDL = /* GraphQL */ `
     company(name: String!): Company @clearance(level: 2)
     "One organization, by name."
     organization(name: String!): Organization @clearance(level: 3)
+    "One receipt, by its identifier."
+    receipt(id: ID!): Receipt @clearance(level: 5)
+    "One office, by name."
+    office(name: String!): Office @clearance(level: 5)
+    "Every travel order on file."
+    travelOrders: [TravelOrder!]! @clearance(level: 5)
+    "Every payment order on file."
+    paymentOrders: [PaymentOrder!]! @clearance(level: 5)
   }
 
   "A sovereign state."
@@ -167,6 +175,10 @@ export const SDL = /* GraphQL */ `
     authorizedBy: Operative
     "The registry's own log of the signature."
     authorizationLog: AuthorizationLog
+    "The office that cleared the order."
+    clearedBy: Office @clearance(level: 5)
+    "The order's entry in the register of the office that cleared it."
+    registerEntry: RegisterEntry @clearance(level: 5)
   }
 
   "The registry's own record of who signed a transfer order."
@@ -229,6 +241,70 @@ export const SDL = /* GraphQL */ `
     name: String!
     "Operatives who belong to the organization."
     members: [Operative!]! @inverse(of: "organization")
+  }
+
+  "An office that clears orders and keeps a register of them."
+  type Office @clearance(level: 5) {
+    "The office's name."
+    name: String!
+    "The city where the office is."
+    city: City
+    "The entries in the office's register, in the order they were made."
+    register: [RegisterEntry!]! @inverse(of: "office")
+  }
+
+  "One numbered entry in an office's register."
+  type RegisterEntry @clearance(level: 5) {
+    "The entry's serial number. The register numbers its entries in the order they are made, so a lower number was entered earlier."
+    serial: Int!
+    "The office whose register holds the entry."
+    office: Office!
+    "What was entered, as the register records it."
+    note: String!
+    "Who countersigned the entry and filed it."
+    countersignedBy: String
+  }
+
+  "An order sending an agent from one city to another."
+  type TravelOrder @clearance(level: 5) {
+    "The order's identifier."
+    id: ID!
+    "The city the agent travels from."
+    from: City!
+    "The city the agent travels to."
+    to: City!
+    "The office that issued the order."
+    issuedBy: Office
+    "The order's entry in the register of the office that issued it."
+    registerEntry: RegisterEntry
+  }
+
+  "An order to pay money to a company."
+  type PaymentOrder @clearance(level: 5) {
+    "The order's identifier."
+    id: ID!
+    "The company the money is paid to."
+    payee: Company
+    "The office that cleared the payment."
+    clearedBy: Office
+    "The order's entry in the register of the office that cleared it."
+    registerEntry: RegisterEntry
+  }
+
+  "A receipt for goods handed back to their owner."
+  type Receipt @clearance(level: 5) {
+    "The receipt's identifier."
+    id: ID!
+    "The shipment the goods travelled in."
+    shipment: Shipment
+    "The person who signed for the goods on behalf of their owner."
+    receivedBy: String
+    "The person who signed for handing the goods over."
+    releasedBy: String
+    "The order under which the goods first left their owner."
+    releaseOrder: TransferOrder
+    "The register entry for the owner's report that the goods were missing."
+    lossReport: RegisterEntry
   }
 `;
 

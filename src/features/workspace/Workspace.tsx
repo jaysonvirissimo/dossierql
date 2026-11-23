@@ -32,6 +32,12 @@ import "./workspace.css";
 
 const EDIT_DELAY_MS = 400;
 
+const KIND_LABEL = {
+  teaching: "teaching case",
+  assessment: "assessment",
+  coda: "coda",
+} as const;
+
 function clockLine(
   clock: NonNullable<Mission["clock"]>,
   hoursLeft: number,
@@ -151,7 +157,7 @@ export default function Workspace({ mission }: { mission: Mission }) {
     restart,
   };
 
-  if (availability(mission, standing) === "locked") {
+  if (availability(mission, course.missions, standing) === "locked") {
     return (
       <main className="page">
         <article className="paper sheet">
@@ -184,7 +190,7 @@ export default function Workspace({ mission }: { mission: Mission }) {
           <div className="sheet__body">
             <p className="label">
               Classified briefing · clearance {mission.clearance} ·{" "}
-              {mission.kind === "assessment" ? "assessment" : "teaching case"}
+              {KIND_LABEL[mission.kind]}
             </p>
             <h1 id="briefing-title">{mission.title}</h1>
             <Prose text={stage.briefing} className="briefing__text" />

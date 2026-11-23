@@ -1,5 +1,9 @@
 import { isObjectType, Kind, parse, visit, type GraphQLSchema } from "graphql";
-import { clearanceInForce, deriveStanding } from "../engine/clearance.ts";
+import {
+  clearanceInForce,
+  deriveStanding,
+  lastCase,
+} from "../engine/clearance.ts";
 import { citationAt, factsAlong, type CitedRow } from "../engine/cite.ts";
 import { computeBudget } from "../engine/clock.ts";
 import { reviewDraft } from "../engine/draft.ts";
@@ -1338,6 +1342,47 @@ function checkPacing(catalog: Catalog, report: Report): void {
   });
 }
 
+/**
+ * A coda is one untimed stage that ends its campaign (SDD 5.4). It teaches
+ * nothing, introduces no mechanic, and comes after every case of the
+ * campaign, at the clearance of the last one.
+ */
+function checkCodas(missions: readonly Mission[], report: Report): void {
+  for (const mission of missions) {
+    if (mission.kind !== "coda") continue;
+    const stages = Object.values(mission.stages);
+    if (stages.length !== 1) {
+      report(mission.id, "course", "A coda has exactly one stage.");
+    }
+    if (mission.clock) {
+      report(mission.id, "course", "A coda has no clock.");
+    }
+    if (mission.teaches !== null) {
+      report(mission.id, "course", "A coda teaches nothing new.");
+    }
+    if (stages.some((stage) => stage.introduces)) {
+      report(mission.id, "course", "A coda introduces no mechanic.");
+    }
+    const campaign = missions.filter((m) => m.campaign === mission.campaign);
+    if (campaign.filter((m) => m.kind === "coda").length > 1) {
+      report(mission.id, "course", "A campaign has at most one coda.");
+    }
+    const last = lastCase(mission.campaign, missions);
+    if (!last) {
+      report(mission.id, "course", "A coda follows at least one case.");
+    } else if (
+      campaign.at(-1) !== mission ||
+      last.clearance !== mission.clearance
+    ) {
+      report(
+        mission.id,
+        "course",
+        "A coda comes last in its campaign, at the clearance of its last case.",
+      );
+    }
+  }
+}
+
 function checkCourseShape(catalog: Catalog, report: Report): void {
   const { missions } = catalog;
   const ids = new Set<string>();
@@ -1360,13 +1405,17 @@ function checkCourseShape(catalog: Catalog, report: Report): void {
           "An assessment starts with a blank editor.",
         );
       }
-    } else if (mission.teaches === null) {
+    } else if (mission.kind === "teaching" && mission.teaches === null) {
       report(mission.id, "course", "A teaching mission teaches one concept.");
     }
   }
+  checkCodas(missions, report);
   const top = Math.max(0, ...missions.map((m) => m.clearance));
   for (let level = 1; level <= top; level++) {
-    const here = missions.filter((m) => m.clearance === level);
+    // A coda follows its level and is not one of its cases.
+    const here = missions.filter(
+      (m) => m.clearance === level && m.kind !== "coda",
+    );
     const teaching = here.filter((m) => m.kind === "teaching");
     const assessments = here.filter((m) => m.kind === "assessment");
     if (teaching.length !== 1) {
@@ -1419,7 +1468,11 @@ function checkCourseShape(catalog: Catalog, report: Report): void {
   let events: Parameters<typeof deriveStanding>[1] = [];
   for (const mission of missions) {
     const standing = deriveStanding(missions, events);
-    if (clearanceInForce(mission, standing) !== mission.clearance) {
+    // A coda follows its campaign's last case, which promotes past it.
+    if (
+      mission.kind !== "coda" &&
+      clearanceInForce(mission, standing) !== mission.clearance
+    ) {
       report(
         mission.id,
         "course",

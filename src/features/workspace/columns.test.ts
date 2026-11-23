@@ -3,6 +3,7 @@ import {
   cellAt,
   columnable,
   hasGroup,
+  headingOf,
   isGroup,
   rowsOf,
   type Path,
@@ -131,5 +132,16 @@ describe("records side by side", () => {
         typeOf({ operative: "Operative" }),
       ),
     ).toBe(false);
+  });
+});
+
+describe("headingOf", () => {
+  it("heads a record by its name or id, and a register entry by its serial", () => {
+    expect(headingOf({ name: "Lisbon" }, 0)).toBe("Lisbon");
+    expect(headingOf({ id: "LIS-0417", serial: 1 }, 0)).toBe("LIS-0417");
+    expect(headingOf({ serial: 4126, note: "Order cleared." }, 0)).toBe(
+      "Serial 4126",
+    );
+    expect(headingOf({ note: "Order cleared." }, 2)).toBe("Entry 3");
   });
 });

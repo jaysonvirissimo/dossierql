@@ -94,7 +94,7 @@ export const missionSchema = z
     campaign: text,
     order: z.number().int().positive(),
     clearance: z.number().int().min(1).max(10),
-    kind: z.enum(["teaching", "assessment"]),
+    kind: z.enum(["teaching", "assessment", "coda"]),
     teaches: concept.nullable(),
     practises: z.array(concept),
     requires: z.array(concept),

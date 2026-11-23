@@ -9,10 +9,17 @@ const MODE_TEXT = {
   "solution-revealed": "Completed with the solution revealed",
 } as const;
 
+const KIND_LABEL = {
+  teaching: "Teaching case",
+  assessment: "Assessment",
+  coda: "Coda",
+} as const;
+
 function conceptTitle(
   mission: Mission,
   titles: ReadonlyMap<string, string>,
-): string {
+): string | null {
+  if (mission.kind === "coda") return null;
   if (mission.teaches)
     return `Teaches: ${titles.get(mission.teaches) ?? mission.teaches}`;
   return `Assessment: ${mission.practises
@@ -41,7 +48,7 @@ function CaseCard({
 }) {
   const { course, standing, save } = useGame();
   const completion = standing.completions[mission.id];
-  const locked = availability(mission, standing) === "locked";
+  const locked = availability(mission, course.missions, standing) === "locked";
   // The assessment that opens a locked case.
   const gate = course.missions.find(
     (m) => m.kind === "assessment" && m.clearance === mission.clearance - 1,
@@ -50,6 +57,7 @@ function CaseCard({
   const inProgress = underway(investigation);
   const placement =
     !completion && isPlacement(mission, course.missions, standing);
+  const concept = conceptTitle(mission, titles);
   return (
     <li
       className={next ? "case paper case--next" : "case paper"}
@@ -61,11 +69,10 @@ function CaseCard({
       />
       <div className="case__body">
         <p className="label">
-          Clearance {mission.clearance} ·{" "}
-          {mission.kind === "assessment" ? "Assessment" : "Teaching case"}
+          Clearance {mission.clearance} · {KIND_LABEL[mission.kind]}
         </p>
         <h3 className="case__title">{mission.title}</h3>
-        <p className="case__concept">{conceptTitle(mission, titles)}</p>
+        {concept && <p className="case__concept">{concept}</p>}
         <p>{mission.summary}</p>
         <ul className="case__status">
           {next && <li className="chip chip--next">Next in the story</li>}
@@ -133,13 +140,15 @@ function CaseCard({
 export function HomeRoute() {
   const { course, standing, save } = useGame();
   const titles = new Map(course.concepts.map((c) => [c.id, c.title]));
-  const done = course.missions.filter((m) => standing.completions[m.id]).length;
+  // A coda is not counted among the cases (SDD 5.4).
+  const counted = course.missions.filter((m) => m.kind !== "coda");
+  const done = counted.filter((m) => standing.completions[m.id]).length;
   const levels = [...new Set(course.missions.map((m) => m.clearance))];
   const next = nextCase(course.missions, standing);
   const placements = course.missions.filter(
     (m) =>
       !standing.completions[m.id] &&
-      availability(m, standing) === "available" &&
+      availability(m, course.missions, standing) === "available" &&
       isPlacement(m, course.missions, standing) &&
       !underway(save.investigations[m.id]?.state),
   );
@@ -162,8 +171,8 @@ export function HomeRoute() {
         <h1>{campaign?.title ?? "Assignments"}</h1>
         <p className="page__lede">{campaign?.summary}</p>
         <p className="page__lede">
-          You hold clearance {standing.clearance}. {done} of{" "}
-          {course.missions.length} cases resolved.
+          You hold clearance {standing.clearance}. {done} of {counted.length}{" "}
+          cases resolved.
         </p>
       </header>
 
@@ -220,7 +229,10 @@ export function HomeRoute() {
 
       {levels.map((level) => {
         const cases = course.missions.filter(
-          (m) => m.clearance === level && !placements.includes(m),
+          (m) =>
+            m.clearance === level &&
+            !placements.includes(m) &&
+            availability(m, course.missions, standing) !== "hidden",
         );
         if (cases.length === 0) return null;
         return (

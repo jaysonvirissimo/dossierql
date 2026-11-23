@@ -1,11 +1,21 @@
 import type { Mission } from "./types.ts";
 
-/** Course order: by clearance, the teaching mission before the assessment. */
+const KIND_RANK: Record<Mission["kind"], number> = {
+  teaching: 0,
+  assessment: 1,
+  coda: 2,
+};
+
+/**
+ * Course order: by clearance, the teaching mission before the assessment,
+ * and a campaign's coda after the assessment of its level.
+ */
 export function sortMissions(missions: readonly Mission[]): Mission[] {
   return [...missions].sort(
     (a, b) =>
       a.clearance - b.clearance ||
-      (a.kind === b.kind ? a.order - b.order : a.kind === "teaching" ? -1 : 1),
+      KIND_RANK[a.kind] - KIND_RANK[b.kind] ||
+      a.order - b.order,
   );
 }
 

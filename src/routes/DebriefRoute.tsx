@@ -45,6 +45,7 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
   }
 
   const { late, mode } = state.outcome;
+  const campaign = course.campaigns.find((c) => c.id === mission.campaign);
   const completion = standing.completions[mission.id];
   const stages = Object.entries(mission.stages);
   const reference = stages.flatMap(([, stage]) => referenceOperations(stage));
@@ -58,7 +59,7 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
     .find(
       (m) =>
         (mission.teaches ? m.practises.includes(mission.teaches) : true) &&
-        availability(m, standing) === "available" &&
+        availability(m, course.missions, standing) === "available" &&
         !standing.completions[m.id],
     );
   // What the transmissions behind the cited facts show of the level's
@@ -90,7 +91,11 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
           <p className="label">Debrief · {mission.title}</p>
           <div className="debrief__head">
             <h1 id="debrief-title">
-              {late ? "Resolved after the deadline" : "Case resolved"}
+              {late
+                ? "Resolved after the deadline"
+                : mission.kind === "coda"
+                  ? "File closed"
+                  : "Case resolved"}
             </h1>
             <p className="stamp" data-testid="stamp">
               {late
@@ -221,13 +226,27 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
             </section>
           )}
 
+          {mission.kind === "coda" && (
+            <p className="note" data-testid="campaign-end">
+              {campaign?.title ?? "The campaign"} ends here. The katas on the
+              training range stay open, and so does every case on the
+              assignments desk.
+            </p>
+          )}
+
           <p className="debrief__next">
             {followUp && (
               <a
                 className="button button--primary"
                 href={href({ name: "mission", missionId: followUp.id })}
               >
-                Next case: {followUp.title}
+                {followUp.kind === "coda" ? "Last file" : "Next case"}:{" "}
+                {followUp.title}
+              </a>
+            )}
+            {mission.kind === "coda" && (
+              <a className="button" href={href({ name: "training" })}>
+                Go to the training range
               </a>
             )}
             <a className="button" href={href({ name: "home" })}>
