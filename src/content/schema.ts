@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CONCEPTS } from "./types.ts";
+import { CONCEPTS, MECHANICS } from "./types.ts";
 
 /** Strict shapes for authored content. Unknown keys are errors. */
 
@@ -31,6 +31,7 @@ const claim = z.strictObject({
 
 const stage = z.strictObject({
   location: z.string().regex(/^[A-Z]{2}$/),
+  introduces: z.enum(MECHANICS).optional(),
   objective: text,
   briefing: text,
   clues: z
@@ -76,7 +77,7 @@ const stage = z.strictObject({
     )
     .optional(),
   resolved: text.optional(),
-  referenceSolution: z.union([text, z.array(text).min(1)]),
+  referenceSolution: z.union([text, z.array(text)]),
   referenceVariables: z
     .union([
       z.record(z.string(), z.unknown()),
@@ -86,36 +87,46 @@ const stage = z.strictObject({
   next: z.string().optional(),
 });
 
-export const missionSchema = z.strictObject({
-  id: z.string().regex(/^[a-z][a-z0-9-]*$/),
-  title: text,
-  campaign: text,
-  order: z.number().int().positive(),
-  clearance: z.number().int().min(1).max(10),
-  kind: z.enum(["teaching", "assessment"]),
-  teaches: concept.nullable(),
-  practises: z.array(concept),
-  requires: z.array(concept),
-  summary: text,
-  motif: z.string().optional(),
-  clock: z.strictObject({
-    countdown: text.refine((t) => t.includes("{remaining}"), {
-      message: "The countdown says where the time goes with {remaining}.",
+export const missionSchema = z
+  .strictObject({
+    id: z.string().regex(/^[a-z][a-z0-9-]*$/),
+    title: text,
+    campaign: text,
+    order: z.number().int().positive(),
+    clearance: z.number().int().min(1).max(10),
+    kind: z.enum(["teaching", "assessment"]),
+    teaches: concept.nullable(),
+    practises: z.array(concept),
+    requires: z.array(concept),
+    summary: text,
+    motif: z.string().optional(),
+    clock: z
+      .strictObject({
+        countdown: text.refine((t) => t.includes("{remaining}"), {
+          message: "The countdown says where the time goes with {remaining}.",
+        }),
+        expired: text,
+        onExpiry: z.enum(["continue", "end"]),
+      })
+      .optional(),
+    startingStage: text,
+    debrief: z.strictObject({
+      onTime: text,
+      afterDeadline: text.optional(),
+      stampOnTime: text,
+      stampLate: text.optional(),
+      comparison: text,
+      geography: text,
     }),
-    expired: text,
-    onExpiry: z.enum(["continue", "end"]),
-  }),
-  startingStage: text,
-  debrief: z.strictObject({
-    onTime: text,
-    afterDeadline: text.optional(),
-    stampOnTime: text,
-    stampLate: text.optional(),
-    comparison: text,
-    geography: text,
-  }),
-  stages: z.record(z.string(), stage),
-});
+    stages: z.record(z.string(), stage),
+  })
+  .refine(
+    (m) =>
+      m.clock !== undefined ||
+      (m.debrief.afterDeadline === undefined &&
+        m.debrief.stampLate === undefined),
+    "A mission with no clock has no deadline to finish after.",
+  );
 
 export const glossarySchema = z.array(
   z.strictObject({

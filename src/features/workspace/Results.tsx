@@ -364,8 +364,8 @@ export function Results() {
         {rejected && (
           <div className="results__rejected">
             <p className="note note--warn">
-              The records clerk returned your request without processing it. No
-              time was spent.
+              The records clerk returned your request without processing it.
+              {state.clock !== "none" && " No time was spent."}
             </p>
             <Errors errors={rejected.errors} />
           </div>

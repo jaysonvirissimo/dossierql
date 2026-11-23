@@ -8,62 +8,160 @@ teaches: nested-selections
 practises: []
 requires: []
 summary: >
-  A museum's tiles left Lisbon in a crate marked as samples. Find the crate
-  before its buyer does.
+  A museum's tiles left Lisbon in a crate marked as samples. Three crates
+  fit that description, and customs can hold one.
 motif: tilework
-clock:
-  countdown: Buyer collects the crate in {remaining}
-  expired: Buyer has collected the crate
-  onExpiry: continue
-startingStage: lisbon
+startingStage: manifests
 
 debrief:
   onTime: |
     Luanda holds the crate. The clerk files the transfer order
     with NIGHTJAR's name circled.
-  afterDeadline: |
-    The buyer has collected the crate. Your copy of the transfer
-    order ties NIGHTJAR to the reroute.
   stampOnTime: HOLD ISSUED
-  stampLate: COLLECTED
   comparison: >
-    The reference solution for Lisbon asks for each shipment's destination,
-    then that city's country, then that country's borders, all in one
-    request. Each pair of braces follows a link to the next record. The
-    whole route comes back in a single transmission, which costs a single
-    hour. In Luanda, the reference solution nests again. Inside each
-    arriving shipment it opens the depot's intake record and both transfer
-    orders, and inside each order it opens the operative who signed it. The
-    label and the two orders come back side by side.
+    The first query in Lisbon asked for one field, `manifest`, on each
+    shipment in a list. The reference solution for the second question
+    opens each shipment's destination, then that city's country, then that
+    country's borders, all in one request. Each pair of braces follows a
+    link to the next record, and the whole route comes back in a single
+    transmission. The travel order needed no query, because both of its
+    claims rest on facts those two responses had already returned. In
+    Luanda, the reference solution nests again. Inside each arriving
+    shipment it opens the depot's intake record and both transfer orders,
+    and inside each order it opens the operative who signed it. The label
+    and the two orders come back side by side.
   geography: >
     Angola borders Namibia along the Cunene and Okavango rivers. Cabo
     Verde is an archipelago in the Atlantic and has no land border at all.
 
 stages:
-  lisbon:
+  manifests:
     location: PT
-    objective: Identify the shipment carrying the tiles and its destination.
+    introduces: citing
+    objective: Identify the shipment whose contents cannot be the tiles.
 
     briefing: |
       A priceless collection of azulejos, the painted tiles of
       Portugal, has vanished from a Lisbon museum. Three shipments
       declared as samples left the port that morning. Customs
-      cannot hold all three and would like to know which one
-      carries the tiles. Put a hold on the crate before the buyer
-      collects it.
+      cannot hold all three, and asks you to set aside one crate
+      at a time. Start with any crate that does not hold tiles.
+
+      Customs accepts nothing without evidence. The Deduction form
+      states a claim about one shipment. The shipment you are
+      making the claim about is called a lead. When a response
+      shows a fact that proves the claim, press Cite beside that
+      fact. Every row of a response has a Cite button, so choose
+      the row that shows the fact itself. The fact is copied onto
+      the form as a [citation](glossary:citation). When the form
+      shows the claim as supported, submit the deduction.
 
     clues:
       - text: >
-          The museum registrar describes blue ceramic squares,
+          All three shipments left from Lisbon.
+        constraint:
+          $shipment.origin: City:lisbon
+      - text: >
+          The museum registrar says the tiles are ceramic: blue squares,
           14 centimetres across.
         constraint:
+          $shipment.manifest!: Blue ceramic squares (14 cm)
+
+    scaffold:
+      level: guided
+      starterQuery: |
+        query {
+          city(name: "Lisbon") {
+            departingShipments {
+              id
+              # This query is unfinished. Add the field that says what
+              # each shipment contains. The Documentation tab lists the
+              # fields a shipment has.
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        One of the three crates holds something that is not ceramic.
+        Find what the papers for each shipment say is inside it.
+      concept: >
+        The query already asks for the id of every shipment that left
+        Lisbon. A field written inside the braces after
+        departingShipments comes back once for each shipment in the
+        list. Add the field for a shipment's contents on a line of its
+        own, under id.
+      schema: >
+        Look at Shipment.manifest.
+      skeleton: |
+        departingShipments { id manifest }
+
+    solution:
+      type: deduction
+      shipment: LIS-0486
+    labels:
+      shipment: Shipment
+
+    claims:
+      - id: not-ceramic
+        prompt: The contents of this shipment are not ceramic.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: manifest
+                equals: Blue slate squares (14 cm)
+          - facts:
+              - entity: Shipment:$shipment
+                field: inspection
+                equals: Inspection:$inspection
+              - entity: Inspection:$inspection
+                field: finding
+                equals: Slate tiles, blue-grey, 14 cm
+
+    resolved: |
+      Deduction accepted. The port expecting that crate will be
+      told it is slate. The harbourmaster there offers to send a
+      sample.
+
+    referenceSolution: |
+      query {
+        city(name: "Lisbon") {
+          departingShipments {
+            id
+            manifest
+          }
+        }
+      }
+
+    next: routes
+
+  routes:
+    location: PT
+    objective: Identify the ceramic shipment that cannot reach Namibia by road.
+
+    briefing: |
+      Two crates of blue ceramic squares are left. An intercepted
+      dispatch says a truck will carry the tiles into Namibia
+      directly from the country that receives them. The tiles are
+      therefore going to a country that shares a land border with
+      Namibia. One of the two crates is going somewhere that
+      shares no such border. Set that crate aside.
+
+      The slate crate still appears in the list of shipments that
+      left Lisbon. You have already dealt with it.
+
+    clues:
+      - text: >
+          Two shipments from Lisbon list blue ceramic squares, 14
+          centimetres across.
+        constraint:
+          $shipment.origin: City:lisbon
           $shipment.manifest: Blue ceramic squares (14 cm)
       - text: >
           An intercepted dispatch says the truck will cross into
-          Namibia directly from the country receiving the shipment.
+          Namibia directly from the country receiving the tiles.
         constraint:
-          $shipment.destination.country.borders: Country:NA
-          $shipment.destination.country: $country
+          $shipment.destination.country.borders!: Country:NA
 
     scaffold:
       level: guided
@@ -82,9 +180,11 @@ stages:
 
     hints:
       nudge: >
-        Some manifests fit the registrar's description. For each of
-        those shipments, find where it is going. Which destination
-        fits the intercepted dispatch?
+        For each of the two ceramic shipments, find the country it is
+        going to. Then find the countries that share a border with that
+        country. One of the two countries has no border with Namibia.
+        A country with no land borders comes back with an empty list,
+        and you can cite an empty list like any other row.
       concept: >
         A shipment's destination is a record, not a single value. A
         field that holds a record needs braces after it, with the
@@ -97,12 +197,122 @@ stages:
         destination { name country { name borders { name } } }
 
     solution:
+      type: deduction
+      shipment: LIS-0522
+    labels:
+      shipment: Shipment
+
+    claims:
+      - id: no-road
+        prompt: The country receiving this shipment has no land border with Namibia.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: borders
+                excludes: Country:NA
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:NA
+                field: borders
+                excludes: Country:$country
+
+    resolved: |
+      Deduction accepted. Praia's harbourmaster asks to see the
+      truck that can drive from an island to the Namibian border.
+
+    referenceSolution: |
+      query {
+        city(name: "Lisbon") {
+          departingShipments {
+            id
+            manifest
+            destination {
+              name
+              country {
+                name
+                borders {
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+
+    next: travel-order
+
+  travel-order:
+    location: PT
+    introduces: travel-order
+    objective: Identify the shipment carrying the tiles and the country receiving it.
+
+    briefing: |
+      One crate is left, and customs will send you after it. To
+      travel, you complete a travel order. A travel order makes two
+      claims about one shipment, and each claim needs evidence of
+      its own. You do not say which claim a citation is for: the
+      form matches each citation to the claim it proves. The form
+      also asks you to choose the country the shipment is going to.
+
+      You do not need a new query. The responses you already have
+      hold every fact this order needs, and they are still in the
+      Results panel. Open the remaining shipment as a lead, cite
+      the evidence for both claims, and travel.
+
+    clues:
+      - text: >
+          The museum registrar describes blue ceramic squares,
+          14 centimetres across.
+        constraint:
+          $shipment.manifest: Blue ceramic squares (14 cm)
+      - text: >
+          An intercepted dispatch says the truck will cross into
+          Namibia directly from the country receiving the shipment.
+        constraint:
+          $shipment.destination.country.borders: Country:NA
+          $shipment.destination.country: $country
+
+    scaffold:
+      level: guided
+      carryOver: true
+
+    hints:
+      nudge: >
+        You have set two crates aside: the slate, and the ceramic crate
+        going to an island. The crate that is left is the lead for this
+        travel order.
+      concept: >
+        This stage needs no new query. Your last response is still in
+        the Results panel. Find the remaining shipment in it. Press Cite
+        on that shipment's manifest row for the first claim. Then find
+        the borders row under that shipment's destination and country,
+        and press Cite on the borders row for the second claim.
+      schema: >
+        The facts came from Shipment.manifest, Shipment.destination,
+        City.country, and Country.borders.
+      skeleton: |
+        Rows to cite under the remaining shipment:
+        manifest
+        destination, then country, then borders
+
+    solution:
       type: destination
       shipment: LIS-0417
       country: AO
     labels:
       shipment: Shipment
-      country: Destination country
+      country: Country receiving the shipment
 
     claims:
       - id: manifest
@@ -143,75 +353,17 @@ stages:
                 field: borders
                 includes: Country:$country
 
-    leadOutcomes:
-      LIS-0486:
-        location: ZA
-        refutation:
-          claim: manifest
-          facts:
-            - entity: Shipment:$shipment
-              field: manifest
-              equals: Blue slate squares (14 cm)
-        ruledOut: |
-          Cape Town confirms the measurements. The harbourmaster
-          offers to send a sample of the slate.
-        fieldCheck: |
-          The crate contains blue slate. The harbourmaster
-          suggests consulting the manifest's description of the goods.
-      LIS-0522:
-        location: CV
-        refutation:
-          claim: route
-          facts:
-            - entity: Shipment:$shipment
-              field: destination
-              equals: City:$city
-            - entity: City:$city
-              field: country
-              equals: Country:$country
-            - entity: Country:$country
-              field: borders
-              excludes: Country:NA
-        ruledOut: |
-          The ceramic squares in Praia fit the description. The
-          harbourmaster asks to see the truck that can drive from
-          an island to the Namibian border.
-        fieldCheck: |
-          Praia confirms the size and material. The harbourmaster
-          asks which land border the truck is meant to cross.
-      LIS-0417:
-        location: AO
-        fieldCheck: |
-          Luanda has opened a file on the shipment. The freight
-          office asks for citations for the whole travel order.
-
     resolved: |
       Travel order approved. You land in Luanda as the depot
       finishes logging the morning's arrivals.
 
-    referenceSolution: |
-      query {
-        city(name: "Lisbon") {
-          departingShipments {
-            id
-            manifest
-            destination {
-              name
-              country {
-                name
-                borders {
-                  name
-                }
-              }
-            }
-          }
-        }
-      }
+    referenceSolution: []
 
     next: luanda
 
   luanda:
     location: AO
+    introduces: deduction
     objective: Identify who authorized the crate's transfer to the replacement consignee.
 
     briefing: |
@@ -220,6 +372,10 @@ stages:
       Two transfer orders give different consignees and carry
       different signatures. Find who signed the order that
       matches the label on the crate.
+
+      This deduction is about more than one record. The form asks
+      you to choose three: the transfer order, the shipment the
+      order is for, and the operative who authorized the order.
 
     clues:
       - text: >
@@ -314,18 +470,6 @@ stages:
               - entity: AuthorizationLog:$log
                 field: signedBy
                 equals: Operative:$operative
-
-    leadOutcomes:
-      LUA-011:
-        refutation:
-          claim: matching-order
-          facts:
-            - entity: TransferOrder:$order
-              field: consignee
-              equals: Company:LUA-LANTERN
-        ruledOut: |
-          Order LUA-011 is made out to Lantern Export. The depot notes
-          that the label on the crate says something else.
 
     resolved: |
       Deduction accepted. The depot holds the crate against

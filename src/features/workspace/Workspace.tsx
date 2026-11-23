@@ -10,6 +10,7 @@ import {
 import { COSTS } from "../../engine/clock.ts";
 import {
   act,
+  deskStages,
   stageOf,
   startMission,
   type Action,
@@ -30,8 +31,11 @@ import "./workspace.css";
 
 const EDIT_DELAY_MS = 400;
 
-function clockLine(mission: Mission, hoursLeft: number): string {
-  return mission.clock.countdown.replace("{remaining}", hours(hoursLeft));
+function clockLine(
+  clock: NonNullable<Mission["clock"]>,
+  hoursLeft: number,
+): string {
+  return clock.countdown.replace("{remaining}", hours(hoursLeft));
 }
 
 export default function Workspace({ mission }: { mission: Mission }) {
@@ -50,8 +54,11 @@ export default function Workspace({ mission }: { mission: Mission }) {
 
   const [notice, setNotice] = useState<Notice | null>(null);
   const [viewing, setViewing] = useState(() =>
-    // A stage opens on a clean results panel; earlier responses are kept.
-    state.transmissions.at(-1)?.stageId === state.stageId
+    // A new location opens on a clean results panel; earlier responses are
+    // kept. Stages in one country share the panel.
+    deskStages(mission, state.stageId).includes(
+      state.transmissions.at(-1)?.stageId ?? "",
+    )
       ? state.transmissions.length
       : 0,
   );
@@ -68,7 +75,12 @@ export default function Workspace({ mission }: { mission: Mission }) {
     (action: Action): Outcome => {
       const before = latest.current.stageId;
       const outcome = act(env, latest.current, action);
-      if (outcome.state.stageId !== before) setViewing(0);
+      if (
+        outcome.state.stageId !== before &&
+        !deskStages(mission, outcome.state.stageId).includes(before)
+      ) {
+        setViewing(0);
+      }
       latest.current = outcome.state;
       commit(mission.id, outcome.state, outcome.events);
       if (action.type !== "edit") {
@@ -79,7 +91,7 @@ export default function Workspace({ mission }: { mission: Mission }) {
       }
       return outcome;
     },
-    [env, commit, mission.id],
+    [env, commit, mission],
   );
 
   // Typing is held briefly so each keystroke does not rewrite the save.
@@ -183,24 +195,28 @@ export default function Workspace({ mission }: { mission: Mission }) {
                 <li key={index}>{clue.text}</li>
               ))}
             </ul>
-            <h2>The clock</h2>
-            <p>
-              {clockLine(mission, state.budget)}. Each transmission costs{" "}
-              {hours(COSTS.transmission)}, however much it asks for. Travel and
-              hints cost more, and every cost is shown before you commit.
-              Reading, drafting and thinking are free, and nothing is timed
-              against a real clock.
-            </p>
-            {mission.clock.onExpiry === "continue" ? (
-              <p>
-                If the deadline passes on this case you may carry on untimed,
-                with everything you have gathered.
-              </p>
-            ) : (
-              <p>
-                If the deadline passes, the attempt ends. You can then restart
-                the case from the beginning.
-              </p>
+            {mission.clock && (
+              <>
+                <h2>The clock</h2>
+                <p>
+                  {clockLine(mission.clock, state.budget)}. Each transmission
+                  costs {hours(COSTS.transmission)}, however much it asks for.
+                  Travel and hints cost more, and every cost is shown before you
+                  commit. Reading, drafting and thinking are free, and nothing
+                  is timed against a real clock.
+                </p>
+                {mission.clock.onExpiry === "continue" ? (
+                  <p>
+                    If the deadline passes on this case you may carry on
+                    untimed, with everything you have gathered.
+                  </p>
+                ) : (
+                  <p>
+                    If the deadline passes, the attempt ends. You can then
+                    restart the case from the beginning.
+                  </p>
+                )}
+              </>
             )}
             {mission.id === course.missions[0]?.id &&
               standing.drills.length < course.drills.length && (
@@ -260,34 +276,36 @@ export default function Workspace({ mission }: { mission: Mission }) {
               {stage.objective}
             </p>
           </div>
-          <div
-            className="casebar__clock"
-            role="status"
-            aria-label="Mission clock"
-          >
-            {timed ? (
-              <>
-                <p className="casebar__deadline">
-                  {clockLine(mission, state.hoursLeft)}
-                </p>
-                <p className="casebar__budget">
-                  {state.hoursLeft} of {hours(state.budget)} left
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="casebar__deadline">{mission.clock.expired}</p>
-                <p className="casebar__budget">
-                  {state.clock === "continuing"
-                    ? "Continuing untimed. Nothing costs time now."
-                    : "This attempt is closed."}
-                </p>
-              </>
-            )}
-          </div>
+          {mission.clock && (
+            <div
+              className="casebar__clock"
+              role="status"
+              aria-label="Mission clock"
+            >
+              {timed ? (
+                <>
+                  <p className="casebar__deadline">
+                    {clockLine(mission.clock, state.hoursLeft)}
+                  </p>
+                  <p className="casebar__budget">
+                    {state.hoursLeft} of {hours(state.budget)} left
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="casebar__deadline">{mission.clock.expired}</p>
+                  <p className="casebar__budget">
+                    {state.clock === "continuing"
+                      ? "Continuing untimed. Nothing costs time now."
+                      : "This attempt is closed."}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
         </header>
 
-        {state.clock === "ended" && (
+        {mission.clock && state.clock === "ended" && (
           <div className="note note--bad workspace__ended" role="alert">
             <p>
               {mission.clock.expired}. The deadline has passed and this attempt
@@ -348,11 +366,14 @@ export default function Workspace({ mission }: { mission: Mission }) {
                 disabled={state.clock === "ended"}
                 onClick={transmit}
               >
-                Transmit ({timed ? hours(COSTS.transmission) : "free"})
+                {state.clock === "none"
+                  ? "Transmit"
+                  : `Transmit (${timed ? hours(COSTS.transmission) : "free"})`}
               </button>
               <span className="terminal__key">
-                or press Ctrl+Enter (⌘+Enter) in the editor. A request the clerk
-                cannot read is returned at no cost.
+                or press Ctrl+Enter (⌘+Enter) in the editor.
+                {state.clock !== "none" &&
+                  " A request the clerk cannot read is returned at no cost."}
               </span>
             </footer>
           </section>

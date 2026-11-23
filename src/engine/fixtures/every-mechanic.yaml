@@ -1,0 +1,347 @@
+id: vanishing-azulejos
+title: The Vanishing Azulejos
+campaign: shadow-network
+order: 1
+clearance: 1
+kind: teaching
+teaches: nested-selections
+practises: []
+requires: []
+summary: >
+  A museum's tiles left Lisbon in a crate marked as samples. Find the crate
+  before its buyer does.
+motif: tilework
+clock:
+  countdown: Buyer collects the crate in {remaining}
+  expired: Buyer has collected the crate
+  onExpiry: continue
+startingStage: lisbon
+
+debrief:
+  onTime: |
+    Luanda holds the crate. The clerk files the transfer order
+    with NIGHTJAR's name circled.
+  afterDeadline: |
+    The buyer has collected the crate. Your copy of the transfer
+    order ties NIGHTJAR to the reroute.
+  stampOnTime: HOLD ISSUED
+  stampLate: COLLECTED
+  comparison: >
+    The reference solution for Lisbon asks for each shipment's destination,
+    then that city's country, then that country's borders, all in one
+    request. Each pair of braces follows a link to the next record. The
+    whole route comes back in a single transmission, which costs a single
+    hour. In Luanda, the reference solution nests again. Inside each
+    arriving shipment it opens the depot's intake record and both transfer
+    orders, and inside each order it opens the operative who signed it. The
+    label and the two orders come back side by side.
+  geography: >
+    Angola borders Namibia along the Cunene and Okavango rivers. Cabo
+    Verde is an archipelago in the Atlantic and has no land border at all.
+
+stages:
+  lisbon:
+    location: PT
+    objective: Identify the shipment carrying the tiles and its destination.
+
+    briefing: |
+      A priceless collection of azulejos, the painted tiles of
+      Portugal, has vanished from a Lisbon museum. Three shipments
+      declared as samples left the port that morning. Customs
+      cannot hold all three and would like to know which one
+      carries the tiles. Put a hold on the crate before the buyer
+      collects it.
+
+    clues:
+      - text: >
+          The museum registrar describes blue ceramic squares,
+          14 centimetres across.
+        constraint:
+          $shipment.manifest: Blue ceramic squares (14 cm)
+      - text: >
+          An intercepted dispatch says the truck will cross into
+          Namibia directly from the country receiving the shipment.
+        constraint:
+          $shipment.destination.country.borders: Country:NA
+          $shipment.destination.country: $country
+
+    scaffold:
+      level: guided
+      starterQuery: |
+        query {
+          city(name: "Lisbon") {
+            departingShipments {
+              id
+              manifest
+              # This query is unfinished. Add the field that says
+              # where each shipment is going. The Documentation tab
+              # lists the fields a shipment has.
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        Some manifests fit the registrar's description. For each of
+        those shipments, find where it is going. Which destination
+        fits the intercepted dispatch?
+      concept: >
+        A shipment's destination is a record, not a single value. A
+        field that holds a record needs braces after it, with the
+        fields you want from that record inside the braces. The fields
+        inside one pair of braces are called a selection.
+      schema: >
+        Look at Shipment.destination, City.country, and
+        Country.borders.
+      skeleton: |
+        destination { name country { name borders { name } } }
+
+    solution:
+      type: destination
+      shipment: LIS-0417
+      country: AO
+    labels:
+      shipment: Shipment
+      country: Destination country
+
+    claims:
+      - id: manifest
+        prompt: The shipment matches the museum registrar's description.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: manifest
+                equals: Blue ceramic squares (14 cm)
+          - facts:
+              - entity: Shipment:$shipment
+                field: inspection
+                equals: Inspection:$inspection
+              - entity: Inspection:$inspection
+                field: finding
+                equals: Glazed ceramic tiles, blue, 14 cm
+      - id: route
+        prompt: The shipment's destination country borders Namibia.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: borders
+                includes: Country:NA
+          - facts:
+              - entity: Shipment:$shipment
+                field: destination
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:NA
+                field: borders
+                includes: Country:$country
+
+    leadOutcomes:
+      LIS-0486:
+        location: ZA
+        refutation:
+          claim: manifest
+          facts:
+            - entity: Shipment:$shipment
+              field: manifest
+              equals: Blue slate squares (14 cm)
+        ruledOut: |
+          Cape Town confirms the measurements. The harbourmaster
+          offers to send a sample of the slate.
+        fieldCheck: |
+          The crate contains blue slate. The harbourmaster
+          suggests consulting the manifest's description of the goods.
+      LIS-0522:
+        location: CV
+        refutation:
+          claim: route
+          facts:
+            - entity: Shipment:$shipment
+              field: destination
+              equals: City:$city
+            - entity: City:$city
+              field: country
+              equals: Country:$country
+            - entity: Country:$country
+              field: borders
+              excludes: Country:NA
+        ruledOut: |
+          The ceramic squares in Praia fit the description. The
+          harbourmaster asks to see the truck that can drive from
+          an island to the Namibian border.
+        fieldCheck: |
+          Praia confirms the size and material. The harbourmaster
+          asks which land border the truck is meant to cross.
+      LIS-0417:
+        location: AO
+        fieldCheck: |
+          Luanda has opened a file on the shipment. The freight
+          office asks for citations for the whole travel order.
+
+    resolved: |
+      Travel order approved. You land in Luanda as the depot
+      finishes logging the morning's arrivals.
+
+    referenceSolution: |
+      query {
+        city(name: "Lisbon") {
+          departingShipments {
+            id
+            manifest
+            destination {
+              name
+              country {
+                name
+                borders {
+                  name
+                }
+              }
+            }
+          }
+        }
+      }
+
+    next: luanda
+
+  luanda:
+    location: AO
+    objective: Identify who authorized the crate's transfer to the replacement consignee.
+
+    briefing: |
+      Someone has relabelled the crate. The replacement label gives
+      a new consignee, which is the company that is to receive it.
+      Two transfer orders give different consignees and carry
+      different signatures. Find who signed the order that
+      matches the label on the crate.
+
+    clues:
+      - text: >
+          The depot logged the label attached to LIS-0417 on arrival.
+        constraint:
+          $shipment: Shipment:LIS-0417
+      - text: >
+          The transfer order must give the same consignee as that label.
+        constraint:
+          $shipment.transferOrders: $order
+          $order.consignee: $shipment.intake.consignee
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          city(name: "Luanda") {
+            # What did the depot record for the arriving shipments?
+          }
+        }
+
+    hints:
+      nudge: >
+        First find who the depot says should receive the crate. Then
+        look for the same company on the two transfer orders.
+      concept: >
+        Each arriving shipment holds an intake record and a list of
+        transfer orders. Open both with braces, and ask for the
+        consignee inside each. Then, inside the transfer orders, open
+        the field that says who authorized the order.
+      schema: >
+        Look at City.arrivingShipments, Shipment.intake,
+        Shipment.transferOrders, and TransferOrder.authorizedBy.
+      skeleton: |
+        arrivingShipments {
+          id
+          intake { consignee { name } }
+          transferOrders { id consignee { name } authorizedBy { codename } }
+        }
+
+    solution:
+      type: deduction
+      order: LUA-012
+      shipment: LIS-0417
+      operative: NIGHTJAR
+    labels:
+      order: Transfer order
+      shipment: For shipment
+      operative: Authorized by
+
+    claims:
+      - id: matching-order
+        prompt: This order gives the same consignee as the crate's replacement label.
+        evidenceSets:
+          - facts:
+              - entity: Shipment:$shipment
+                field: intake
+                equals: IntakeRecord:$intake
+              - entity: IntakeRecord:$intake
+                field: consignee
+                equals: Company:LUA-PARALLAX
+              - entity: Shipment:$shipment
+                field: transferOrders
+                includes: TransferOrder:$order
+              - entity: TransferOrder:$order
+                field: consignee
+                equals: Company:LUA-PARALLAX
+          - facts:
+              - entity: Shipment:$shipment
+                field: unloadingReceipt
+                equals: UnloadingReceipt:$receipt
+              - entity: UnloadingReceipt:$receipt
+                field: labelConsignee
+                equals: Company:LUA-PARALLAX
+              - entity: Shipment:$shipment
+                field: transferOrders
+                includes: TransferOrder:$order
+              - entity: TransferOrder:$order
+                field: consignee
+                equals: Company:LUA-PARALLAX
+      - id: authorizer
+        prompt: This operative authorized the matching order.
+        evidenceSets:
+          - facts:
+              - entity: TransferOrder:$order
+                field: authorizedBy
+                equals: Operative:$operative
+          - facts:
+              - entity: TransferOrder:$order
+                field: authorizationLog
+                equals: AuthorizationLog:$log
+              - entity: AuthorizationLog:$log
+                field: signedBy
+                equals: Operative:$operative
+
+    leadOutcomes:
+      LUA-011:
+        refutation:
+          claim: matching-order
+          facts:
+            - entity: TransferOrder:$order
+              field: consignee
+              equals: Company:LUA-LANTERN
+        ruledOut: |
+          Order LUA-011 is made out to Lantern Export. The depot notes
+          that the label on the crate says something else.
+
+    resolved: |
+      Deduction accepted. The depot holds the crate against
+      order LUA-012.
+
+    referenceSolution: |
+      query {
+        city(name: "Luanda") {
+          arrivingShipments {
+            id
+            intake { consignee { name } }
+            transferOrders {
+              id
+              consignee { name }
+              authorizedBy { codename }
+            }
+          }
+        }
+      }

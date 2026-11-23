@@ -12,6 +12,10 @@ if (issues.length > 0) {
   process.exitCode = 1;
 } else {
   for (const mission of raw.missions) {
+    if (!mission.clock) {
+      console.log(`${mission.id}: untimed`);
+      continue;
+    }
     const b = computeBudget(mission, raw.world);
     console.log(
       `${mission.id}: budget ${String(b.total)}h (travel ${String(b.travel)}, transmissions ${String(b.transmissions)} x ${String(b.factor)}, hints ${String(b.hintLadder)})`,

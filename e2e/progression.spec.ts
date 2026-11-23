@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
+  clock,
   draft,
   expectClean,
   openCase,
@@ -159,6 +160,83 @@ test("a later case ends at its deadline and can be restarted", async ({
   await expect(
     page.getByRole("button", { name: "Open the terminal" }),
   ).toBeVisible();
+});
+
+const LEDGERS = `query {
+  mombasa: city(name: "Mombasa") { ...crates }
+  dar: city(name: "Dar es Salaam") { ...crates }
+  maputo: city(name: "Maputo") { ...crates }
+}
+fragment crates on City {
+  arrivingShipments {
+    id
+    manifest
+    inspection { finding }
+    consignee { name director { codename organization { name } } }
+  }
+}`;
+
+test("a case with a clock: rule out a lead, check another, and run out of time", async ({
+  page,
+}) => {
+  await openCase(page, "bound-ledgers");
+  await expect(clock(page)).toContainText("17 of 17 hours left");
+  await send(page, LEDGERS);
+  await expect(clock(page)).toContainText("16 of 17 hours left");
+
+  // Rule out one wrong lead, free.
+  await press(
+    record(page, "MPM-0144").getByRole("button", {
+      name: /^Cite (.* → )?finding,/,
+    }),
+  );
+  await expect(
+    draft(page).getByRole("tab", { name: "MPM-0144" }),
+  ).toHaveAttribute("aria-selected", "true");
+  await expect(draft(page)).toContainText("Contradicted");
+  await press(draft(page).getByRole("button", { name: /Rule out this lead/ }));
+  await expect(draft(page)).toContainText("the inspector has borrowed one");
+  await expect(draft(page)).toContainText("no time spent");
+  await expect(clock(page)).toContainText("16 of 17 hours left");
+
+  // A different lead with one supported claim and one unverified: field check.
+  await press(
+    record(page, "MBA-0102").getByRole("button", {
+      name: /^Cite (.* → )?finding,/,
+    }),
+  );
+  await expect(
+    draft(page).getByRole("tab", { name: "MBA-0102" }),
+  ).toHaveAttribute("aria-selected", "true");
+  const check = draft(page).getByRole("button", {
+    name: /Order a field check/,
+  });
+  await expect(check).toContainText("2 hours");
+  await press(check);
+  await expect(draft(page)).toContainText(
+    "asks who directs the company collecting them",
+  );
+  await expect(clock(page)).toContainText("14 of 17 hours left");
+  await expect(page.getByRole("heading", { name: "Deduction" })).toBeVisible();
+
+  // A reload keeps the clock and the history of both leads.
+  await page.reload();
+  await expect(clock(page)).toContainText("14 of 17 hours left");
+  await openTool(page, "Case");
+  await expect(page.locator(".dispatches")).toContainText(
+    "ruled out · MPM-0144",
+  );
+  await expect(page.locator(".dispatches")).toContainText(
+    "field check · MBA-0102",
+  );
+
+  // The deadline ends the attempt.
+  await press(page.getByRole("button", { name: "Let the deadline pass…" }));
+  await press(
+    page.getByRole("button", { name: "Let the deadline pass", exact: true }),
+  );
+  await expect(page.getByRole("alert")).toContainText("this attempt is closed");
+  await expect(page.getByTestId("transmit")).toBeDisabled();
 });
 
 test("aliases bring three files back in one transmission", async ({ page }) => {

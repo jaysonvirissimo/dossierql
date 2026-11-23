@@ -9,6 +9,17 @@ export const CONCEPTS = [
 ] as const;
 export type Concept = (typeof CONCEPTS)[number];
 
+/** The casework mechanics of SDD 3.15, in the order the course meets them. */
+export const MECHANICS = [
+  "citing",
+  "travel-order",
+  "deduction",
+  "clock",
+  "ruling-out",
+  "field-check",
+] as const;
+export type Mechanic = (typeof MECHANICS)[number];
+
 export type Literal = string | number | boolean;
 
 /**
@@ -65,6 +76,8 @@ export interface Solution {
 export interface Stage {
   /** Country code of where the stage takes place. */
   location: string;
+  /** The casework mechanic a player first meets in this stage (SDD 3.15). */
+  introduces?: Mechanic;
   objective: string;
   briefing: string;
   clues: Clue[];
@@ -83,6 +96,7 @@ export interface Stage {
   leadOutcomes?: Record<string, LeadOutcome>;
   /** Dispatch read when the stage is resolved. */
   resolved?: string;
+  /** An empty list: the evidence is already in the ledger. */
   referenceSolution: string | string[];
   referenceVariables?: Record<string, unknown> | Record<string, unknown>[];
   next?: string;
@@ -101,7 +115,8 @@ export interface Mission {
   requires: Concept[];
   summary: string;
   motif?: string;
-  clock: {
+  /** A mission with no clock is untimed (SDD 3.3). */
+  clock?: {
     countdown: string;
     expired: string;
     onExpiry: "continue" | "end";
