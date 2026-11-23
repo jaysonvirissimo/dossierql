@@ -1,0 +1,101 @@
+# Running a round of agent playtests
+
+This is the prompt for an orchestrating agent, such as Codex, that runs a
+round of agent playtests and acts on what they find. The orchestrator works
+inside this repository. The agents it starts do not: each one sees only its
+prompt and a browser page.
+
+Paste everything below the line to the orchestrator. Fill in [DATE] and edit
+the run list if this round needs different runs.
+
+---
+
+You are running a round of playtests for DossierQL, a browser game that
+teaches GraphQL. You work in this repository. Read `AGENTS.md`,
+`docs/playtest/README.md`, and SDD sections 3.15, 5.7, and 10.1 before you
+start.
+
+## Your role and the runners' role
+
+- **You** may read the repository. You build and serve the game, seed each
+  save, start each run, read the reports, and act on them.
+- **Each run** is a separate agent with a fresh context. It gets only the
+  prompt you paste and one browser page. Give it no access to this
+  repository, no shell, and no file tools. The built JavaScript holds every
+  mission's answers, so a runner that reads it learns nothing about what the
+  game teaches.
+
+## Setup for each run
+
+1. Serve the current build: `npm run build && npm run preview`. Rebuild
+   after every change you make to the game.
+2. Open a fresh browser profile or private window for each run. Block every
+   origin except the preview server, so a runner cannot follow the footer
+   link to the repository.
+3. Seed the save if the run list gives a seed. Use the snippet in
+   `docs/playtest/README.md` with the assessment id given, then reload.
+   Simulated round 2 uses the seed in `simulated-sessions.md`.
+4. Check the clearance in the header against the run list. If it differs,
+   fix the seed. Do not hand the page over until it matches.
+5. Paste the prompt whole, with its bracketed values filled in. Change
+   nothing else in it.
+
+## The run list
+
+| Prompt                           | Case                               | Seed                   | Clearance |
+| -------------------------------- | ---------------------------------- | ---------------------- | --------- |
+| `clean-room-solve.md`            | _The Vanishing Azulejos_           | none                   | 1         |
+| `clean-room-solve.md`            | _The Borrowed Chronometer_         | none                   | 1         |
+| `clean-room-solve.md`            | _The Guest Register_               | `borrowed-chronometer` | 2         |
+| `clean-room-solve.md`            | _The Quiet Consignee_              | `borrowed-chronometer` | 2         |
+| `clean-room-solve.md`            | _Three Couriers_                   | `quiet-consignee`      | 3         |
+| `clean-room-solve.md`            | _The Receipt_                      | `registrars-return`    | 6         |
+| `novice-walkthrough.md`          | _The Receipt_                      | `registrars-return`    | 6         |
+| `simulated-sessions.md`, round 1 | the drills and the first two cases | none                   | 1         |
+| `simulated-sessions.md`, round 2 | the path given in the prompt       | in the prompt          | 2         |
+
+- **_The Receipt_.** It is the coda of the campaign. It appears once
+  _The Registrar's Return_ has any completion, so the one seed is enough.
+  Check that the desk shows it before you hand the page over. For the
+  novice walkthrough, set [PRIOR PLAY] to: "You have played every earlier
+  case of the campaign, and you remember what its debriefs taught."
+- **The simulated rounds.** Run each round once for each persona, P1 to P4,
+  in a fresh context each time. Start round 2 only after round 1's summary
+  is written and its fixes are made. If round 1's fixes change the opening,
+  run round 1 again on the new build before you start round 2.
+
+## Checking each run
+
+Read each transcript before you read its report. Discard a run that read
+page source, network traffic, storage, or DOM attributes, or that left the
+game's site, and run it again in a fresh context. Note each discarded run
+in the summary.
+
+## Reports
+
+- Save each report under `docs/playtest/reports/`, named as
+  `docs/playtest/README.md` says, with [DATE] as the date.
+- Write one summary for each simulated round, as "After a round" in
+  `simulated-sessions.md` says. Sort overload by SDD section 3.15: a stage
+  asks too much only when it brings more than one new GraphQL step or more
+  than one new casework mechanic. Do not tune the clock. Record the hours
+  left.
+- Write one summary for the clean-room solves and the coda's walkthrough,
+  named `docs/playtest/reports/agent-playtests-[DATE].md`.
+
+## Acting on the findings
+
+- Mark every finding as fixed, or log it with the reason it stands.
+- Follow `AGENTS.md` for every fix.
+  - Read SDD section 5.7 before you change text a player can read.
+  - Search the tests for a phrase before you change it, and update the
+    test in the same change.
+  - Run the query before you write about its result.
+  - Put any change to how the game works in the SDD as well.
+- Give each changed passage of teaching text to a fresh reader who does
+  not know the answer, and revise it from what they report.
+- Run `npm run check`. Then build and run `npm run test:e2e`. Both must
+  pass.
+- Do not commit. Leave the changes and the reports for review. End with a
+  short list of what you changed, what you logged, and what still needs a
+  person.

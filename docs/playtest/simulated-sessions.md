@@ -68,6 +68,9 @@ Run every persona in each round.
 - **P3, non-programmer.** "You work in operations. You have edited JSON
   config files and once followed a tutorial to call a web API. You do not
   program. You read every word carefully, and jargon stops you."
+- **P4, hurried player.** "You have used JSON and called a web API from a
+  tutorial. You have never written GraphQL. You skim briefings, start
+  typing before you finish reading, and transmit to see what happens."
 
 ---
 
@@ -105,6 +108,9 @@ risk in this test, so follow these rules:
   a hint, or stay stuck.
 - **Do not fix things silently.** If the person would misread something,
   misread it, and record what you misread and why.
+- **Send what the person would send.** Do not correct a mistake before you
+  transmit if this person would not have caught it. Do not invent mistakes
+  either: make only the ones this person's reading of the screen leads to.
 - **Think aloud.** Before each action, write one or two sentences, in the
   person's voice, about what they read, what they expect, and what they
   are unsure of.
@@ -150,9 +156,11 @@ Play only the path for round [ROUND].
 - If a case makes no progress in 20 transmissions, stop it, record where
   you stopped, and go on to the next item on the path.
 - To write a query: click in the editor, select all (Ctrl+A or Cmd+A) to
-  replace what is there, and type. The editor closes brackets and quotes
-  as you type, so read the editor back before you send. Send with the
-  Transmit button.
+  replace what is there, and type it key by key, as the person would. Do
+  not paste or insert the whole query at once. The editor closes braces,
+  parentheses and quotes as you type. Record each time that changes what
+  you meant to type, and read the editor back before you send. Send with
+  the Transmit button.
 
 ## Interview yourself at every stage boundary
 
@@ -240,12 +248,18 @@ Combine the persona reports into one summary per round, named
 
 - **Findings.** List every finding. Mark each one as fixed, or log it with
   the reason it stands.
-- **Overload.** Treat a stage as asking for too much when two or more
-  personas name more than one new thing in it (SDD section 3.15).
+- **Overload.** Sort each new thing the personas listed into a GraphQL
+  step, a casework mechanic (the table in SDD section 3.15), or something
+  else, such as a record, a phrase, or a panel. A stage breaks SDD section
+  3.15 when two or more personas meet more than one new GraphQL step, or
+  more than one new casework mechanic, in it. Something else that two or
+  more personas list for the same stage is a finding about load.
 - **Leaks.** Treat a leak in the syntax ledger as a finding against the
   game, not against the persona. It marks a place where the screen did not
   teach what the player needed.
 
-After round 1, rework the opening from the summary before going on. Round 2
-also decides whether the draft should say more about an incomplete claim,
-and it tunes the clock from the notes of both rounds.
+After round 1, rework the opening from the summary, then run round 1 again
+before going on. Round 2 also decides whether the draft should say more
+about an incomplete claim. Neither round tunes the clock, because the agent
+already knows GraphQL (SDD section 3.3). Record the hours left, and leave
+the costs and factors as they are.

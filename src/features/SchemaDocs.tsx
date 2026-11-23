@@ -55,11 +55,15 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
         <code>
           city(name: "Lisbon") {"{"} name {"}"}
         </code>{" "}
-        to get Lisbon&apos;s name. In the entry, <code>String!</code> inside the
-        parentheses means you must supply text in double quotes. After the colon
-        outside the parentheses, <code>City</code> tells you what comes back. If
-        the return value has a <code>!</code>, the archive always returns a
-        value.{" "}
+        to get Lisbon&apos;s name. In the entry, <code>String</code> inside the
+        parentheses means that the value you give for <code>name</code> is text,
+        which you write in double quotes. The <code>!</code> after{" "}
+        <code>String</code> means that you must give that value. After the colon
+        outside the parentheses, <code>City</code> tells you what kind of record
+        comes back. When an entry shows a <code>!</code> after what comes back,
+        as in <code>name: String!</code>, the archive always returns a value.
+        Without one, the archive returns <code>null</code> when it has nothing
+        to give.{" "}
         {clearance < 5 ? (
           <>
             You never type a <code>!</code> in a query.

@@ -56,3 +56,28 @@ An earlier P2 attempt ended during drill 6 after the external GitHub footer link
 ## Reading check after the rework
 
 A fresh simulated reader passed Ask for a field, Read a list, and Follow a chain of three links in one send each using the revised text. They could point to where `capital` goes, explain why the list uses braces in the query, and distinguish Spain's `name` line from Portugal's. On the first Azulejos terminal, the reader could explain when Cite opens the shipment draft and when to choose a lead manually. This was a focused check of the revised teaching copy.
+
+## Review
+
+A later review corrected two points in this summary.
+
+- **Overload.** This summary counted every new thing a persona listed. SDD
+  section 3.15 limits a stage to one new GraphQL step and one new casework
+  mechanic. Each flagged stage meets that limit when its items are sorted
+  that way:
+  - **Drills:** each introduces one GraphQL step and no mechanic. The
+    documentation drill introduces neither.
+  - **Azulejos stage 1:** citing, and no GraphQL step.
+  - **Azulejos stage 2:** nested selections, and no mechanic.
+  - **Azulejos stage 3:** the travel order, and no GraphQL step.
+  - **Azulejos stage 4:** two records opened side by side, and deduction
+    over several records.
+  - **Chronometer:** the clock, and no GraphQL step.
+
+  The other items, such as the empty editor, the documentation notation,
+  and the grouped citation, are notes on load. The text fixes above
+  address them.
+
+- **The clock.** These sessions do not tune the clock, because the agent
+  already knows GraphQL (SDD section 3.3). The 17 of 18 hours left is
+  recorded, and the costs and factors stay provisional.

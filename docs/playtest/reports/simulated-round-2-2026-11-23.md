@@ -50,3 +50,25 @@ Keep the one-hour transmission price, free unread requests and rule-outs, quoted
 Each run used a fresh agent context and its own browser context, with only the specified round-two starting completions. The bridge limited browsing to the game origin and exposed rendered text, screenshots, visible editor readback and controls. The action logs showed no visits to project files or external pages and no inspection of page internals. The agent that anticipated a repeated-key conflict in Quiet Consignee recorded it as a possible prior-knowledge leak. It did not use aliases before the visible Glossary example. No repeated field is required in Quiet Consignee, so the alias lesson remains at clearance 3. The new signpost helps players reach it before the first required use. No other unsupported syntax was reported.
 
 These simulations measure transmissions and whether a visible basis exists for a decision. The seeded start does not measure whether a human would retain the opening lessons in round two. Accessibility output and whole-editor insertion cannot measure visual discovery, autocomplete, manual typing or real reading time.
+
+## Review
+
+A later review corrected two points in this summary.
+
+- **Overload.** This summary counted every new thing a persona listed. SDD
+  section 3.15 limits a stage to one new GraphQL step and one new casework
+  mechanic. Each flagged stage meets that limit when its items are sorted
+  that way:
+  - **The Guest Register, stage 1:** arguments, and ruling out.
+  - **The Guest Register, stage 2:** no new step, and no new mechanic.
+  - **The Quiet Consignee:** the field check, and no new step.
+  - **Three Couriers, stage 1:** aliases, and no mechanic.
+  - **Three Couriers, stage 2:** neither.
+
+  The deep chain through the documentation, the blank editor, and the
+  change of record type are notes on load.
+
+- **The clock.** "Keep the current budget factors" is withdrawn as a
+  decision. These sessions cannot tune the clock, because the agent
+  already knows GraphQL (SDD section 3.3). The costs and factors stay as
+  they are, and stay provisional.

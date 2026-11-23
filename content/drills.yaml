@@ -4,10 +4,12 @@
 - id: one-field
   title: Ask for a field
   task: >
-    The clerk has filled in a request for Portugal. Look for `name`
-    inside the braces after `country(name: "Portugal")`. The archive
-    returns the fields you put inside those braces. Put each field on
-    its own line. Add `capital` on the line after `name`.
+    The clerk has filled in a request for Portugal. In
+    `country(name: "Portugal")`, the part in parentheses says which
+    country you want. The braces after it hold the fields you want back
+    from that country. At present they hold one field, `name`. Put each
+    field on its own line, with no comma between fields. Add `capital`
+    on the line after `name`.
   starter: |
     query {
       country(name: "Portugal") {
@@ -155,11 +157,13 @@
 - id: three-links
   title: Follow a chain of three links
   task: >
-    The query takes you from Lisbon to Portugal to Spain. The starter's
-    innermost braces hold the fields you want from Spain. Inside those
-    braces, `name` gives you Spain's name. On the next line, start a
-    second `borders` at the same indent as `name`. The second list takes
-    you from Spain to its own neighbours. Ask for each neighbour's name.
+    The query starts at Lisbon, opens its `country`, which is Portugal,
+    and opens Portugal's `borders`. The braces after `borders` hold the
+    fields you want from each of Portugal's neighbours. Portugal has one
+    land neighbour, Spain, so `name` there gives you Spain's name. On the
+    next line, inside the same braces as that `name`, add a second
+    `borders` with braces of its own. The second `borders` lists Spain's
+    own neighbours. Inside its braces, ask for each neighbour's `name`.
   starter: |
     query {
       city(name: "Lisbon") {

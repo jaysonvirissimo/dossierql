@@ -48,9 +48,10 @@ stuck. Write down that you helped, and what you said.
 **After each stage** (and once after the drills), ask the questions below
 before the player goes on. Write the answers down in the player's own words.
 
-- "What was new in that stage?" A stage where the player lists more than one
-  new thing, counting both GraphQL and game controls, asked for too much
-  (SDD section 3.15).
+- "What was new in that stage?" A stage where the player meets more than
+  one new GraphQL step, or more than one new casework mechanic, asked for
+  too much (SDD section 3.15). Note anything else they list, such as a
+  record, a phrase, or a panel, as load.
 - Point at each control the stage used (Cite, the draft form, Submit, travel)
   and ask "What was that for?" A control the player cannot explain is a
   finding.
