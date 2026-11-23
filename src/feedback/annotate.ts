@@ -1,5 +1,12 @@
 import type { ResultError } from "../engine/mission.ts";
-import { isUndocumented } from "../graphql/schema.ts";
+import { isUnionType } from "graphql";
+import { isUndocumented, schemaFor } from "../graphql/schema.ts";
+import { MAX_CLEARANCE } from "../graphql/sdl.ts";
+
+/** Whether a type is a union, which lists no fields of its own. */
+function isUnion(type: string): boolean {
+  return isUnionType(schemaFor(MAX_CLEARANCE).getType(type));
+}
 
 /**
  * The records clerk's note beneath an error. A note says where to look and
@@ -71,20 +78,25 @@ const RULES: Rule[] = [
         kinds.length === 1
           ? `${String(kinds[0])} has it`
           : `${kinds.join(" and ")} have it`;
+      if (isUnion(String(m[2]))) {
+        return `${String(m[2])} is a union, so it lists no fields of its own. Every field you ask for inside it goes in an inline fragment for one kind of record. ${which.replace(/ it$/, "")} "${String(m[1])}". The glossary entry for a union shows how.`;
+      }
       return `Not every kind of ${String(m[2])} has "${String(m[1])}". ${which}. To ask for a field that belongs to one kind, put the field inside an inline fragment for that kind. The glossary entry for an inline fragment shows how.`;
     },
   },
   {
     test: /^Fragment cannot be spread here as objects of type "(\w+)" can never be of type "(\w+)"/,
     note: (m) =>
-      `The inline fragment for ${String(m[2])} stands inside a field that returns ${String(m[1])} records, and a record of type ${String(m[1])} is never of type ${String(m[2])}. An inline fragment goes inside a field that can return ${String(m[2])} records. The documentation panel lists the kinds of record that each interface stands for.`,
+      `The inline fragment for ${String(m[2])} stands inside a field that returns ${String(m[1])} records, and a record of type ${String(m[1])} is never of type ${String(m[2])}. An inline fragment goes inside a field that can return ${String(m[2])} records. The documentation panel lists the kinds of record that each interface and each union stands for.`,
   },
   {
     test: /^Cannot query field "(\w+)" on type "(\w+)"/,
     note: (m) =>
-      isUndocumented(String(m[2]))
-        ? `The archive keeps no "${String(m[1])}" on ${String(m[2])}. ${String(m[2])} is not in the documentation panel, but the archive can describe ${String(m[2])} itself. The glossary entry for introspection shows how to ask which fields ${String(m[2])} has.`
-        : `The archive keeps no "${String(m[1])}" on ${String(m[2])}. The documentation panel lists the fields that ${String(m[2])} does have.`,
+      isUnion(String(m[2]))
+        ? `${String(m[2])} is a union, so it lists no fields of its own, and no kind of record in ${String(m[2])} has "${String(m[1])}". Every field you ask for inside it goes in an inline fragment for one kind. The documentation panel lists the kinds, and the fields of each kind.`
+        : isUndocumented(String(m[2]))
+          ? `The archive keeps no "${String(m[1])}" on ${String(m[2])}. ${String(m[2])} is not in the documentation panel, but the archive can describe ${String(m[2])} itself. The glossary entry for introspection shows how to ask which fields ${String(m[2])} has.`
+          : `The archive keeps no "${String(m[1])}" on ${String(m[2])}. The documentation panel lists the fields that ${String(m[2])} does have.`,
   },
   {
     test: /^Field "(\w+)" of type "([^"]+)" must have a selection of subfields/,
@@ -175,6 +187,21 @@ const RULES: Rule[] = [
       `The archive has no type called "${String(m[1])}" at your clearance. The documentation panel lists the types that exist.`,
   },
   { test: /^Expected value of type "[^"]+", found /, note: () => VALUE_KIND },
+  {
+    test: /^Enum "(\w+)" cannot represent non-enum value: \[/,
+    note: (m) =>
+      `This argument takes one ${String(m[1])} value, and you gave a list. The documentation panel shows which arguments take a list: their type is written in square brackets.`,
+  },
+  {
+    test: /^Enum "(\w+)" cannot represent non-enum value: "/,
+    note: (m) =>
+      `This argument takes a value of ${String(m[1])}, which is an enum. An enum value is a word written without quotation marks. The clerk suggests removing the quotation marks around the value.`,
+  },
+  {
+    test: /^Value "(\w+)" does not exist in "(\w+)" enum/,
+    note: (m) =>
+      `"${String(m[1])}" is not one of the values of ${String(m[2])}. The documentation panel lists every value of ${String(m[2])}, and you write a value exactly as the panel lists it, in capital letters.`,
+  },
   { test: /cannot represent/, note: () => VALUE_KIND },
   {
     test: /is classified above your clearance\.$/,

@@ -141,6 +141,13 @@ export const TO_CLEARANCE_7 = [
   "exchange-book",
 ] as const;
 
+/** Every case through the clearance 7 assessment. */
+export const TO_CLEARANCE_8 = [
+  ...TO_CLEARANCE_7,
+  "valparaiso-draft",
+  "station-file",
+] as const;
+
 /** Sends the query from inside the editor with the keyboard shortcut. */
 export async function transmit(page: Page): Promise<void> {
   const content = page.getByRole("textbox", { name: "GraphQL query" });

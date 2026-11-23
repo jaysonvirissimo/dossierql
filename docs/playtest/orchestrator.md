@@ -59,6 +59,10 @@ start.
 | `novice-walkthrough.md`          | _The Valparaíso Draft_             | `exchange-book`        | 7         |
 | `clean-room-solve.md`            | _The Station File_                 | `exchange-book`        | 7         |
 | `novice-walkthrough.md`          | _The Station File_                 | `exchange-book`        | 7         |
+| `clean-room-solve.md`            | _The Listening Post_               | `station-file`         | 8         |
+| `novice-walkthrough.md`          | _The Listening Post_               | `station-file`         | 8         |
+| `clean-room-solve.md`            | _The Door Watch_                   | `station-file`         | 8         |
+| `novice-walkthrough.md`          | _The Door Watch_                   | `station-file`         | 8         |
 | `simulated-sessions.md`, round 1 | the drills and the first two cases | none                   | 1         |
 | `simulated-sessions.md`, round 2 | the path given in the prompt       | in the prompt          | 2         |
 
@@ -81,6 +85,15 @@ start.
   Exchange Book, and you remember what their debriefs taught. You have never
   read a list whose records are of different kinds." For _The Station File_,
   add: "You have also played The Valparaíso Draft."
+- **_The Listening Post_ and _The Door Watch_.** They are the clearance 8
+  cases of the second campaign. Seed the completion of `station-file`, and
+  for _The Door Watch_ the completion of `listening-post` as well. For the
+  novice walkthrough of _The Listening Post_, set [PRIOR PLAY] to: "You have
+  played every case of the first campaign, The Sealed Cabinet, The Exchange
+  Book, The Valparaíso Draft, and The Station File, and you remember what
+  their debriefs taught. You have read a list of documents that share some
+  fields, and you have never read a list whose records share none." For
+  _The Door Watch_, add: "You have also played The Listening Post."
 - **The simulated rounds.** Run each round once for each persona, P1 to P4,
   in a fresh context each time. Start round 2 only after round 1's summary
   is written and its fixes are made. If round 1's fixes change the opening,

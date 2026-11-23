@@ -8,11 +8,11 @@ evidence supports.
 Play it at <https://virissimo.info/dossierql/>.
 
 The design is in [SOFTWARE_DESIGN_DOCUMENT.md](SOFTWARE_DESIGN_DOCUMENT.md).
-This repository implements 1.0 and the first two levels after it: clearance
-levels 1 to 7, with a teaching case and an assessment for each of nested
-selections, arguments, aliases, fragments, variables, introspection, and
-interfaces. A training range
-of short drills comes before the first case.
+This repository implements 1.0 and the first three levels after it:
+clearance levels 1 to 8, with a teaching case and an assessment for each of
+nested selections, arguments, aliases, fragments, variables, introspection,
+interfaces, and unions. A training range of short drills comes before the
+first case.
 
 The game runs entirely in the browser. There is no backend, no account, and
 no request to any other origin.
@@ -70,8 +70,8 @@ the text a player reads.
 - **Facts are recorded during execution.** A single field resolver serves
   every record type and notes each field it resolves. Identity comes from
   the record, so an alias changes the path and not the fact. A record reached
-  through an interface keeps the type it was filed as, so its facts belong
-  to that type.
+  through an interface or a union keeps the type it was filed as, so its
+  facts belong to that type.
 - **The engine is one reducer.** `act(env, state, action)` in
   `src/engine/mission.ts` holds every rule of an investigation. The interface
   only dispatches actions and renders state.

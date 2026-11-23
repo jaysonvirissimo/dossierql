@@ -222,3 +222,35 @@
     record of another type comes back without them, and with no error.
     An inline fragment is written where it is used, and it has no name of
     its own.
+- id: union
+  term: union
+  clearance: 8
+  matches: [unions]
+  definition: >
+    A type whose records are of several kinds, and the kinds need have no
+    fields in common. In the Documentation tab, `Intercept` is a union.
+    Each entry in an intercept log is a `Vessel`, a `Company`, a
+    `Sighting`, a `Telegram`, or a `Pass`. An interface lists the fields
+    that its kinds share, and a union lists no fields at all. So inside a
+    field that returns a union, such as `entries`, you ask for every field
+    inside an inline fragment for one kind, as in
+    `... on Vessel { name }`. The one field you can ask for directly is
+    `__typename`, which every type has, and which tells you the kind of
+    each record.
+- id: enum
+  term: enum
+  clearance: 8
+  matches: [enums, enum value, enum values]
+  definition: >
+    A type whose values are a fixed list of words. `InterceptKind` is an
+    enum, and its values are `VESSEL`, `COMPANY`, `SIGHTING`, `TELEGRAM`,
+    and `PASS`. The Documentation tab lists the values of each enum. You
+    write an enum value as the word itself, in capital letters and without
+    quotation marks, as in `entries(kind: VESSEL)`. A word in quotation
+    marks is text, and an argument that takes an enum refuses text. When
+    the Documentation tab shows an argument's type in square brackets, as
+    in `kinds: [InterceptKind!]`, the argument takes a list. You write a
+    list as values between square brackets, with a comma between each
+    value and the next, as in `kinds: [VESSEL, COMPANY]`. Where an
+    argument takes a list, a single value is accepted as well, and the
+    archive reads it as a list of one.

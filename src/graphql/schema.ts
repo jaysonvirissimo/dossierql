@@ -39,6 +39,8 @@ export function schemaDocumentFor(
     if (
       (definition.kind === Kind.OBJECT_TYPE_DEFINITION ||
         definition.kind === Kind.INTERFACE_TYPE_DEFINITION ||
+        definition.kind === Kind.UNION_TYPE_DEFINITION ||
+        definition.kind === Kind.ENUM_TYPE_DEFINITION ||
         definition.kind === Kind.SCALAR_TYPE_DEFINITION) &&
       clearanceOf(definition.directives) > level
     ) {
@@ -58,6 +60,15 @@ export function schemaDocumentFor(
             ),
           },
     InterfaceTypeDefinition: (node) =>
+      hidden.has(node.name.value) ? null : undefined,
+    UnionTypeDefinition: (node) =>
+      hidden.has(node.name.value)
+        ? null
+        : {
+            ...node,
+            types: node.types?.filter((t) => !hidden.has(t.name.value)),
+          },
+    EnumTypeDefinition: (node) =>
       hidden.has(node.name.value) ? null : undefined,
     ScalarTypeDefinition: (node) =>
       hidden.has(node.name.value) ? null : undefined,
@@ -122,13 +133,18 @@ export function isUndocumented(type: string, field?: string): boolean {
       if (
         definition.kind !== Kind.OBJECT_TYPE_DEFINITION &&
         definition.kind !== Kind.INTERFACE_TYPE_DEFINITION &&
+        definition.kind !== Kind.UNION_TYPE_DEFINITION &&
+        definition.kind !== Kind.ENUM_TYPE_DEFINITION &&
         definition.kind !== Kind.SCALAR_TYPE_DEFINITION
       ) {
         continue;
       }
       const name = definition.name.value;
       if (marked(definition.directives)) found.add(name);
-      if (definition.kind !== Kind.SCALAR_TYPE_DEFINITION) {
+      if (
+        definition.kind === Kind.OBJECT_TYPE_DEFINITION ||
+        definition.kind === Kind.INTERFACE_TYPE_DEFINITION
+      ) {
         for (const f of definition.fields ?? []) {
           if (marked(f.directives)) found.add(`${name}.${f.name.value}`);
         }

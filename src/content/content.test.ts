@@ -26,9 +26,9 @@ describe("the authored course", () => {
     expect(validateContent(raw)).toEqual([]);
   });
 
-  it("covers clearance 1 to 7 with a teaching mission and an assessment each", () => {
+  it("covers clearance 1 to 8 with a teaching mission and an assessment each", () => {
     const cases = raw.missions.filter((m) => m.kind !== "coda");
-    expect(cases).toHaveLength(14);
+    expect(cases).toHaveLength(16);
   });
 
   it("ends the first campaign with one coda", () => {
@@ -593,14 +593,14 @@ describe("validation of steps (SDD 3.7) fails the build when a step", () => {
   it("is never practised by a later mission", () => {
     expect(
       steps(
-        mutated("exchange-book", (m) => {
-          const operations = m.stages.lusaka!.referenceSolution as string[];
-          m.stages.lusaka!.referenceSolution = operations.map((o) =>
-            o.replace("__typename ", ""),
+        mutated("door-watch", (m) => {
+          const operations = m.stages.door!.referenceSolution as string[];
+          m.stages.door!.referenceSolution = operations.map((o) =>
+            o.replace("entries(kinds: [SIGHTING, PASS])", "entries"),
           );
         }),
       ),
-    ).toContain("No later mission practises typename.");
+    ).toContain("No later mission practises list-value.");
   });
 
   it("belongs to another clearance", () => {
@@ -655,5 +655,46 @@ describe("the steps of clearance 7 are recognised from the parsed request", () =
       ),
     ).toBe(true);
     expect(uses("boolean-value", `{ cities { name } }`)).toBe(false);
+  });
+});
+
+describe("the steps of clearance 8 are recognised from the parsed request", () => {
+  const uses = (id: string, query: string) =>
+    stepById(id)?.uses(parse(query)) ?? false;
+  const log = (inner: string, after = "") =>
+    `{ interceptLog(reference: "IL-0112") { ${inner} } } ${after}`;
+
+  it("an enum value, and not a quoted word", () => {
+    expect(
+      uses("enum-value", log(`entries(kind: VESSEL) { __typename }`)),
+    ).toBe(true);
+    expect(uses("enum-value", `{ city(name: "VESSEL") { name } }`)).toBe(false);
+  });
+
+  it("a list value, and not a list type in a declaration", () => {
+    expect(
+      uses("list-value", log(`entries(kinds: [VESSEL]) { __typename }`)),
+    ).toBe(true);
+    expect(
+      uses(
+        "list-value",
+        `query Q($k: [InterceptKind!]) { interceptLog(reference: "IL-0112") { entries(kinds: $k) { __typename } } }`,
+      ),
+    ).toBe(false);
+  });
+
+  it("a named fragment on a member of a union, spread inside it", () => {
+    expect(
+      uses(
+        "union-fragment",
+        log(`entries { ...Seen }`, `fragment Seen on Sighting { note }`),
+      ),
+    ).toBe(true);
+    expect(
+      uses(
+        "union-fragment",
+        `{ operative(codename: "GILT_MAGPIE") { sightings { ...Seen } } } fragment Seen on Sighting { note }`,
+      ),
+    ).toBe(false);
   });
 });

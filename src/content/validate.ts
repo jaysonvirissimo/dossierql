@@ -1,8 +1,9 @@
 import {
   getNamedType,
-  isAbstractType,
+  isEnumType,
   isInterfaceType,
   isObjectType,
+  isUnionType,
   Kind,
   parse,
   TypeInfo,
@@ -169,19 +170,22 @@ function reach(
   start: string,
   path: readonly string[],
 ): Reached[] {
+  // Each record is read as the type it was filed as, so a path may pass
+  // through a field that returns an interface or a union.
   let current: Reached[] = [start];
-  let type: string | null = parseRef(start).type;
   for (const fieldName of path) {
-    const objectType = type ? schema.getType(type) : undefined;
-    if (!objectType || !isRecordType(objectType)) return [];
-    const field = objectType.getFields()[fieldName];
-    if (!field) throw new Error(`${String(type)} has no field ${fieldName}.`);
-    const shape = fieldShape(field.type);
     const next: Reached[] = [];
     for (const ref of current) {
       if (typeof ref !== "string") continue;
       const record = store.getRef(ref);
       if (!record) continue;
+      const objectType = schema.getType(record.type);
+      if (!objectType || !isRecordType(objectType)) continue;
+      const field = objectType.getFields()[fieldName];
+      if (!field) {
+        throw new Error(`${record.type} has no field ${fieldName}.`);
+      }
+      const shape = fieldShape(field.type);
       const raw = fieldName === "id" ? record.id : record[fieldName];
       const values = Array.isArray(raw) ? raw : [raw];
       for (const value of values) {
@@ -194,7 +198,6 @@ function reach(
       }
     }
     current = next;
-    type = shape.target;
   }
   return current;
 }
@@ -292,10 +295,13 @@ export function solve(
 // ------------------------------------------------------------- concepts
 
 /**
- * Whether a request opens a field that returns an interface, and so asks for
- * records of several kinds at once.
+ * Whether a request opens a field that returns an abstract type of the kind
+ * `test` accepts, and so asks for records of several kinds at once.
  */
-function asksThroughInterface(document: DocumentNode): boolean {
+function asksThrough(
+  document: DocumentNode,
+  test: (type: GraphQLNamedType) => boolean,
+): boolean {
   const schema = schemaFor(MAX_CLEARANCE);
   const info = new TypeInfo(schema);
   let found = false;
@@ -304,7 +310,7 @@ function asksThroughInterface(document: DocumentNode): boolean {
     visitWithTypeInfo(info, {
       Field(node) {
         const type = info.getType();
-        if (node.selectionSet && type && isAbstractType(getNamedType(type))) {
+        if (node.selectionSet && type && test(getNamedType(type))) {
           found = true;
         }
       },
@@ -336,7 +342,8 @@ export function conceptsUsed(operation: string): Set<Concept> {
     VariableDefinition: () => void used.add("variables"),
   });
   if (usesIntrospection(document)) used.add("introspection");
-  if (asksThroughInterface(document)) used.add("interfaces");
+  if (asksThrough(document, isInterfaceType)) used.add("interfaces");
+  if (asksThrough(document, isUnionType)) used.add("unions");
   return used;
 }
 
@@ -434,6 +441,8 @@ const VOCABULARY = [
   "scalar",
   "interface",
   "inline fragment",
+  "union",
+  "enum",
 ];
 
 // ------------------------------------------------------------ the checks
@@ -1384,6 +1393,7 @@ function checkCurriculum(
     "variables",
     "introspection",
     "interfaces",
+    "unions",
   ] as const) {
     if (used.has(concept) && !declared.has(concept)) {
       report(
@@ -1809,6 +1819,10 @@ function checkHintsAndText(
       .flatMap((t) => catalog.store.all(t).map((r) => r.id)),
     // The kinds of type that introspection reports.
     ...Object.values(TypeKind),
+    // The values of the enums at the mission's clearance, such as VESSEL.
+    ...Object.values(schemaFor(mission.clearance).getTypeMap()).flatMap(
+      (type) => (isEnumType(type) ? type.getValues().map((v) => v.name) : []),
+    ),
   ]);
   for (const { path, text } of proseOf(mission)) {
     const at = `${mission.id}.${path}`;

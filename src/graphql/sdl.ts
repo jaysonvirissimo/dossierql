@@ -9,9 +9,9 @@
 export const SDL = /* GraphQL */ `
   directive @clearance(
     level: Int!
-  ) on OBJECT | INTERFACE | SCALAR | FIELD_DEFINITION
+  ) on OBJECT | INTERFACE | UNION | ENUM | SCALAR | FIELD_DEFINITION
   directive @inverse(of: String!) on FIELD_DEFINITION
-  directive @undocumented on OBJECT | SCALAR | FIELD_DEFINITION
+  directive @undocumented on OBJECT | UNION | ENUM | SCALAR | FIELD_DEFINITION
 
   type Query {
     "One city, by name."
@@ -48,6 +48,8 @@ export const SDL = /* GraphQL */ `
     exchangeBook: [Slip!]! @clearance(level: 6) @undocumented
     "One case file, by the reference on its cover."
     caseFile(reference: ID!): CaseFile @clearance(level: 7)
+    "One intercept log, by the reference on its cover."
+    interceptLog(reference: ID!): InterceptLog @clearance(level: 8)
   }
 
   "A sovereign state."
@@ -156,6 +158,8 @@ export const SDL = /* GraphQL */ `
     auditor: Operative @clearance(level: 4)
     "Shipments whose shipping papers give the company as the consignee."
     shipments: [Shipment!]! @inverse(of: "consignee") @clearance(level: 2)
+    "Vessels the company hired for a voyage. The company that hires a vessel need not be the company that owns it."
+    charters: [Vessel!]! @inverse(of: "charteredBy") @clearance(level: 8)
   }
 
   "The depot's record of a shipment on arrival."
@@ -244,6 +248,10 @@ export const SDL = /* GraphQL */ `
     nameGiven: CoverName
     "What the witness reported."
     note: String
+    "The vessel the person came ashore from, if the watcher saw one."
+    vessel: Vessel @clearance(level: 8)
+    "The pass the person showed at a door, if the watcher saw one."
+    pass: Pass @clearance(level: 8)
   }
 
   "An organization, and the operatives who belong to it."
@@ -462,6 +470,66 @@ export const SDL = /* GraphQL */ `
     "The office where the officer works."
     office: Office
   }
+
+  "An intercept log: what one of the agency's listening posts heard and saw, entry by entry."
+  type InterceptLog @clearance(level: 8) {
+    "The reference on the log's cover."
+    reference: ID!
+    "The post and the hours that the log covers, as written on its cover."
+    title: String!
+    "The entries in the log, in the order the post made them. Each entry is a vessel, a company, a sighting, a telegram, or a pass. With kind, only the entries of that kind are listed. With kinds, only the entries of the kinds in the list are listed."
+    entries(kind: InterceptKind, kinds: [InterceptKind!]): [Intercept!]!
+  }
+
+  "One entry in an intercept log. An entry is a Vessel, a Company, a Sighting, a Telegram, or a Pass. Intercept lists no fields of its own, even where two kinds have a field of the same name."
+  union Intercept @clearance(level: 8) =
+    | Vessel
+    | Company
+    | Sighting
+    | Telegram
+    | Pass
+
+  "The kinds of entry in an intercept log."
+  enum InterceptKind @clearance(level: 8) {
+    "A vessel that the post heard on the harbour radio."
+    VESSEL
+    "A company whose business the post overheard."
+    COMPANY
+    "A sighting that one of the post's watchers reported."
+    SIGHTING
+    "A telegram that the post copied off the wire."
+    TELEGRAM
+    "A pass that the post copied at a door."
+    PASS
+  }
+
+  "A vessel, as the listening post heard it on the harbour radio."
+  type Vessel @clearance(level: 8) {
+    "The vessel's name, as painted on its bow."
+    name: String!
+    "The country whose flag the vessel flies."
+    flag: Country
+    "The city of the port the vessel last sailed from."
+    lastPort: City
+    "The company that owns the vessel."
+    owner: Company
+    "The company that hired the vessel for its voyage. A vessel sailing for its owner has none."
+    charteredBy: Company
+    "What the vessel reported on the harbour radio."
+    report: String!
+  }
+
+  "A pass that admits its holder to the agency's building in Lisbon."
+  type Pass @clearance(level: 8) {
+    "The number printed on the pass."
+    number: ID!
+    "The name written on the pass, as the holder gave it."
+    holder: String!
+    "The office that issued the pass."
+    issuedBy: Office
+    "The officer who signed the pass for the office that issued it. Empty when nobody signed it."
+    signedBy: Officer
+  }
 `;
 
-export const MAX_CLEARANCE = 7;
+export const MAX_CLEARANCE = 8;

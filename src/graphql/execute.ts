@@ -99,6 +99,11 @@ function pathArray(path: {
   return out;
 }
 
+/** A type's name as an enum value names it: `InterceptLog` is `INTERCEPT_LOG`. */
+export function enumName(type: string): string {
+  return type.replace(/([a-z0-9])([A-Z])/g, "$1_$2").toUpperCase();
+}
+
 /** Text compared as a player would type it: case and accents aside. */
 function plain(text: string): string {
   return text
@@ -112,6 +117,9 @@ function plain(text: string): string {
  * Whether a record passes the arguments that filter its list. A field that
  * points at another record, such as a city, matches that record by its id
  * or by its name. A true-or-false field the record does not mention is false.
+ * The arguments `kind` and `kinds`, on a field that returns an interface or a
+ * union, match a record by the type it was filed as, written as an enum value:
+ * a `Vessel` is `VESSEL`.
  */
 function matches(
   record: RawRecord,
@@ -121,6 +129,10 @@ function matches(
 ): boolean {
   return Object.entries(args).every(([name, wanted]) => {
     if (wanted === null || wanted === undefined) return true;
+    if (name === "kind" || name === "kinds") {
+      const kinds: unknown[] = Array.isArray(wanted) ? wanted : [wanted];
+      return kinds.includes(enumName(record.type));
+    }
     const actual = record[name] ?? (name === "id" ? record.id : undefined);
     if (typeof wanted === "boolean") return (actual ?? false) === wanted;
     if (typeof actual === "string" && typeof wanted === "string") {
@@ -291,8 +303,8 @@ export function transmit(
     variableValues: transmission.variables ?? {},
     contextValue: context,
     fieldResolver: resolveField,
-    // A record reached through an interface answers with the type it was
-    // filed as.
+    // A record reached through an interface or a union answers with the
+    // type it was filed as.
     typeResolver: (value) => (value as RawRecord).type,
   });
   if (outcome instanceof Promise) {

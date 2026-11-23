@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Fact } from "../../graphql/facts.ts";
-import { labelOf, rowWords, type Ledger } from "./describe.ts";
+import { describeFact, labelOf, rowWords, type Ledger } from "./describe.ts";
 
 function ledgerOf(facts: Fact[]): Ledger {
   return Object.fromEntries(
@@ -44,6 +44,19 @@ describe("labelOf", () => {
       "operative 2, not yet identified",
     );
     expect(labelOf("Operative:NIGHTJAR", ledger)).toBe("NIGHTJAR");
+  });
+});
+
+describe("describeFact", () => {
+  it("says a record's type once, whether or not a query has identified it", () => {
+    const seen = ref("Sighting:SGT-108", "vessel", "Vessel:santa-luzia");
+    const named = scalar("Vessel:santa-luzia", "name", "Santa Luzia");
+    expect(describeFact(seen, ledgerOf([seen, named]))).toBe(
+      "sighting 1, not yet identified · vessel: Santa Luzia",
+    );
+    expect(describeFact(named, ledgerOf([named]))).toBe(
+      "vessel Santa Luzia · name: Santa Luzia",
+    );
   });
 });
 

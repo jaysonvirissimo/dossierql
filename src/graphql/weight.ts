@@ -2,12 +2,14 @@ import {
   getNamedType,
   isInterfaceType,
   isObjectType,
+  isUnionType,
   Kind,
   type DocumentNode,
   type GraphQLInterfaceType,
   type GraphQLNamedType,
   type GraphQLObjectType,
   type GraphQLSchema,
+  type GraphQLUnionType,
   type SelectionSetNode,
 } from "graphql";
 import { fieldShape, type Store } from "./store.ts";
@@ -15,12 +17,12 @@ import { fieldShape, type Store } from "./store.ts";
 /** The clearance from which every result states its weight (SDD 3.3). */
 export const WEIGHT_REPORTED_FROM = 6;
 
-type RecordType = GraphQLObjectType | GraphQLInterfaceType;
+type RecordType = GraphQLObjectType | GraphQLInterfaceType | GraphQLUnionType;
 
 function isRecordType(
   type: GraphQLNamedType | undefined | null,
 ): type is RecordType {
-  return isObjectType(type) || isInterfaceType(type);
+  return isObjectType(type) || isInterfaceType(type) || isUnionType(type);
 }
 
 const longest = new WeakMap<Store, Map<string, number>>();
@@ -77,7 +79,9 @@ export function requestWeight(
       if (selection.kind === Kind.FIELD) {
         const name = selection.name.value;
         if (name.startsWith("__")) continue;
-        const field = type.getFields()[name];
+        // A union has no fields of its own: only its inline fragments and
+        // spreads ask for records.
+        const field = isUnionType(type) ? undefined : type.getFields()[name];
         if (!field || !selection.selectionSet) continue;
         const named = getNamedType(field.type);
         if (!isRecordType(named)) continue;

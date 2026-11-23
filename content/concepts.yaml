@@ -145,3 +145,30 @@
   payoff: >
     One query reads a file of mixed papers, and asks each kind of paper for
     the fields that only that kind has.
+- id: unions
+  title: Unions and enums
+  clearance: 8
+  summary: >
+    A union is a type that stands for several kinds of record and lists no
+    fields of its own. In the example, `entries` returns the union
+    `Intercept`, so the list holds vessels, companies, sightings,
+    telegrams, and passes together. The example asks for `__typename`
+    directly, because every type has it, and asks for every other field
+    inside an inline fragment for one kind, such as `... on Vessel`. The
+    argument `kinds` takes a list of values of the enum `InterceptKind`.
+    An enum value is a word in capital letters, written without quotation
+    marks, so `kinds: [VESSEL, SIGHTING]` lists only the vessels and the
+    sightings.
+  example: |
+    query {
+      interceptLog(reference: "IL-0112") {
+        entries(kinds: [VESSEL, SIGHTING]) {
+          __typename
+          ... on Vessel { name report }
+          ... on Sighting { note }
+        }
+      }
+    }
+  payoff: >
+    One query reads a log of unrelated records, and asks each kind for its
+    own fields.

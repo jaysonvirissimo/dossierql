@@ -141,4 +141,39 @@ describe("annotate", () => {
     expect(note).not.toMatch(FALLBACK);
     expect(styleIssues(note!)).toEqual([]);
   });
+  it("tells a player that a union lists no fields of its own", () => {
+    const [note] = notes(
+      `{ interceptLog(reference: "IL-0112") { entries { name } } }`,
+      8,
+    );
+    expect(note).toContain("Intercept is a union");
+    expect(note).toContain('Company and Vessel have "name"');
+    expect(note).toContain("glossary entry for a union");
+    expect(styleIssues(note!)).toEqual([]);
+    const [none] = notes(
+      `{ interceptLog(reference: "IL-0112") { entries { colour } } }`,
+      8,
+    );
+    expect(none).toContain("no kind of record in Intercept");
+    expect(styleIssues(none!)).toEqual([]);
+  });
+
+  it("explains an enum value in quotation marks, a list, and an unknown value", () => {
+    const entries = (args: string) =>
+      notes(
+        `{ interceptLog(reference: "IL-0112") { entries${args} { __typename } } }`,
+        8,
+      );
+    const [quoted] = entries(`(kind: "VESSEL")`);
+    expect(quoted).toContain("removing the quotation marks");
+    const [list] = entries(`(kind: [VESSEL, COMPANY])`);
+    expect(list).toContain("you gave a list");
+    const [unknown] = entries(`(kind: SHIP)`);
+    expect(unknown).toContain(
+      '"SHIP" is not one of the values of InterceptKind',
+    );
+    for (const note of [quoted, list, unknown]) {
+      expect(styleIssues(note!)).toEqual([]);
+    }
+  });
 });

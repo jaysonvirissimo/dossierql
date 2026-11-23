@@ -8,6 +8,7 @@ export const CONCEPTS = [
   "variables",
   "introspection",
   "interfaces",
+  "unions",
 ] as const;
 export type Concept = (typeof CONCEPTS)[number];
 

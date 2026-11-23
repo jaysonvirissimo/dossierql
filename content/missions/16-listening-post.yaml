@@ -1,0 +1,576 @@
+id: listening-post
+title: The Listening Post
+campaign: fourth-desk
+order: 5
+clearance: 8
+kind: teaching
+teaches: unions
+practises: [nested-selections, arguments, aliases, fragments, introspection]
+requires: [nested-selections, arguments, aliases, fragments, introspection]
+summary: >
+  Someone handed in the instruction for Valparaíso Station at the counter of
+  the Cipher Room and gave no name. The agency's listening post was keeping
+  its log in those hours, and the log holds records of every kind.
+motif: wire
+clock:
+  countdown: The listening post sends its logs to be pulped in {remaining}
+  expired: The listening post has sent its logs to be pulped
+  onExpiry: end
+startingStage: wire
+
+debrief:
+  onTime: |
+    GILT_MAGPIE, the Parallax Circle's handler, came ashore from the
+    Santa Luzia at the river quay and walked up to the agency's building.
+    At the counter of the Cipher Room he handed in the instruction for
+    Valparaíso Station, and he gave no name. Kwanza Passage Agency, of
+    Luanda, hired the vessel for the voyage.
+
+    The counter of the Cipher Room is inside the building, and the door
+    watch admits nobody without a pass. The inquiry asks how the Circle's
+    handler got past the door.
+  stampOnTime: COURIER IDENTIFIED
+  comparison: >
+    The reference solution asks log IL-0112 for its `entries`. The field
+    `entries` returns the union `Intercept`, so its entries are vessels,
+    companies, sightings, telegrams, and passes together. A union lists no
+    fields of its own, so the solution asks for `__typename` directly and
+    for every other field inside an inline fragment, as in
+    `... on Telegram { text }`. It narrows the list with the enum value
+    `kind: VESSEL`, and then with the list `kinds: [VESSEL, COMPANY]`.
+    Where an argument takes a list, the archive also accepts a single
+    value and reads it as a list of one, so `kinds: VESSEL` lists the
+    vessels as well. Last, it writes a fragment on `Sighting` once and
+    spreads it inside the entries of two logs, each under an alias.
+  geography: >
+    Lisbon stands on the north bank of the Tagus, where the river widens
+    into an estuary before it reaches the Atlantic. For five centuries,
+    ships for Africa and the Americas sailed from its quays.
+
+stages:
+  wire:
+    location: PT
+    objective: Identify the telegram in log IL-0112 that carried the instruction to Valparaíso Station.
+
+    briefing: |
+      You read this case at a desk in Lisbon. Someone handed in the
+      instruction for Valparaíso Station at the counter of the Cipher
+      Room, and the Cipher Room's register records no name for that
+      person. The agency's listening post in Lisbon keeps a log of what
+      it hears and sees, and its log for those hours is IL-0112. Ask for
+      the log with `interceptLog(reference: "IL-0112")`. Inside the log,
+      the field `entries` lists what the post recorded.
+
+      Look up `InterceptLog` in the Documentation tab. The field `entries`
+      returns `[Intercept!]!`, a list of `Intercept` records. Then look up
+      `Intercept`. Each entry is a `Vessel`, a `Company`, a `Sighting`, a
+      `Telegram`, or a `Pass`. These kinds of record are not alike: a
+      vessel has a `report`, and a telegram has a `text`. `Intercept` is a
+      [union](glossary:union): a type that stands for several kinds of
+      record and lists no fields of its own.
+
+      The interface `Document` listed the fields that every document
+      shares, such as `reference`, and you asked for those fields
+      directly inside `documents`. The union `Intercept` lists no fields,
+      so inside `entries` you ask for every field inside an inline
+      fragment for one kind. For example, `... on Telegram { text }`
+      inside `entries` asks for the text of each telegram. You can write
+      several inline fragments side by side, one for each kind you want.
+
+      The response does not say which kind each entry is. To learn the
+      kind, ask for `__typename` directly inside `entries`, beside the
+      inline fragments. It is the one field you can ask for without an
+      inline fragment, because every type has it.
+
+      The post copies every telegram that goes out on the wire. Identify
+      the telegram in the log that carried the instruction to Valparaíso
+      Station.
+
+    clues:
+      - text: >
+          The telegram carried the instruction to draft the minute that
+          released the museum's tiles.
+        constraint:
+          $telegram.text: Draft a minute to the Fourth Desk for the release of the museum's tiles under order REL-0417. Send the draft to the First Desk in the bag, under seal.
+
+    scaffold:
+      level: guided
+      starterQuery: |
+        query {
+          interceptLog(reference: "IL-0112") {
+            entries {
+              __typename
+              # Ask for the fields of a telegram here, inside an
+              # inline fragment for Telegram: reference, text, and
+              # the name of the office inside origin.
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        Two telegrams are in the log. One of them is about a cargo of
+        coffee.
+      concept: >
+        Intercept is a union, so it lists no fields of its own. Inside
+        entries, ask for the fields of a telegram inside an inline fragment
+        for Telegram, and ask for __typename directly.
+      schema: >
+        Look at Query.interceptLog, InterceptLog.entries, Telegram.text, and
+        Telegram.origin.
+      skeleton: |
+        interceptLog(reference: "IL-0112") { entries { __typename ... on Telegram { reference text origin { name } } } }
+
+    solution:
+      type: deduction
+      telegram: TEL-0039
+    labels:
+      telegram: Telegram
+
+    claims:
+      - id: instruction
+        prompt: This telegram carried the instruction to draft the minute.
+        evidenceSets:
+          - facts:
+              - entity: Telegram:$telegram
+                field: text
+                equals: >-
+                  Draft a minute to the Fourth Desk for the release of the
+                  museum's tiles under order REL-0417. Send the draft to the
+                  First Desk in the bag, under seal.
+          - facts:
+              - entity: Telegram:$telegram
+                field: origin
+                equals: Office:cipher-room
+              - entity: Telegram:$telegram
+                field: city
+                equals: City:valparaiso
+
+    leadOutcomes:
+      TEL-0111:
+        refutation:
+          claim: instruction
+          facts:
+            - entity: Telegram:$telegram
+              field: text
+              equals: The Cabo Ledo has sailed for Lisbon with coffee for Parallax Freight.
+        ruledOut: |
+          Telegram TEL-0111 came from the Luanda Port Office, and it is
+          about the Cabo Ledo and its cargo of coffee.
+
+    resolved: |
+      Deduction accepted. The post copied telegram TEL-0039 off the wire:
+      the Cipher Room's instruction to Valparaíso Station. A watcher at the
+      counter of the Cipher Room saw the instruction handed in, and the
+      watcher's sighting is in the same log.
+
+    referenceSolution:
+      - |
+        query {
+          interceptLog(reference: "IL-0112") {
+            entries {
+              __typename
+              ... on Telegram { reference text origin { name } }
+            }
+          }
+        }
+
+    next: vessel
+
+  vessel:
+    location: PT
+    step: enum-value
+    objective: Identify the vessel that brought the man who handed in the instruction.
+
+    briefing: |
+      The watcher at the counter of the Cipher Room saw a man hand in the
+      instruction. He gave no name, and he had come up from the river
+      quay, off a vessel from Luanda. Three vessels berthed at the river
+      quay in the hours that the log covers.
+
+      The log has eleven entries, and you want only the vessels. Look up
+      `InterceptLog` in the Documentation tab. The field `entries` takes
+      an argument `kind`, of type `InterceptKind`. Then look up
+      `InterceptKind`. It is an [enum](glossary:enum): a type whose values
+      are a fixed list of words, here `VESSEL`, `COMPANY`, `SIGHTING`,
+      `TELEGRAM`, and `PASS`.
+
+      You write an enum value as the word itself, in capital letters and
+      without quotation marks. `entries(kind: VESSEL)` lists only the
+      vessels. Written with quotation marks, `"VESSEL"` is text, and the
+      archive refuses text for an argument that takes an enum.
+
+      The argument `kind` changes which entries come back. It does not
+      change what `entries` returns, which is still a list of `Intercept`
+      records. So even when every entry is a vessel, you still ask for a
+      vessel's fields inside `... on Vessel`.
+
+      A vessel's field `lastPort` returns the city it last sailed from,
+      and its field `report` holds what it said on the harbour radio.
+      Identify the vessel that brought the man who handed in the
+      instruction.
+
+    clues:
+      - text: >
+          The vessel last sailed from Luanda.
+        constraint:
+          $vessel.lastPort: City:luanda
+      - text: >
+          The vessel landed a passenger at the river quay.
+        constraint:
+          $vessel.report: Berthed at the river quay. Landed one passenger, who went ashore before the customs launch came alongside.
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          interceptLog(reference: "IL-0112") {
+            # Put the argument kind: VESSEL in parentheses
+            # after entries.
+            entries {
+              __typename
+              # Ask for name and report here, inside an inline
+              # fragment for Vessel, with the name of the city
+              # inside lastPort.
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        Two of the vessels last sailed from Luanda. Read what each one
+        reported on the harbour radio.
+      concept: >
+        An enum value is a word in capital letters, written without
+        quotation marks. Put kind: VESSEL in the parentheses after entries.
+      schema: >
+        Look at InterceptLog.entries, InterceptKind, Vessel.lastPort, and
+        Vessel.report.
+      skeleton: |
+        entries(kind: VESSEL) { ... on Vessel { name report lastPort { name } } }
+
+    solution:
+      type: deduction
+      vessel: santa-luzia
+    labels:
+      vessel: Vessel
+
+    claims:
+      - id: brought
+        prompt: This vessel brought the man who handed in the instruction.
+        evidenceSets:
+          - facts:
+              - entity: Vessel:$vessel
+                field: lastPort
+                equals: City:luanda
+              - entity: Vessel:$vessel
+                field: report
+                equals: >-
+                  Berthed at the river quay. Landed one passenger, who went
+                  ashore before the customs launch came alongside.
+          - facts:
+              - entity: Sighting:$sighting
+                field: note
+                equals: >-
+                  At the counter of the Cipher Room, a man handed in an
+                  instruction for Valparaíso Station and gave no name. He
+                  had come up from the river quay, off a vessel from Luanda.
+              - entity: Sighting:$sighting
+                field: vessel
+                equals: Vessel:$vessel
+
+    leadOutcomes:
+      cabo-ledo:
+        refutation:
+          claim: brought
+          facts:
+            - entity: Vessel:$vessel
+              field: report
+              equals: Berthed at the river quay with a cargo of coffee. No passengers.
+        ruledOut: |
+          The Cabo Ledo last sailed from Luanda, but it reported a cargo of
+          coffee and no passengers.
+      rio-lima:
+        refutation:
+          claim: brought
+          facts:
+            - entity: Vessel:$vessel
+              field: lastPort
+              equals: City:porto
+        ruledOut: |
+          The Rio Lima landed a passenger at the river quay, but it last
+          sailed from Porto, not from Luanda.
+
+    resolved: |
+      Deduction accepted. The Santa Luzia brought the man from Luanda. Tejo
+      Coastal Line owns the vessel, and it owns the other two vessels in
+      the log as well.
+
+    referenceSolution:
+      - |
+        query {
+          interceptLog(reference: "IL-0112") {
+            entries(kind: VESSEL) {
+              __typename
+              ... on Vessel { name report lastPort { name } }
+            }
+          }
+        }
+
+    next: charter
+
+  charter:
+    location: PT
+    step: list-value
+    objective: Identify the company that hired the Santa Luzia for its voyage.
+
+    briefing: |
+      Tejo Coastal Line owns the Santa Luzia. A company can hire a vessel
+      for a voyage from the company that owns it, and the company that
+      hired the Santa Luzia paid for the voyage. A vessel's field
+      `charteredBy` returns the company that hired it. A company's field
+      `charters` lists the vessels it hired. The log holds both vessels
+      and companies, so either side of the hire is there to read.
+
+      The argument `kind` takes one value. Look up `entries` in the
+      Documentation tab again. It also takes an argument `kinds`, of type
+      `[InterceptKind!]`. The square brackets mean that `kinds` takes a
+      list of `InterceptKind` values. You write a list as values between
+      square brackets, with a comma between each value and the next.
+      `entries(kinds: [VESSEL, COMPANY])` lists the vessels and the
+      companies, and leaves out the other kinds.
+
+      A vessel and a company both have a field called `name`. The union
+      `Intercept` still lists no fields, so you ask for `name` once inside
+      the inline fragment for `Vessel` and once inside the inline fragment
+      for `Company`.
+
+      Identify the company that hired the Santa Luzia for its voyage.
+
+    clues:
+      - text: >
+          The company hired the Santa Luzia for its voyage.
+        constraint:
+          $company.charters: Vessel:santa-luzia
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          interceptLog(reference: "IL-0112") {
+            # Put the argument kinds: [VESSEL, COMPANY] in
+            # parentheses after entries.
+            entries {
+              __typename
+              # Ask for the name of each vessel and the name of the
+              # company inside charteredBy, in an inline fragment for
+              # Vessel. Ask for the name of each company and the names
+              # of the vessels inside charters, in an inline fragment
+              # for Company.
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        The company that owns the Santa Luzia did not hire it. Four
+        companies are in the log, and two of them hired a vessel.
+      concept: >
+        A list value goes between square brackets, with a comma between
+        each value and the next. Put kinds: [VESSEL, COMPANY] in the
+        parentheses after entries.
+      schema: >
+        Look at InterceptLog.entries, Vessel.charteredBy, Company.charters,
+        and Vessel.owner.
+      skeleton: |
+        entries(kinds: [VESSEL, COMPANY]) { ... on Vessel { name charteredBy { name } } ... on Company { name charters { name } } }
+
+    solution:
+      type: deduction
+      company: LUA-KWANZA
+    labels:
+      company: Company
+
+    claims:
+      - id: hired
+        prompt: This company hired the Santa Luzia for its voyage.
+        evidenceSets:
+          - facts:
+              - entity: Vessel:santa-luzia
+                field: charteredBy
+                equals: Company:$company
+          - facts:
+              - entity: Company:$company
+                field: charters
+                includes: Vessel:santa-luzia
+
+    leadOutcomes:
+      LIS-TEJO:
+        refutation:
+          claim: hired
+          facts:
+            - entity: Company:$company
+              field: charters
+              excludes: Vessel:santa-luzia
+        ruledOut: |
+          Tejo Coastal Line owns the Santa Luzia, and it hired no vessel.
+          The company that owns a vessel does not hire it.
+      LUA-PARALLAX:
+        refutation:
+          claim: hired
+          facts:
+            - entity: Company:$company
+              field: charters
+              excludes: Vessel:santa-luzia
+        ruledOut: |
+          Parallax Freight is the Circle's own front, and it hired a vessel
+          from Luanda. The vessel it hired is the Cabo Ledo, for its coffee.
+
+    resolved: |
+      Deduction accepted. Kwanza Passage Agency, of Luanda, hired the Santa
+      Luzia. The watch on the river quay kept a log of its own in the same
+      hours, and it saw who came ashore.
+
+    referenceSolution:
+      - |
+        query {
+          interceptLog(reference: "IL-0112") {
+            entries(kinds: [VESSEL, COMPANY]) {
+              __typename
+              ... on Vessel { name charteredBy { name } }
+              ... on Company { name charters { name } }
+            }
+          }
+        }
+
+    next: quay
+
+  quay:
+    location: PT
+    step: union-fragment
+    objective: Identify the operative who handed in the instruction at the counter of the Cipher Room.
+
+    briefing: |
+      The watch on the river quay kept its own log, IL-0110. Its watchers
+      saw each passenger come ashore, and a sighting's field `vessel`
+      returns the vessel that the person came ashore from. Compare the
+      sightings in both logs: the man at the counter in IL-0112, and the
+      passengers on the quay in IL-0110.
+
+      You want the same fields from every sighting in both logs: `note`,
+      the name inside `vessel`, and the codename inside `operative`. Ask
+      for `interceptLog` twice in one query, with an alias in front of
+      each, as in `quay: interceptLog(reference: "IL-0110")`. Then write
+      the sighting's fields once, as a fragment on `Sighting` after the
+      query's closing brace, and spread the fragment inside `entries` in
+      each log.
+
+      `entries` returns `Intercept`, and `Sighting` is one kind of
+      `Intercept`. A fragment on `Sighting`, spread inside `entries`,
+      works as the inline fragment `... on Sighting` does. Its fields
+      come back for each entry that is a sighting, and every other entry
+      comes back without them.
+
+      Identify the operative who handed in the instruction at the counter
+      of the Cipher Room.
+
+    clues:
+      - text: >
+          The operative came ashore from the Santa Luzia.
+        constraint:
+          $sighting.vessel: Vessel:santa-luzia
+          $sighting.operative: $operative
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          counter: interceptLog(reference: "IL-0112") {
+            entries(kind: SIGHTING) { ...Seen }
+          }
+          # Ask for log IL-0110 here, under the alias quay. Spread
+          # the fragment Seen inside its entries, as the log
+          # IL-0112 above does.
+        }
+
+        fragment Seen on Sighting {
+          note
+          # Ask for the name inside vessel, and the codename
+          # inside operative.
+        }
+
+    hints:
+      nudge: >
+        Two passengers came ashore on the quay. Only one of them came from
+        the vessel that brought the man at the counter.
+      concept: >
+        Write the fields of a sighting once, as a fragment on Sighting. Then
+        write three dots and the fragment's name inside entries, in each
+        log.
+      schema: >
+        Look at InterceptLog.entries, Sighting.vessel, Sighting.operative,
+        and Operative.codename.
+      skeleton: |
+        quay: interceptLog(reference: "IL-0110") { entries(kind: SIGHTING) { ...Seen } }
+
+    solution:
+      type: deduction
+      operative: GILT_MAGPIE
+    labels:
+      operative: Operative
+
+    claims:
+      - id: handed
+        prompt: This operative handed in the instruction at the counter of the Cipher Room.
+        evidenceSets:
+          - facts:
+              - entity: Sighting:$sighting
+                field: vessel
+                equals: Vessel:santa-luzia
+              - entity: Sighting:$sighting
+                field: operative
+                equals: Operative:$operative
+          - facts:
+              - entity: Operative:$operative
+                field: sightings
+                includes: Sighting:$sighting
+              - entity: Sighting:$sighting
+                field: vessel
+                equals: Vessel:santa-luzia
+
+    leadOutcomes:
+      SABLE_IBIS:
+        refutation:
+          claim: handed
+          facts:
+            - entity: Sighting:$sighting
+              field: operative
+              equals: Operative:$operative
+            - entity: Sighting:$sighting
+              field: vessel
+              equals: Vessel:rio-lima
+        ruledOut: |
+          SABLE_IBIS came ashore on the quay in the same hours, but from the
+          Rio Lima, which last sailed from Porto.
+
+    resolved: |
+      Deduction accepted. GILT_MAGPIE came ashore from the Santa Luzia and
+      walked up to the agency's building. He handed in the instruction at
+      the counter of the Cipher Room.
+
+    referenceSolution:
+      - |
+        query {
+          counter: interceptLog(reference: "IL-0112") {
+            entries(kind: SIGHTING) { ...Seen }
+          }
+          quay: interceptLog(reference: "IL-0110") {
+            entries(kind: SIGHTING) { ...Seen }
+          }
+        }
+
+        fragment Seen on Sighting {
+          note
+          vessel { name }
+          operative { codename }
+        }

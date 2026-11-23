@@ -1,4 +1,15 @@
-import { visit, type DocumentNode, type FieldNode } from "graphql";
+import {
+  isObjectType,
+  isUnionType,
+  Kind,
+  TypeInfo,
+  visit,
+  visitWithTypeInfo,
+  type DocumentNode,
+  type FieldNode,
+} from "graphql";
+import { schemaFor } from "../graphql/schema.ts";
+import { MAX_CLEARANCE } from "../graphql/sdl.ts";
 
 /**
  * A step (SDD 3.7) is a part of GraphQL smaller than a concept. It is
@@ -37,6 +48,51 @@ function hasField(
       },
     },
   });
+  return found;
+}
+
+/** Whether any node of the given kind appears in the request. */
+function hasNode(document: DocumentNode, kind: Kind): boolean {
+  let found = false;
+  visit(document, {
+    enter(node) {
+      if (node.kind === kind) found = true;
+    },
+  });
+  return found;
+}
+
+/**
+ * Whether a named fragment on one member of a union is spread directly inside
+ * a field that returns the union.
+ */
+function spreadsUnionMember(document: DocumentNode): boolean {
+  const schema = schemaFor(MAX_CLEARANCE);
+  const conditions = new Map<string, string>();
+  for (const definition of document.definitions) {
+    if (definition.kind === Kind.FRAGMENT_DEFINITION) {
+      conditions.set(
+        definition.name.value,
+        definition.typeCondition.name.value,
+      );
+    }
+  }
+  const info = new TypeInfo(schema);
+  let found = false;
+  visit(
+    document,
+    visitWithTypeInfo(info, {
+      FragmentSpread(node) {
+        const parent = info.getParentType();
+        const condition = conditions.get(node.name.value);
+        if (!condition || !isUnionType(parent)) return;
+        const member = schema.getType(condition);
+        if (isObjectType(member) && schema.isSubType(parent, member)) {
+          found = true;
+        }
+      },
+    }),
+  );
   return found;
 }
 
@@ -128,6 +184,27 @@ export const STEPS: readonly Step[] = [
       });
       return found;
     },
+  },
+  {
+    id: "enum-value",
+    clearance: 8,
+    summary:
+      "an enum value, written without quotes, as in entries(kind: VESSEL)",
+    term: "enum",
+    uses: (document) => hasNode(document, Kind.ENUM),
+  },
+  {
+    id: "list-value",
+    clearance: 8,
+    summary: "a list value, as in entries(kinds: [VESSEL, COMPANY])",
+    uses: (document) => hasNode(document, Kind.LIST),
+  },
+  {
+    id: "union-fragment",
+    clearance: 8,
+    summary:
+      "a named fragment for one member of the union, spread inside its selection",
+    uses: spreadsUnionMember,
   },
 ];
 

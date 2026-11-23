@@ -72,3 +72,21 @@ describe("request weight", () => {
     ).toBe(1 + most * 2);
   });
 });
+
+describe("request weight through a union", () => {
+  it("counts a list of a union, and the records inside its inline fragments", () => {
+    const most = Math.max(
+      ...store.all("InterceptLog").map((l) => (l.entries as string[]).length),
+    );
+    const at8 = (query: string) =>
+      requestWeight(schemaFor(8), store, parse(query));
+    expect(
+      at8(`{ interceptLog(reference: "IL-0112") { entries { __typename } } }`),
+    ).toBe(1 + most);
+    expect(
+      at8(
+        `{ interceptLog(reference: "IL-0112") { entries { ... on Vessel { owner { name } } } } }`,
+      ),
+    ).toBe(1 + most * 2);
+  });
+});

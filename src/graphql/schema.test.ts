@@ -1,5 +1,7 @@
 import {
+  isEnumType,
   isInterfaceType,
+  isUnionType,
   getIntrospectionQuery,
   isObjectType,
   type IntrospectionQuery,
@@ -76,6 +78,15 @@ const ADDED: Record<number, string[]> = {
     "Telegram",
     "Office.officers",
     "Query.caseFile",
+  ],
+  8: [
+    "InterceptLog",
+    "Pass",
+    "Vessel",
+    "Company.charters",
+    "Sighting.pass",
+    "Sighting.vessel",
+    "Query.interceptLog",
   ],
 };
 
@@ -340,5 +351,61 @@ describe("the Fourth Desk's cabinet at clearance 6", () => {
       "MEM-0044",
     ]);
     expect(references(`(sealed: false)`)).toEqual(references(""));
+  });
+});
+
+describe("the intercept logs at clearance 8", () => {
+  const entries = (args: string, selection = "__typename") => {
+    const sent = transmit(catalog.store, {
+      operation: `{ interceptLog(reference: "IL-0112") { entries${args} { ${selection} } } }`,
+      clearance: 8,
+    });
+    expect(sent.result.errors).toBeUndefined();
+    return {
+      sent,
+      list: (
+        sent.result.data as {
+          interceptLog: { entries: Record<string, string>[] };
+        }
+      ).interceptLog.entries,
+    };
+  };
+
+  it("has no union or enum below clearance 8, and Intercept with five kinds at 8", () => {
+    expect(schemaFor(7).getType("Intercept")).toBeUndefined();
+    expect(schemaFor(7).getType("InterceptKind")).toBeUndefined();
+    const intercept = schemaFor(8).getType("Intercept");
+    expect(isUnionType(intercept)).toBe(true);
+    if (!isUnionType(intercept)) return;
+    expect(
+      intercept
+        .getTypes()
+        .map((t) => t.name)
+        .sort(),
+    ).toEqual(["Company", "Pass", "Sighting", "Telegram", "Vessel"]);
+    expect(isEnumType(schemaFor(8).getType("InterceptKind"))).toBe(true);
+  });
+
+  it("answers each entry as its own kind, and records facts by that kind", () => {
+    const { sent, list } = entries(
+      "",
+      "__typename ... on Vessel { name } ... on Sighting { note }",
+    );
+    expect(list.map((e) => e.__typename)).toContain("Company");
+    expect(list[0]).toEqual({ __typename: "Vessel", name: "Cabo Ledo" });
+    const keys = sent.facts.map((f) => f.fact.key);
+    expect(keys).toContain("Vessel:santa-luzia.name");
+    expect(keys).toContain("Sighting:SGT-112.note");
+  });
+
+  it("filters entries by one kind, by a list of kinds, and by a single value given for a list", () => {
+    const kinds = (args: string) =>
+      new Set(entries(args).list.map((e) => e.__typename));
+    expect(kinds("(kind: VESSEL)")).toEqual(new Set(["Vessel"]));
+    expect(kinds("(kinds: [VESSEL, COMPANY])")).toEqual(
+      new Set(["Vessel", "Company"]),
+    );
+    expect(kinds("(kinds: SIGHTING)")).toEqual(new Set(["Sighting"]));
+    expect(entries("(kind: VESSEL)").list).toHaveLength(3);
   });
 });

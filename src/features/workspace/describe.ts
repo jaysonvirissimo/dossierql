@@ -89,7 +89,11 @@ export function describeValue(fact: Fact, ledger: Ledger): string {
 }
 
 export function describeFact(fact: Fact, ledger: Ledger): string {
-  return `${typeWords(fact.entity)} ${labelOf(fact.entity, ledger)} · ${words(fact.field)}: ${describeValue(fact, ledger)}`;
+  const label = labelOf(fact.entity, ledger);
+  const type = typeWords(fact.entity);
+  // A record not yet identified is labelled by its type already.
+  const record = label.startsWith(`${type} `) ? label : `${type} ${label}`;
+  return `${record} · ${words(fact.field)}: ${describeValue(fact, ledger)}`;
 }
 
 export { pathKey };

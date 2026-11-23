@@ -1,0 +1,234 @@
+id: door-watch
+title: The Door Watch
+campaign: fourth-desk
+order: 6
+clearance: 8
+kind: assessment
+teaches: null
+practises: [nested-selections, arguments, fragments, unions]
+requires: [nested-selections, arguments, fragments, unions]
+summary: >
+  The counter of the Cipher Room is inside the agency's building, and the
+  door watch admits nobody without a pass. GILT_MAGPIE came through that
+  door.
+motif: seal
+clock:
+  countdown: The door watch hands its log to the registry in {remaining}
+  expired: The door watch has handed its log to the registry
+  onExpiry: end
+startingStage: door
+
+debrief:
+  onTime: |
+    GILT_MAGPIE came through the door on pass PS-0471, which gives its
+    holder as The Registrar. The registry files that name as one of his
+    cover names. The First Desk issued the pass, and nobody signed it.
+    The Fourth Desk's passes in the same log carry the signature of its
+    head of desk.
+
+    The minute, the draft, the wire, and now the door all lead back to
+    the First Desk. No officer's name is on any of them.
+  stampOnTime: PASS TRACED
+  comparison: >
+    The reference solution asks log IL-0113 for its sightings and its
+    passes, with `kinds: [SIGHTING, PASS]`. It writes the fields of a
+    sighting once, as a fragment on `Sighting`, and spreads the fragment
+    inside `entries`. It asks for the fields of a pass in an inline
+    fragment, `... on Pass`. A second query asks the log for its passes
+    alone, with `kind: PASS`, and opens `issuedBy` on each one. If you
+    open `issuedBy` inside a sighting's `pass`, one query answers both
+    stages. The First Desk's `register` also holds an entry for the pass,
+    which says that the box for the signing officer was left empty.
+  geography: >
+    The Tagus estuary is one of the largest wetlands in western Europe.
+    In winter, flamingos feed on its mudflats within sight of the city.
+
+stages:
+  door:
+    location: PT
+    objective: Identify the pass that GILT_MAGPIE showed at the door of the agency's building.
+
+    briefing: |
+      GILT_MAGPIE handed in the instruction at the counter of the Cipher
+      Room, and the counter is inside the agency's building. Nobody comes
+      through the door of the building without a pass. The door watch
+      keeps a log of who comes in and of every pass it is shown. Its log
+      for the same hours is IL-0113.
+
+      Identify the pass that GILT_MAGPIE showed at the door of the
+      agency's building.
+
+    clues:
+      - text: >
+          A watcher at the door saw GILT_MAGPIE show the pass.
+        constraint:
+          $sighting.operative: Operative:GILT_MAGPIE
+          $sighting.pass: $pass
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        Two operatives showed a pass at the door. The door watch saw both of
+        them.
+      concept: >
+        IL-0113 holds sightings and passes. Ask for the fields of each kind
+        inside an inline fragment, or a fragment on that kind, inside
+        entries.
+      schema: >
+        Look at InterceptLog.entries, Sighting.operative, Sighting.pass, and
+        Pass.holder.
+      skeleton: |
+        interceptLog(reference: "IL-0113") { entries(kind: SIGHTING) { ... on Sighting { note operative { codename } pass { number } } } }
+
+    solution:
+      type: deduction
+      pass: PS-0471
+    labels:
+      pass: Pass
+
+    claims:
+      - id: showed
+        prompt: GILT_MAGPIE showed this pass at the door.
+        evidenceSets:
+          - facts:
+              - entity: Sighting:$sighting
+                field: operative
+                equals: Operative:GILT_MAGPIE
+              - entity: Sighting:$sighting
+                field: pass
+                equals: Pass:$pass
+          - facts:
+              - entity: Pass:$pass
+                field: holder
+                equals: The Registrar
+              - entity: CoverName:the-registrar
+                field: name
+                equals: The Registrar
+              - entity: CoverName:the-registrar
+                field: operative
+                equals: Operative:GILT_MAGPIE
+
+    leadOutcomes:
+      PS-0502:
+        refutation:
+          claim: showed
+          facts:
+            - entity: Sighting:$sighting
+              field: pass
+              equals: Pass:$pass
+            - entity: Sighting:$sighting
+              field: operative
+              equals: Operative:SABLE_IBIS
+        ruledOut: |
+          SABLE_IBIS showed pass PS-0502 at the door in the same hours, and
+          went up to the Fourth Desk.
+
+    resolved: |
+      Deduction accepted. GILT_MAGPIE showed pass PS-0471 at the door, in
+      the name of The Registrar.
+
+    referenceSolution:
+      - |
+        query {
+          interceptLog(reference: "IL-0113") {
+            entries(kinds: [SIGHTING, PASS]) {
+              ...Seen
+              ... on Pass { number holder }
+            }
+          }
+        }
+
+        fragment Seen on Sighting {
+          note
+          operative { codename }
+          pass { number }
+        }
+
+    next: issued
+
+  issued:
+    location: PT
+    objective: Identify the office that issued pass PS-0471.
+
+    briefing: |
+      An office of the agency issues each pass, and an officer of that
+      office signs it. Identify the office that issued pass PS-0471.
+
+    clues:
+      - text: >
+          The office issued pass PS-0471.
+        constraint:
+          $pass.number: PS-0471
+          $pass.issuedBy: $office
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        The Fourth Desk issued two of the passes in the log. Read whom each
+        pass names as its issuer.
+      concept: >
+        Ask the log for its passes with the enum value PASS, and open
+        issuedBy inside an inline fragment for Pass.
+      schema: >
+        Look at InterceptLog.entries, Pass.issuedBy, Pass.signedBy, and
+        Office.register.
+      skeleton: |
+        entries(kind: PASS) { ... on Pass { number issuedBy { name } signedBy { name } } }
+
+    solution:
+      type: deduction
+      office: first-desk
+    labels:
+      office: Office
+
+    claims:
+      - id: issued
+        prompt: This office issued pass PS-0471.
+        evidenceSets:
+          - facts:
+              - entity: Pass:$pass
+                field: number
+                equals: PS-0471
+              - entity: Pass:$pass
+                field: issuedBy
+                equals: Office:$office
+          - facts:
+              - entity: Office:$office
+                field: register
+                includes: RegisterEntry:$entry
+              - entity: RegisterEntry:$entry
+                field: note
+                equals: >-
+                  Pass PS-0471 issued to the holder The Registrar. The box
+                  for the officer who signs the pass is left empty.
+
+    leadOutcomes:
+      fourth-desk:
+        refutation:
+          claim: issued
+          facts:
+            - entity: Office:$office
+              field: register
+              excludes: RegisterEntry:fs-0471
+        ruledOut: |
+          The Fourth Desk issued passes PS-0502 and PS-0388, and its head
+          of desk signed both of them. Its register has no entry for pass
+          PS-0471.
+
+    resolved: |
+      Deduction accepted. The First Desk issued pass PS-0471, and nobody
+      signed it.
+
+    referenceSolution:
+      - |
+        query {
+          interceptLog(reference: "IL-0113") {
+            entries(kind: PASS) {
+              ... on Pass { number holder issuedBy { name } signedBy { name } }
+            }
+          }
+        }

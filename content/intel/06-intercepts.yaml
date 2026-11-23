@@ -1,0 +1,136 @@
+# Records for clearance 8: intercept logs whose entries are unrelated kinds
+# of record (SDD 3.7). IL-0112 is the Lisbon listening post's log for the
+# hours around Cipher Room entry CR-0112. IL-0110 is the watch on the river
+# quay in the same hours. IL-0113 is the door watch of the agency's building.
+Company:
+  LIS-TEJO: { name: Tejo Coastal Line, registeredIn: PT }
+  LUA-KWANZA: { name: Kwanza Passage Agency, registeredIn: AO }
+
+Vessel:
+  cabo-ledo:
+    name: Cabo Ledo
+    flag: AO
+    lastPort: luanda
+    owner: LIS-TEJO
+    charteredBy: LUA-PARALLAX
+    report: Berthed at the river quay with a cargo of coffee. No passengers.
+  santa-luzia:
+    name: Santa Luzia
+    flag: AO
+    lastPort: luanda
+    owner: LIS-TEJO
+    charteredBy: LUA-KWANZA
+    report: Berthed at the river quay. Landed one passenger, who went ashore before the customs launch came alongside.
+  rio-lima:
+    name: Rio Lima
+    flag: PT
+    lastPort: porto
+    owner: LIS-TEJO
+    report: Berthed at the river quay. Landed one passenger, who went ashore before the customs launch came alongside.
+
+Sighting:
+  SGT-108:
+    city: lisbon
+    operative: GILT_MAGPIE
+    vessel: santa-luzia
+    note: Came ashore before the customs launch came alongside, and walked up from the river quay toward the agency's building.
+  SGT-109:
+    city: lisbon
+    operative: SABLE_IBIS
+    vessel: rio-lima
+    note: Came ashore before the customs launch came alongside, and took a tram toward the railway station.
+  SGT-111:
+    city: lisbon
+    note: At the counter of the Cipher Room, a woman asked when the bag for Luanda closes. She handed nothing in.
+  SGT-112:
+    city: lisbon
+    vessel: santa-luzia
+    note: At the counter of the Cipher Room, a man handed in an instruction for Valparaíso Station and gave no name. He had come up from the river quay, off a vessel from Luanda.
+  SGT-114:
+    city: lisbon
+    operative: GILT_MAGPIE
+    pass: PS-0471
+    note: Showed a pass at the door, and went up to the counter of the Cipher Room.
+  SGT-115:
+    city: lisbon
+    operative: SABLE_IBIS
+    pass: PS-0502
+    note: Showed a pass at the door, and went up to the Fourth Desk.
+
+Telegram:
+  TEL-0111:
+    reference: TEL-0111
+    title: Telegram copied off the wire
+    stamp: LP-0111
+    city: lisbon
+    sealed: false
+    origin: luanda-port
+    text: The Cabo Ledo has sailed for Lisbon with coffee for Parallax Freight.
+
+Pass:
+  PS-0471:
+    number: PS-0471
+    holder: The Registrar
+    issuedBy: first-desk
+  PS-0502:
+    number: PS-0502
+    holder: P. Okello
+    issuedBy: fourth-desk
+    signedBy: ines-valadares
+  PS-0388:
+    number: PS-0388
+    holder: Inês Valadares
+    issuedBy: fourth-desk
+    signedBy: ines-valadares
+
+Officer:
+  ines-valadares:
+    name: Inês Valadares
+    post: Head of desk
+    initials: I.V.
+    office: fourth-desk
+
+RegisterEntry:
+  fs-0471:
+    serial: 471
+    office: first-desk
+    note: Pass PS-0471 issued to the holder The Registrar. The box for the officer who signs the pass is left empty.
+  fd-4141:
+    serial: 4141
+    office: fourth-desk
+    note: Pass PS-0502 issued to the holder P. Okello, and signed by the head of desk.
+
+InterceptLog:
+  IL-0112:
+    reference: IL-0112
+    title: Lisbon listening post, the hours around Cipher Room entry CR-0112
+    entries:
+      - cabo-ledo
+      - LUA-PARALLAX
+      - TEL-0111
+      - SGT-111
+      - santa-luzia
+      - LIS-TEJO
+      - rio-lima
+      - OPO-DOURO
+      - SGT-112
+      - LUA-KWANZA
+      - TEL-0039
+  IL-0110:
+    reference: IL-0110
+    title: The watch on the river quay, the same hours
+    entries:
+      - rio-lima
+      - SGT-109
+      - santa-luzia
+      - SGT-108
+      - cabo-ledo
+  IL-0113:
+    reference: IL-0113
+    title: The door watch of the agency's building, the same hours
+    entries:
+      - PS-0388
+      - SGT-115
+      - PS-0502
+      - SGT-114
+      - PS-0471
