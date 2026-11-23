@@ -35,6 +35,7 @@ export const SDL = /* GraphQL */ `
   type Country {
     "Two-letter country code."
     code: ID!
+    "The country's name in English."
     name: String!
     "The name of the capital."
     capital: String
@@ -49,12 +50,14 @@ export const SDL = /* GraphQL */ `
 
   "A continent, and the countries counted in it."
   type Continent {
+    "The continent's name in English."
     name: String!
     countries: [Country!]! @inverse(of: "continent")
   }
 
   "A language, and the countries where it is spoken."
   type Language {
+    "The language's name in English."
     name: String!
     "Countries where the language is spoken."
     countries: [Country!]! @inverse(of: "languages")
@@ -64,6 +67,7 @@ export const SDL = /* GraphQL */ `
   type Currency {
     "Three-letter currency code."
     code: ID!
+    "The currency's name in English."
     name: String!
     "Countries that use the currency."
     countries: [Country!]! @inverse(of: "currency")
@@ -71,6 +75,7 @@ export const SDL = /* GraphQL */ `
 
   "A city the archive holds a file on, with the shipments through it."
   type City {
+    "The city's name in English."
     name: String!
     country: Country!
     "Shipments that left this city."
@@ -83,6 +88,7 @@ export const SDL = /* GraphQL */ `
 
   "A consignment moving between two cities."
   type Shipment {
+    "The shipment's identifier, as written on its papers."
     id: ID!
     "The goods as the shipper declared them."
     manifest: String!
@@ -104,6 +110,7 @@ export const SDL = /* GraphQL */ `
 
   "What a customs inspector found on opening a shipment."
   type Inspection {
+    "The inspection report's identifier."
     id: ID!
     "The goods as the inspector described them."
     finding: String!
@@ -112,6 +119,7 @@ export const SDL = /* GraphQL */ `
 
   "A registered company that sends or receives shipments."
   type Company {
+    "The company's registered name."
     name: String!
     registeredIn: Country
     "The operative who directs the company."
@@ -124,6 +132,7 @@ export const SDL = /* GraphQL */ `
 
   "The depot's record of a shipment on arrival."
   type IntakeRecord {
+    "The intake record's identifier."
     id: ID!
     "The consignee on the label when the shipment arrived."
     consignee: Company
@@ -131,6 +140,7 @@ export const SDL = /* GraphQL */ `
 
   "The dockside receipt for an unloaded shipment."
   type UnloadingReceipt {
+    "The receipt's identifier."
     id: ID!
     "The consignee on the label, as the dockhand copied it."
     labelConsignee: Company
@@ -140,6 +150,7 @@ export const SDL = /* GraphQL */ `
 
   "An order to hand a shipment to a particular consignee."
   type TransferOrder {
+    "The order's identifier."
     id: ID!
     consignee: Company
     "The operative whose signature is on the order."
@@ -150,12 +161,14 @@ export const SDL = /* GraphQL */ `
 
   "The registry's own record of who signed a transfer order."
   type AuthorizationLog {
+    "The log entry's identifier."
     id: ID!
     signedBy: Operative
   }
 
   "A person of interest, filed under a codename."
   type Operative {
+    "The name the registry files the operative under."
     codename: String!
     "The cover names that the operative is known to travel under."
     coverNames: [CoverName!]! @clearance(level: 2)
@@ -173,6 +186,7 @@ export const SDL = /* GraphQL */ `
 
   "A name an operative travels under."
   type CoverName @clearance(level: 2) {
+    "The cover name, as written."
     name: String!
     "The operative the registry files this name under."
     operative: Operative @inverse(of: "coverNames")
@@ -182,6 +196,7 @@ export const SDL = /* GraphQL */ `
 
   "A report that someone was seen."
   type Sighting @clearance(level: 2) {
+    "The report's identifier."
     id: ID!
     city: City!
     "The operative the report was filed under."
@@ -194,6 +209,7 @@ export const SDL = /* GraphQL */ `
 
   "An organization, and the operatives who belong to it."
   type Organization @clearance(level: 3) {
+    "The organization's name."
     name: String!
     members: [Operative!]! @inverse(of: "organization")
   }

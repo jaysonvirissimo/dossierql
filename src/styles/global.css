@@ -177,6 +177,13 @@ input {
   background: var(--cobalt-soft);
 }
 
+.chip--next {
+  color: var(--paper);
+  background: var(--cobalt);
+  border-color: var(--cobalt);
+  font-weight: 600;
+}
+
 .label {
   font-family: var(--font-sans);
   font-size: 0.75rem;

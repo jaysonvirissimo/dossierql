@@ -136,3 +136,24 @@ export function availability(
 export function clearanceInForce(mission: Mission, standing: Standing): number {
   return Math.max(mission.clearance, standing.clearance);
 }
+
+/**
+ * The case the assignments desk puts first: the next case in the story
+ * (SDD 9). It is the first case in course order that the player has not
+ * completed, can open, and would not attempt as a placement. A case at or
+ * above the player's clearance comes before an earlier one, so a player
+ * promoted by placement is pointed at their new level and not back at the
+ * first case.
+ */
+export function nextCase(
+  missions: readonly Mission[],
+  standing: Standing,
+): Mission | undefined {
+  const open = missions.filter(
+    (m) =>
+      !standing.completions[m.id] &&
+      availability(m, standing) === "available" &&
+      !isPlacement(m, missions, standing),
+  );
+  return open.find((m) => m.clearance >= standing.clearance) ?? open[0];
+}

@@ -1282,7 +1282,7 @@ The screens support the gameplay loop described in Section 3.1.
 
 **Orientation:** The optional introduction to the terminal and its tools (Section 3.13).
 
-**Mission Selection:** Available assignments, the clearance each requires, the concept each teaches, and campaign progress. For completed assignments, show the help used. An assessment that the player would attempt as a placement is marked as one. One assignment is emphasized: the next case in the story. Placements are grouped under a single entry, so that a new player sees one way forward and a returning player can still skip ahead. A campaign's coda appears once its last case is resolved.
+**Mission Selection:** Available assignments, the clearance each requires, the concept each teaches, and campaign progress. For completed assignments, show the help used. An assessment that the player would attempt as a placement is marked as one. One assignment is emphasized: the next case in the story. It is the first case in course order that the player has not completed, can open, and would not attempt as a placement. A case at or above the player's clearance comes before an earlier one, so a player promoted by placement is pointed at their new level and not back at the first case. Placements are grouped under a single entry, closed until the player opens it, so that a new player sees one way forward and a returning player can still skip ahead. A placement already in progress stays with its level, where the player can see it, and a completed placement returns to its level. A campaign's coda appears once its last case is resolved.
 
 **Mission Briefing:** Classified narrative introduction, objectives, and initial intelligence.
 
@@ -1400,7 +1400,7 @@ To complete this milestone, a player must be able to compare and cite query find
 
 ### Milestone 5 — 1.0: Evidence the Player Can Follow
 
-This milestone finishes clearance levels 1 through 5. It adds no clearance level. Its tasks are in priority order. The order puts the opening of the game first: a beginner who is lost in the first case does not reach anything built after it. The first four tasks are built.
+This milestone finishes clearance levels 1 through 5. It adds no clearance level. Its tasks are in priority order. The order puts the opening of the game first: a beginner who is lost in the first case does not reach anything built after it. The first six tasks are built.
 
 - Make a citation carry every fact on its path that an evidence set can use (Section 3.2), and test the code that builds citations. Add the validation check that every evidence set can be assembled from Cite controls (Section 5.5).
 - Show under each claim the cited facts that count toward it, show on the Cite control which lead's draft it feeds, and distinguish facts that do not connect from a fact that is missing.

@@ -72,12 +72,10 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
                   </code>
                 </dt>
                 <dd>
-                  {field.description ??
-                    (isObjectType(getNamedType(field.type))
-                      ? ""
-                      : "A single value, not a record.")}
-                  {isObjectType(getNamedType(field.type)) &&
-                    ` Returns ${String(getNamedType(field.type))}, which is a record, so this field needs braces after it.`}
+                  {field.description ?? ""}
+                  {isObjectType(getNamedType(field.type))
+                    ? ` Returns ${String(getNamedType(field.type))}, which is a record, so this field needs braces after it.`
+                    : " Holds a single value, so this field takes no braces."}
                 </dd>
               </div>
             ))}

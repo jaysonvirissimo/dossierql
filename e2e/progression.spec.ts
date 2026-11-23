@@ -37,7 +37,9 @@ test("a player who knows GraphQL is promoted by placement", async ({
   const locked = page.locator(".case", { hasText: "Three Couriers" });
   await expect(locked).toContainText("Locked: needs clearance 3");
 
-  // The level 2 assessment is open to anyone, and is marked as a placement.
+  // The level 2 assessment is open to anyone. It waits in the placement
+  // group, and is marked as a placement.
+  await press(page.locator(".placements summary"));
   const assessment = page.locator(".case", { hasText: "The Quiet Consignee" });
   await expect(assessment).toContainText("Placement");
   await page.goto("./#/mission/quiet-consignee");
@@ -97,6 +99,9 @@ test("a player who knows GraphQL is promoted by placement", async ({
   await expect(
     page.locator(".case", { hasText: "Three Couriers" }),
   ).not.toContainText("Locked");
+  // The desk points a promoted player at the new level.
+  await expect(page.locator(".case--next")).toHaveCount(1);
+  await expect(page.locator(".case--next")).toContainText("Three Couriers");
   await expect(
     page.locator(".case", { hasText: "The Paymaster" }),
   ).toContainText("Locked: needs clearance 4");

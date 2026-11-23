@@ -20,8 +20,9 @@ test.afterEach(() => {
 const PASSES = [
   `query { country(name: "Portugal") { name capital } }`,
   `query { city(name: "Lisbon") { country { name } } }`,
-  `query { country(name: "Portugal") { borders { name } } }`,
-  `query { city(name: "Lisbon") { country { borders { capital } } } }`,
+  `query { country(name: "Kenya") { borders { name } } }`,
+  `query { city(name: "Prague") { country { borders { capital } } } }`,
+  `query { city(name: "Lisbon") { country { borders { borders { name } } } } }`,
   `query { city(name: "Luanda") { country { currency { name } } } }`,
 ];
 
@@ -71,7 +72,7 @@ test("a new player is offered training and can pass every drill", async ({
   // Drills earn no rank, and the record survives a reload.
   await expect(page.locator(".shell-bar__rank")).toHaveText("Clearance 1");
   await page.reload();
-  await expect(page.locator(".drill__pick .chip")).toHaveCount(5);
+  await expect(page.locator(".drill__pick .chip")).toHaveCount(6);
 
   await send(page, PASSES[0]!);
   await page.goto("./");

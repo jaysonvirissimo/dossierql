@@ -5,6 +5,7 @@ import {
   clearanceInForce,
   deriveStanding,
   isPlacement,
+  nextCase,
   type ProgressEvent,
 } from "./clearance.ts";
 
@@ -97,5 +98,36 @@ describe("deriveStanding", () => {
     expect(s.clearance).toBe(1);
     expect(s.cards).toEqual([]);
     expect(s.completions).toEqual({});
+  });
+});
+
+describe("nextCase", () => {
+  const next = (events: ProgressEvent[]) =>
+    nextCase(missions, deriveStanding(missions, events))?.id;
+
+  it("points a new player at the first teaching case", () => {
+    expect(next([])).toBe("t1");
+  });
+
+  it("points at the assessment once its teaching case is done", () => {
+    expect(next([done("t1")])).toBe("a1");
+  });
+
+  it("moves to the next level after a promotion", () => {
+    expect(next([done("t1"), done("a1")])).toBe("t2");
+  });
+
+  it("points a player promoted by placement at their new level", () => {
+    expect(next([done("a2")])).toBe("t3");
+  });
+
+  it("falls back to an earlier case when the new level is finished", () => {
+    expect(next([done("a2"), done("t3")])).toBe("t1");
+  });
+
+  it("points nowhere when every case is complete", () => {
+    expect(
+      next([done("t1"), done("a1"), done("t2"), done("a2"), done("t3")]),
+    ).toBeUndefined();
   });
 });

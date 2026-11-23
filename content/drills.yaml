@@ -70,33 +70,34 @@
     After `country`, write braces with the field you want inside them:
     `country { name }`.
   payoff: >
-    Braces open a record. Wherever a field holds a record, you can open it.
+    Braces open a record. A field that holds a record is a link to that
+    record, and wherever there is a link, you can open it.
 
 - id: lists
   title: Read a list
   task: >
     Some fields hold a list of records instead of just one. A country's
-    `borders` is one: it holds every country that shares a border with it.
-    You open a list with braces, the way you opened `country` in the last
-    drill. The fields you put inside the braces come back once for each
-    record in the list. Find the name of each country that borders
-    Portugal.
+    `borders` is one: it holds every country that shares a land border with
+    it. You open a list with braces, the way you opened `country` in the
+    last drill. The fields you put inside the braces come back once for
+    each record in the list. Find the name of each country that borders
+    Kenya.
   starter: |
     query {
-      country(name: "Portugal") {
+      country(name: "Kenya") {
         name
       }
     }
   expects:
-    - entity: Country:PT
+    - entity: Country:KE
       field: borders
-      includes: Country:ES
-    - entity: Country:ES
+      includes: Country:TZ
+    - entity: Country:TZ
       field: name
-      equals: Spain
+      equals: Tanzania
   reference: |
     query {
-      country(name: "Portugal") {
+      country(name: "Kenya") {
         name
         borders {
           name
@@ -104,41 +105,44 @@
       }
     }
   nudge: >
-    Add `borders { name }` inside the braces after `country(name: "Portugal")`.
+    Add `borders { name }` inside the braces after `country(name: "Kenya")`.
   payoff: >
-    Portugal has one land border. The clerk points out that a list of
-    one is still a list.
+    Kenya has five land borders, and the response lists five countries. You
+    asked for `name` once, inside the braces after `borders`, and the
+    archive returned a `name` for each country in the list. In the raw
+    response, a list comes back inside square brackets. The documentation
+    shows which fields hold a list.
 
 - id: two-links
   title: Follow two links
   task: >
     A field that holds a record, or a list of records, is a link from one
-    record to another. A
-    record that you have opened can have links of its own, and you can open
-    those too. The query below opens Lisbon's `country`, which is Portugal.
-    Portugal has a `borders` list. Starting from the city of Lisbon, find
-    the capital of each country that borders Portugal.
+    record to another. A record that you have opened can have links of its
+    own, and you can open those too. The query below opens the `country`
+    field of the city of Prague, and that country is Czechia. Czechia has a
+    `borders` list. Starting from the city of Prague, find the capital of
+    each country that borders Czechia.
   starter: |
     query {
-      city(name: "Lisbon") {
+      city(name: "Prague") {
         country {
           name
         }
       }
     }
   expects:
-    - entity: City:lisbon
+    - entity: City:prague
       field: country
-      equals: Country:PT
-    - entity: Country:PT
+      equals: Country:CZ
+    - entity: Country:CZ
       field: borders
-      includes: Country:ES
-    - entity: Country:ES
+      includes: Country:AT
+    - entity: Country:AT
       field: capital
-      equals: Madrid
+      equals: Vienna
   reference: |
     query {
-      city(name: "Lisbon") {
+      city(name: "Prague") {
         country {
           name
           borders {
@@ -153,8 +157,68 @@
     `capital` inside the braces after `borders`.
   payoff: >
     One request went from a city, to its country, to that country's
-    neighbours. A query can keep following links like this for as long as
-    you need.
+    neighbours. Each neighbour came back with its own capital.
+
+- id: three-links
+  title: Follow a chain of three links
+  task: >
+    The query below starts at the city of Lisbon, opens its `country`, which
+    is Portugal, and opens Portugal's `borders`. Portugal has one land
+    border, with Spain. The braces after `borders` hold the fields you want
+    from each neighbour, so here they hold the fields for Spain. Spain is a
+    country too, so it has a `borders` list of its own. You open Spain's
+    list by writing another `borders` with braces inside those braces, under
+    `name`. That makes a chain of three links: from the city to its country,
+    from the country to its neighbour, and from the neighbour to its
+    neighbours. Starting from the city of Lisbon, find the name of each
+    country that borders Spain.
+  starter: |
+    query {
+      city(name: "Lisbon") {
+        country {
+          name
+          borders {
+            name
+          }
+        }
+      }
+    }
+  expects:
+    - entity: City:lisbon
+      field: country
+      equals: Country:PT
+    - entity: Country:PT
+      field: borders
+      includes: Country:ES
+    - entity: Country:ES
+      field: borders
+      includes: Country:FR
+    - entity: Country:FR
+      field: name
+      equals: France
+  reference: |
+    query {
+      city(name: "Lisbon") {
+        country {
+          name
+          borders {
+            name
+            borders {
+              name
+            }
+          }
+        }
+      }
+    }
+  nudge: >
+    The inner `borders { name }` lists Spain. Inside those braces, under
+    `name`, add another `borders { name }` for the countries that border
+    Spain.
+  payoff: >
+    Portugal is in the last list, because a border runs both ways: Portugal
+    borders Spain, and Spain borders Portugal. Morocco is there because two
+    Spanish cities, Ceuta and Melilla, are on the African coast. A query can follow as many
+    links as the question needs, one pair of braces for each link.
 
 - id: documentation
   title: Consult the documentation

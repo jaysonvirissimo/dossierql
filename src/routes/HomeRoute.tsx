@@ -1,6 +1,6 @@
 import { useGame } from "../app/GameProvider.tsx";
 import type { Mission } from "../content/types.ts";
-import { availability, isPlacement } from "../engine/clearance.ts";
+import { availability, isPlacement, nextCase } from "../engine/clearance.ts";
 import { href } from "./parseRoute.ts";
 
 const MODE_TEXT = {
@@ -20,11 +20,124 @@ function conceptTitle(
     .join(", ")}`;
 }
 
+/** Whether an investigation has been started and not finished. */
+function underway(state: { status: string } | undefined): boolean {
+  return (
+    state !== undefined &&
+    state.status !== "complete" &&
+    state.status !== "briefing"
+  );
+}
+
+function CaseCard({
+  mission,
+  next,
+  titles,
+}: {
+  mission: Mission;
+  /** Whether this is the next case in the story, which the desk emphasizes. */
+  next: boolean;
+  titles: ReadonlyMap<string, string>;
+}) {
+  const { course, standing, save } = useGame();
+  const completion = standing.completions[mission.id];
+  const locked = availability(mission, standing) === "locked";
+  const investigation = save.investigations[mission.id]?.state;
+  const inProgress = underway(investigation);
+  const placement =
+    !completion && isPlacement(mission, course.missions, standing);
+  return (
+    <li
+      className={next ? "case paper case--next" : "case paper"}
+      data-locked={locked}
+    >
+      <div
+        className={`motif motif--${mission.motif ?? "plain"}`}
+        aria-hidden="true"
+      />
+      <div className="case__body">
+        <p className="label">
+          Clearance {mission.clearance} ·{" "}
+          {mission.kind === "assessment" ? "Assessment" : "Teaching case"}
+        </p>
+        <h3 className="case__title">{mission.title}</h3>
+        <p className="case__concept">{conceptTitle(mission, titles)}</p>
+        <p>{mission.summary}</p>
+        <ul className="case__status">
+          {next && <li className="chip chip--next">Next in the story</li>}
+          {locked && (
+            <li className="chip chip--open">
+              Locked: needs clearance {mission.clearance}
+            </li>
+          )}
+          {placement && !locked && (
+            <li className="chip chip--info">
+              {standing.clearance > mission.clearance
+                ? "Optional: you already hold a higher clearance"
+                : "Placement: attempt it to skip ahead"}
+            </li>
+          )}
+          {inProgress && <li className="chip chip--info">In progress</li>}
+          {completion && (
+            <li className="chip chip--ok">{MODE_TEXT[completion.mode]}</li>
+          )}
+          {completion?.late && (
+            <li className="chip chip--open">Resolved after the deadline</li>
+          )}
+          {completion &&
+            mission.kind === "assessment" &&
+            !completion.passed && (
+              <li className="chip chip--bad">
+                Placement not passed: the solution was viewed
+              </li>
+            )}
+        </ul>
+        {locked ? (
+          <p className="case__locked">
+            Pass the level {mission.clearance - 1} assessment to open this case.
+          </p>
+        ) : (
+          <p className="case__go">
+            <a
+              className={next ? "button button--primary" : "button"}
+              href={href({ name: "mission", missionId: mission.id })}
+            >
+              {inProgress
+                ? "Resume"
+                : !completion && placement
+                  ? "Attempt placement"
+                  : "Open case"}
+              <span className="visually-hidden">: {mission.title}</span>
+            </a>
+            {completion && investigation?.status === "complete" && (
+              <a
+                className="button"
+                href={href({ name: "debrief", missionId: mission.id })}
+              >
+                Read debrief
+                <span className="visually-hidden">: {mission.title}</span>
+              </a>
+            )}
+          </p>
+        )}
+      </div>
+    </li>
+  );
+}
+
 export function HomeRoute() {
   const { course, standing, save } = useGame();
   const titles = new Map(course.concepts.map((c) => [c.id, c.title]));
   const done = course.missions.filter((m) => standing.completions[m.id]).length;
   const levels = [...new Set(course.missions.map((m) => m.clearance))];
+  const next = nextCase(course.missions, standing);
+  const placements = course.missions.filter(
+    (m) =>
+      !standing.completions[m.id] &&
+      availability(m, standing) === "available" &&
+      isPlacement(m, course.missions, standing) &&
+      !underway(save.investigations[m.id]?.state),
+  );
   const campaign = course.campaigns[0];
   const drills = course.drills.length;
   const trained = course.drills.filter((d) =>
@@ -50,7 +163,7 @@ export function HomeRoute() {
         <article className="induction paper">
           <div className="motif motif--plain" aria-hidden="true" />
           <div className="case__body">
-            <p className="label">First day · optional · about five minutes</p>
+            <p className="label">First day · optional · about six minutes</p>
             <h3 className="case__title">The Training Range</h3>
             <p className="case__concept">
               Teaches: how to write a request, one skill at a time
@@ -88,134 +201,66 @@ export function HomeRoute() {
         </article>
       </section>
 
-      {levels.map((level) => (
-        <section
-          key={level}
-          className="level"
-          aria-labelledby={`level-${String(level)}`}
-        >
-          <h2 id={`level-${String(level)}`} className="level__title">
-            Clearance {level}
+      {levels.map((level) => {
+        const cases = course.missions.filter(
+          (m) => m.clearance === level && !placements.includes(m),
+        );
+        if (cases.length === 0) return null;
+        return (
+          <section
+            key={level}
+            className="level"
+            aria-labelledby={`level-${String(level)}`}
+          >
+            <h2 id={`level-${String(level)}`} className="level__title">
+              Clearance {level}
+            </h2>
+            <ul className="cases">
+              {cases.map((mission) => (
+                <CaseCard
+                  key={mission.id}
+                  mission={mission}
+                  next={mission === next}
+                  titles={titles}
+                />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
+
+      {placements.length > 0 && (
+        <section className="level" aria-labelledby="placements-title">
+          <h2 id="placements-title" className="level__title">
+            Skip ahead
           </h2>
-          <ul className="cases">
-            {course.missions
-              .filter((m) => m.clearance === level)
-              .map((mission) => {
-                const completion = standing.completions[mission.id];
-                const locked = availability(mission, standing) === "locked";
-                const investigation = save.investigations[mission.id]?.state;
-                const underway =
-                  investigation &&
-                  investigation.status !== "complete" &&
-                  investigation.status !== "briefing";
-                const placement =
-                  !completion &&
-                  isPlacement(mission, course.missions, standing);
-                return (
-                  <li
+          <details className="placements paper">
+            <summary className="placements__summary">
+              Placement: {placements.length}{" "}
+              {placements.length === 1 ? "assessment" : "assessments"} you can
+              attempt now to skip ahead
+            </summary>
+            <div className="placements__body">
+              <p>
+                An assessment that you attempt before its level&apos;s teaching
+                case is a placement. If you solve it without viewing the
+                solution, you are promoted past that level, and every case you
+                skipped stays open to you.
+              </p>
+              <ul className="cases">
+                {placements.map((mission) => (
+                  <CaseCard
                     key={mission.id}
-                    className="case paper"
-                    data-locked={locked}
-                  >
-                    <div
-                      className={`motif motif--${mission.motif ?? "plain"}`}
-                      aria-hidden="true"
-                    />
-                    <div className="case__body">
-                      <p className="label">
-                        Clearance {mission.clearance} ·{" "}
-                        {mission.kind === "assessment"
-                          ? "Assessment"
-                          : "Teaching case"}
-                      </p>
-                      <h3 className="case__title">{mission.title}</h3>
-                      <p className="case__concept">
-                        {conceptTitle(mission, titles)}
-                      </p>
-                      <p>{mission.summary}</p>
-                      <ul className="case__status">
-                        {locked && (
-                          <li className="chip chip--open">
-                            Locked: needs clearance {mission.clearance}
-                          </li>
-                        )}
-                        {placement && !locked && (
-                          <li className="chip chip--info">
-                            {standing.clearance > mission.clearance
-                              ? "Optional: you already hold a higher clearance"
-                              : "Placement: attempt it to skip ahead"}
-                          </li>
-                        )}
-                        {underway && (
-                          <li className="chip chip--info">In progress</li>
-                        )}
-                        {completion && (
-                          <li className="chip chip--ok">
-                            {MODE_TEXT[completion.mode]}
-                          </li>
-                        )}
-                        {completion?.late && (
-                          <li className="chip chip--open">
-                            Resolved after the deadline
-                          </li>
-                        )}
-                        {completion &&
-                          mission.kind === "assessment" &&
-                          !completion.passed && (
-                            <li className="chip chip--bad">
-                              Placement not passed: the solution was viewed
-                            </li>
-                          )}
-                      </ul>
-                      {locked ? (
-                        <p className="case__locked">
-                          Pass the level {mission.clearance - 1} assessment to
-                          open this case.
-                        </p>
-                      ) : (
-                        <p className="case__go">
-                          <a
-                            className="button button--primary"
-                            href={href({
-                              name: "mission",
-                              missionId: mission.id,
-                            })}
-                          >
-                            {underway
-                              ? "Resume"
-                              : completion
-                                ? "Open case"
-                                : placement
-                                  ? "Attempt placement"
-                                  : "Open case"}
-                            <span className="visually-hidden">
-                              : {mission.title}
-                            </span>
-                          </a>
-                          {completion &&
-                            investigation?.status === "complete" && (
-                              <a
-                                className="button"
-                                href={href({
-                                  name: "debrief",
-                                  missionId: mission.id,
-                                })}
-                              >
-                                Read debrief
-                                <span className="visually-hidden">
-                                  : {mission.title}
-                                </span>
-                              </a>
-                            )}
-                        </p>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-          </ul>
+                    mission={mission}
+                    next={false}
+                    titles={titles}
+                  />
+                ))}
+              </ul>
+            </div>
+          </details>
         </section>
-      ))}
+      )}
     </main>
   );
 }

@@ -37,20 +37,18 @@ export function OrientationRoute() {
             shape.
           </p>
           <p>
-            In the query below, <code>city(name: "Lisbon")</code> asks for one
-            record. The part in parentheses says which record: the city whose
-            name is Lisbon. The braces after it hold the pieces of information
-            you want from that city.
+            In the query below, <code>country(name: "Chile")</code> asks for one
+            record. The part in parentheses says which record: the country whose
+            name is Chile. The braces after it hold the pieces of information
+            you want from that country, here its name and its capital.
           </p>
           <div className="orientation__pair">
             <figure>
               <figcaption className="label">A query</figcaption>
               <pre className="code">{`query {
-  city(name: "Lisbon") {
+  country(name: "Chile") {
     name
-    country {
-      name
-    }
+    capital
   }
 }`}</pre>
             </figure>
@@ -58,11 +56,9 @@ export function OrientationRoute() {
               <figcaption className="label">Its result</figcaption>
               <pre className="code code--paper">{`{
   "data": {
-    "city": {
-      "name": "Lisbon",
-      "country": {
-        "name": "Portugal"
-      }
+    "country": {
+      "name": "Chile",
+      "capital": "Santiago"
     }
   }
 }`}</pre>
