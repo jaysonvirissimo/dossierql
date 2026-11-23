@@ -15,9 +15,10 @@
   clearance: 1
   matches: [transmissions]
   definition: >
-    One query sent to the archive. On a case, each transmission costs one
-    hour, however much it asks for. Asking for everything you need in one
-    transmission is therefore cheaper than asking for it in several.
+    One query sent to the archive. On a case with a clock, each
+    transmission costs one hour, however much it asks for. Asking for
+    everything you need in one transmission is therefore cheaper than asking
+    for it in several.
 - id: field
   term: field
   clearance: 1

@@ -84,7 +84,9 @@ the text a player reads.
 4. Run `npm run content:validate`. Every finding is an error. It checks that
    the clues identify one solution, that each claim has two evidence routes,
    that refutations and field checks work, that the reference solution solves
-   the mission, and the curriculum, text and wording rules.
+   the mission, and the curriculum, pacing, text and wording rules. Pacing
+   means that a stage uses the clock, ruling out or a field check only once
+   the course has introduced it (section 3.15).
 5. Run both agent playtests in `docs/playtest/` before the mission ships.
 
 New cities go in `data/source/cities.yaml`, followed by `npm run world:build`.

@@ -20,7 +20,15 @@ function reference(missionId: string, stageId: string) {
   let state: MissionState = act(env, startMission(env), {
     type: "begin",
   }).state;
-  state = { ...state, stageId };
+  // Any stage can be read on its own: it borrows the opening stage's desk.
+  state = {
+    ...state,
+    stageId,
+    stages: {
+      ...state.stages,
+      [stageId]: state.stages[mission.startingStage]!,
+    },
+  };
   state = act(env, state, {
     type: "edit",
     editor: stage.referenceSolution as string,
@@ -39,7 +47,7 @@ function reference(missionId: string, stageId: string) {
 }
 
 describe("citationAt in the Lisbon opening", () => {
-  const { record, at } = reference("vanishing-azulejos", "lisbon");
+  const { record, at } = reference("vanishing-azulejos", "routes");
   const shipment = "city/departingShipments/0";
 
   it("carries the whole route when the deepest row is cited", () => {

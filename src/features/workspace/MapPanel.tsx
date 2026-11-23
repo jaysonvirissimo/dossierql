@@ -48,7 +48,10 @@ export default function MapPanel() {
     <div className="tool">
       <p className="tool__lede">
         You are in {here?.name ?? stage.location}. Countries from your results
-        are marked, with the time a journey there would take.
+        are marked
+        {state.clock === "none"
+          ? "."
+          : ", with the time a journey there would take."}
       </p>
       <svg
         className="map"
@@ -102,7 +105,9 @@ export default function MapPanel() {
         <ul className="journeys">
           {journeys.map(({ country, hours: h }) => (
             <li key={country.code}>
-              {country.name}: {timed ? hours(h) : `${hours(h)} (untimed)`}
+              {state.clock === "none"
+                ? country.name
+                : `${country.name}: ${timed ? hours(h) : `${hours(h)} (untimed)`}`}
             </li>
           ))}
         </ul>

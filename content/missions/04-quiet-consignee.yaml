@@ -34,6 +34,7 @@ debrief:
 stages:
   callao:
     location: PE
+    introduces: field-check
     objective: Identify the company that is to receive VAL-0733 and the operative who directs that company.
 
     briefing: |
@@ -41,6 +42,14 @@ stages:
       called Meridian appear on its papers, one at each end of the
       voyage. The bureaucracy wants the receiving company and its
       director, and has asked not to be given the sender by mistake.
+
+      This case adds the field check. Suppose you have supported
+      one claim about a lead and cannot yet support the other. The
+      form then offers to order a field check. The office in that
+      lead's country looks into the lead and sends back a dispatch
+      that says where to look next. A field check costs hours, and
+      the button shows how many before you press it. The case
+      stays open afterwards.
 
     clues:
       - text: >

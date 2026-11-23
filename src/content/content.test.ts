@@ -50,7 +50,7 @@ describe("validation fails the build when", () => {
       codes(
         mutated(
           azulejos,
-          (m) => (m.stages.lisbon!.solution.shipment = "LIS-9999"),
+          (m) => (m.stages.manifests!.solution.shipment = "LIS-9999"),
         ),
       ),
     ).toContain("references");
@@ -58,13 +58,15 @@ describe("validation fails the build when", () => {
 
   it("a stage cannot be reached", () => {
     expect(
-      codes(mutated(azulejos, (m) => delete m.stages.lisbon!.next)),
+      codes(mutated(azulejos, (m) => delete m.stages.manifests!.next)),
     ).toContain("reachability");
   });
 
   it("the clues admit more than one solution", () => {
     expect(
-      codes(mutated(azulejos, (m) => m.stages.lisbon!.clues.splice(0, 1))),
+      codes(
+        mutated(azulejos, (m) => m.stages["travel-order"]!.clues.splice(0, 1)),
+      ),
     ).toContain("clues");
   });
 
@@ -73,26 +75,60 @@ describe("validation fails the build when", () => {
       codes(
         mutated(
           azulejos,
-          (m) => (m.stages.lisbon!.solution.shipment = "LIS-0522"),
+          (m) => (m.stages["travel-order"]!.solution.shipment = "LIS-0522"),
         ),
       ),
     ).toContain("clues");
   });
 
-  it("one clue alone settles the opening", () => {
-    const copy = structuredClone(raw);
-    const slate = copy.intel
+  it("one clue alone settles a stage whose wrong leads can be ruled out", () => {
+    // One ceramic crate now lists roof tiles, so the manifest clue alone
+    // picks the crate. The stage is given the refutations that make the
+    // rule apply.
+    const copy = mutated(azulejos, (m) => {
+      m.stages["travel-order"]!.leadOutcomes = {
+        "LIS-0486": {
+          refutation: {
+            claim: "manifest",
+            facts: [
+              {
+                entity: "Shipment:$shipment",
+                field: "manifest",
+                equals: "Blue slate squares (14 cm)",
+              },
+            ],
+          },
+          ruledOut: "Slate.",
+        },
+        "LIS-0522": {
+          refutation: {
+            claim: "route",
+            facts: [
+              {
+                entity: "Shipment:$shipment",
+                field: "destination",
+                equals: "City:praia",
+              },
+            ],
+          },
+          ruledOut: "An island.",
+        },
+      };
+    });
+    const island = copy.intel
       .map((file) => file.Shipment?.["LIS-0522"])
       .find((record) => record);
-    slate!.manifest = "Roof tiles";
-    expect(codes(copy)).toContain("clues");
+    island!.manifest = "Roof tiles";
+    expect(validateContent(copy).map((issue) => issue.message)).toContain(
+      "The clue alone identifies the lead, so no wrong lead is plausible.",
+    );
   });
 
   it("a claim has a single evidence set", () => {
     expect(
       codes(
         mutated(azulejos, (m) =>
-          m.stages.lisbon!.claims[0]!.evidenceSets.pop(),
+          m.stages.manifests!.claims[0]!.evidenceSets.pop(),
         ),
       ),
     ).toContain("evidence");
@@ -102,7 +138,7 @@ describe("validation fails the build when", () => {
     expect(
       codes(
         mutated(azulejos, (m) => {
-          const sets = m.stages.lisbon!.claims[0]!.evidenceSets;
+          const sets = m.stages.manifests!.claims[0]!.evidenceSets;
           sets[1]!.facts.push(...sets[0]!.facts);
         }),
       ),
@@ -128,9 +164,9 @@ describe("validation fails the build when", () => {
   it("a refutation does not refute", () => {
     expect(
       codes(
-        mutated(azulejos, (m) => {
-          m.stages.lisbon!.leadOutcomes!["LIS-0486"]!.refutation!.claim =
-            "route";
+        mutated("guest-register", (m) => {
+          m.stages.luanda!.leadOutcomes!["SGT-027"]!.refutation!.claim =
+            "language";
         }),
       ),
     ).toContain("refutation");
@@ -140,7 +176,7 @@ describe("validation fails the build when", () => {
     expect(
       codes(
         mutated(azulejos, (m) => {
-          m.stages.lisbon!.referenceSolution = `query { city(name: "Lisbon") { name } }`;
+          m.stages.routes!.referenceSolution = `query { city(name: "Lisbon") { name } }`;
         }),
       ),
     ).toEqual(expect.arrayContaining(["solvability"]));
@@ -178,7 +214,7 @@ describe("validation fails the build when", () => {
     expect(
       codes(
         mutated(azulejos, (m) => {
-          const stage = m.stages.lisbon!;
+          const stage = m.stages.routes!;
           stage.scaffold.starterQuery = stage.referenceSolution as string;
         }),
       ),
@@ -189,7 +225,7 @@ describe("validation fails the build when", () => {
     expect(
       codes(
         mutated(azulejos, (m) => {
-          m.stages.lisbon!.hints.schema = "Look at Operative.coverNames.";
+          m.stages.manifests!.hints.schema = "Look at Operative.coverNames.";
         }),
       ),
     ).toContain("hints");
@@ -199,7 +235,7 @@ describe("validation fails the build when", () => {
     expect(
       codes(
         mutated(azulejos, (m) => {
-          m.stages.lisbon!.hints.nudge = "Try an alias for each shipment.";
+          m.stages.manifests!.hints.nudge = "Try an alias for each shipment.";
         }),
       ),
     ).toContain("terms");
@@ -219,7 +255,8 @@ describe("validation fails the build when", () => {
     expect(
       codes(
         mutated(azulejos, (m) => {
-          m.stages.lisbon!.hints.nudge = "Open the destination the same way.";
+          m.stages.manifests!.hints.nudge =
+            "Open the destination the same way.";
         }),
       ),
     ).toContain("style");
@@ -248,7 +285,8 @@ describe("validation fails the build when", () => {
     expect(
       codes(
         mutated(azulejos, (m) => {
-          m.stages.lisbon!.objective = "Find the `destination` of the crate.";
+          m.stages.manifests!.objective =
+            "Find the `destination` of the crate.";
         }),
       ),
     ).toContain("markup");
@@ -258,7 +296,7 @@ describe("validation fails the build when", () => {
     expect(
       codes(
         mutated(azulejos, (m) => {
-          m.stages.lisbon!.briefing = "Write a [query](glossary:no-such).";
+          m.stages.manifests!.briefing = "Write a [query](glossary:no-such).";
         }),
       ),
     ).toContain("links");
@@ -268,10 +306,91 @@ describe("validation fails the build when", () => {
     expect(
       codes(
         mutated(azulejos, (m) => {
-          m.stages.lisbon!.briefing = "See [this](glossary:partial-result).";
+          m.stages.manifests!.briefing = "See [this](glossary:partial-result).";
         }),
       ),
     ).toContain("links");
+  });
+
+  it("a stage uses a mechanic before the course introduces it", () => {
+    const issues = validateContent(
+      mutated(azulejos, (m) => {
+        m.stages.luanda!.leadOutcomes = {
+          "LUA-011": {
+            refutation: {
+              claim: "matching-order",
+              facts: [
+                {
+                  entity: "TransferOrder:$order",
+                  field: "consignee",
+                  equals: "Company:LUA-LANTERN",
+                },
+              ],
+            },
+            ruledOut: "Made out to Lantern Export.",
+          },
+        };
+      }),
+    );
+    expect(issues).toContainEqual({
+      path: "vanishing-azulejos.stages.luanda",
+      code: "pacing",
+      message:
+        "The stage uses ruling-out, which no stage up to this one introduces.",
+    });
+  });
+
+  it("a case gains a clock before the clock is introduced", () => {
+    const copy = mutated(azulejos, (m) => {
+      m.clock = {
+        countdown: "Buyer collects the crate in {remaining}",
+        expired: "Buyer has collected the crate",
+        onExpiry: "end",
+      };
+    });
+    expect(codes(copy)).toContain("pacing");
+  });
+
+  it("a stage introduces a mechanic it does not use", () => {
+    expect(
+      codes(
+        mutated(azulejos, (m) => {
+          m.stages.routes!.introduces = "field-check";
+        }),
+      ),
+    ).toContain("pacing");
+  });
+
+  it("a mechanic is used and never introduced", () => {
+    expect(
+      codes(
+        mutated("quiet-consignee", (m) => {
+          delete m.stages.callao!.introduces;
+        }),
+      ),
+    ).toContain("pacing");
+  });
+
+  it("a mission after the first introduces two mechanics", () => {
+    const copy = mutated("guest-register", (m) => {
+      m.stages.luanda!.leadOutcomes!["SGT-027"]!.fieldCheck = "Mombasa asks.";
+      m.stages.zanzibar!.introduces = "field-check";
+    });
+    const callao = copy.missions.find((m) => m.id === "quiet-consignee")!;
+    delete callao.stages.callao!.introduces;
+    expect(validateContent(copy).map((issue) => issue.message)).toContain(
+      "A mission after the first introduces at most one mechanic.",
+    );
+  });
+
+  it("a mission with no clock has a deadline ending", () => {
+    expect(
+      codes(
+        mutated(azulejos, (m) => {
+          m.debrief.stampLate = "COLLECTED";
+        }),
+      ),
+    ).toContain("structure");
   });
 
   it("a drill's reference does not return the expected facts", () => {

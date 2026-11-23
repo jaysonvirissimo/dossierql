@@ -5,6 +5,7 @@ import {
   openCase,
   openTool,
   press,
+  record,
   send,
   watchPage,
   type PageWatch,
@@ -55,10 +56,21 @@ test("every screen has its own route and survives a reload", async ({
   ).toBeVisible();
 });
 
+const GENOA = `query {
+  city(name: "Genoa") {
+    departingShipments {
+      id
+      manifest
+      destination { name country { name currency { name } } }
+    }
+  }
+}`;
+
 test("the tools beside the terminal are free and say what help costs", async ({
   page,
 }) => {
-  await openCase(page, "vanishing-azulejos");
+  // The second case is the first with a clock.
+  await openCase(page, "borrowed-chronometer");
   const before = await page
     .getByRole("status", { name: "Mission clock" })
     .innerText();
@@ -88,16 +100,16 @@ test("the tools beside the terminal are free and say what help costs", async ({
 
   await press(page.getByRole("button", { name: "Take hint 1 of 4 (1 hour)" }));
   await expect(page.locator(".tools__panel")).toContainText(
-    "Some manifests fit the registrar's description",
+    "Two crates fit the observatory's description",
   );
   await expect(
     page.getByRole("status", { name: "Mission clock" }),
-  ).toContainText("26 of 27 hours left");
+  ).toContainText("17 of 18 hours left");
 
-  await send(page, LISBON);
+  await send(page, GENOA);
   await openTool(page, "Map");
   await expect(page.getByRole("img", { name: /World map/ })).toBeVisible();
-  await expect(page.locator(".journeys")).toContainText("Angola: 4 hours");
+  await expect(page.locator(".journeys")).toContainText(/Senegal: \d hours/);
   await openTool(page, "Dossiers");
   await expect(page.locator(".tools__panel")).toContainText(
     "No operative has appeared",
@@ -141,7 +153,5 @@ test("the game is playable when the browser refuses storage", async ({
   await expect(page.getByText(/not storing progress/)).toBeVisible();
   await openCase(page, "vanishing-azulejos");
   await send(page, LISBON);
-  await expect(
-    page.getByRole("status", { name: "Mission clock" }),
-  ).toContainText("26 of 27 hours left");
+  await expect(record(page, "LIS-0417")).toBeVisible();
 });

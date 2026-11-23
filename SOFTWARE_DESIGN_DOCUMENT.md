@@ -1,7 +1,7 @@
 # DossierQL — Software Design Document
 
 **Status:** Draft
-**Version:** 0.10
+**Version:** 0.11
 **Last updated:** November 22, 2026
 
 ## 1. Introduction and Overview
@@ -367,6 +367,8 @@ A player who skips ahead by placement (Section 3.8) meets every mechanic of the 
 | 3. Lisbon, the travel order | Send the hold to the country that receives the remaining crate. | None. The evidence is already in the ledger. | Travel order |
 | 4. Luanda | Identify who signed the transfer order that matches the replacement label. | Two records opened side by side under one shipment | Deduction over several records |
 
+Stages 1 to 3 take place at one desk in Lisbon. Stages in the same country share their results: the responses stay in the results panel when the next stage opens, and a lead can be opened from any of them. This is what lets stage 3 be completed with no new query. A form that is accepted without a journey is acknowledged with a dispatch marked as accepted, and the results panel is cleared only when the player travels.
+
 Stages 1 and 2 each ask for one claim about one crate, so the player's first two forms hold a single claim. The two crates set aside in those stages are not ruled out with the ruling-out mechanic, which does not exist yet for this player. Each is the answer to its own stage.
 
 Validation enforces the rules about mechanics (Section 5.5). It cannot measure whether a query is one step harder than the last, so the rule about nesting is an authoring rule (Section 5.6), and the novice walkthrough (Section 10.1) reports where a stage asked for too much.
@@ -545,43 +547,283 @@ Missions should be declarative and stored as human-readable YAML files in versio
 
 Each mission contains one or more stages. A stage represents an investigation objective, usually associated with a location.
 
-A mission declares what it teaches, what it practises, what it requires, and the event its deadline represents. Its time budget is computed from its reference solution (Section 3.3). An assessment mission teaches nothing and lists the concepts it combines under `practises`. A stage declares its clues, scaffold, hint ladder, evidence sets, accepted solution, and a reference solution. It can also declare which leads can be ruled out, what evidence refutes them, and what dispatch a field check returns. A stage that introduces a casework mechanic declares it under `introduces`, with one of the mechanics of Section 3.15. A mission with no `clock` entry is untimed. Each evidence set lists facts that must be cited together, and each claim has at least two sets that support it. Records are written as `Type:identifier`. A name beginning with `$` is a binding, which stands for one record. The bindings named in a stage's `solution` describe the lead under consideration, such as `$shipment`. Within one evidence set or refutation, a binding stands for the same record wherever it appears. A binding that the solution does not name, such as `$inspection`, may be any record for which every fact in the set has been cited.
+A mission declares what it teaches, what it practises, what it requires, and the event its deadline represents. Its time budget is computed from its reference solution (Section 3.3). An assessment mission teaches nothing and lists the concepts it combines under `practises`. A stage declares its clues, scaffold, hint ladder, evidence sets, accepted solution, and a reference solution. It can also declare which leads can be ruled out, what evidence refutes them, and what dispatch a field check returns. A stage that introduces a casework mechanic declares it under `introduces`, with one of the mechanics of Section 3.15. A mission with no `clock` entry is untimed. A stage whose evidence is already in the ledger, such as the travel order of the first case, has an empty list as its reference solution and asks for no new query. Each evidence set lists facts that must be cited together, and each claim has at least two sets that support it. Records are written as `Type:identifier`. A name beginning with `$` is a binding, which stands for one record. The bindings named in a stage's `solution` describe the lead under consideration, such as `$shipment`. Within one evidence set or refutation, a binding stands for the same record wherever it appears. A binding that the solution does not name, such as `$inspection`, may be any record for which every fact in the set has been cited.
 
-A clue's `constraint` is the machine-readable form of the clue. Each entry is a path of schema fields that starts from a binding, followed by the value the path must reach: a literal, a record, or another path. A path that passes through a list is satisfied when any member of the list matches. Validation evaluates the constraints against the data itself, not against the ledger, and tries every record of the right type for each binding the constraints use. Exactly one assignment may satisfy every constraint of the stage, and it must agree with the `solution` (Section 5.5). A part of the solution that no constraint binds, such as the signer in Luanda, must follow from the stage's evidence sets.
+A clue's `constraint` is the machine-readable form of the clue. Each entry is a path of schema fields that starts from a binding, followed by the value the path must reach: a literal, a record, or another path. A path that passes through a list is satisfied when any member of the list matches. A path written with `!` after it must not reach the value, so `$shipment.manifest!` followed by a description selects the shipments whose manifest says something else. The first case uses this form for the two crates it sets aside, each of which is identified by the clue it fails. Validation evaluates the constraints against the data itself, not against the ledger, and tries every record of the right type for each binding the constraints use. Exactly one assignment may satisfy every constraint of the stage, and it must agree with the `solution` (Section 5.5). A part of the solution that no constraint binds, such as the signer in Luanda, must follow from the stage's evidence sets.
 
-This example follows *The Vanishing Azulejos* as it was first built, with two stages, a clock, and wrong leads to rule out in Lisbon. Section 3.15 replaces that layout with four untimed stages. The example shows the format and is rewritten when the case is re-authored (Section 11).
+This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four stages and no clock.
 
     id: vanishing-azulejos
     title: The Vanishing Azulejos
     campaign: shadow-network
+    order: 1
     clearance: 1
+    kind: teaching
     teaches: nested-selections
     practises: []
     requires: []
-    clock:
-      countdown: Buyer collects the crate in {remaining}
-      expired: Buyer has collected the crate
-      onExpiry: continue
-    startingStage: lisbon
+    summary: >
+      A museum's tiles left Lisbon in a crate marked as samples. Three crates
+      fit that description, and customs can hold one.
+    motif: tilework
+    startingStage: manifests
 
     debrief:
       onTime: |
         Luanda holds the crate. The clerk files the transfer order
         with NIGHTJAR's name circled.
-      afterDeadline: |
-        The buyer has collected the crate. Your copy of the transfer
-        order ties NIGHTJAR to the reroute.
+      stampOnTime: HOLD ISSUED
+      comparison: >
+        The first query in Lisbon asked for one field, `manifest`, on each
+        shipment in a list. The reference solution for the second question
+        opens each shipment's destination, then that city's country, then that
+        country's borders, all in one request. Each pair of braces follows a
+        link to the next record, and the whole route comes back in a single
+        transmission. The travel order needed no query, because both of its
+        claims rest on facts those two responses had already returned. In
+        Luanda, the reference solution nests again. Inside each arriving
+        shipment it opens the depot's intake record and both transfer orders,
+        and inside each order it opens the operative who signed it. The label
+        and the two orders come back side by side.
+      geography: >
+        Angola borders Namibia along the Cunene and Okavango rivers. Cabo
+        Verde is an archipelago in the Atlantic and has no land border at all.
 
     stages:
-      lisbon:
+      manifests:
         location: PT
-        objective: Identify the shipment carrying the tiles and its destination.
+        introduces: citing
+        objective: Identify the shipment whose contents cannot be the tiles.
 
         briefing: |
-          A priceless collection of azulejos has vanished from a
-          Lisbon museum. Three shipments declared as samples left the
-          port that morning. Customs would appreciate a narrower list.
-          Put a hold on the crate before the buyer collects it.
+          A priceless collection of azulejos, the painted tiles of
+          Portugal, has vanished from a Lisbon museum. Three shipments
+          declared as samples left the port that morning. Customs
+          cannot hold all three, and asks you to set aside one crate
+          at a time. Start with any crate that does not hold tiles.
+
+          Customs accepts nothing without evidence. The Deduction form
+          states a claim about one shipment. The shipment you are
+          making the claim about is called a lead. When a response
+          shows a fact that proves the claim, press Cite beside that
+          fact. Every row of a response has a Cite button, so choose
+          the row that shows the fact itself. The fact is copied onto
+          the form as a [citation](glossary:citation). When the form
+          shows the claim as supported, submit the deduction.
+
+        clues:
+          - text: >
+              All three shipments left from Lisbon.
+            constraint:
+              $shipment.origin: City:lisbon
+          - text: >
+              The museum registrar says the tiles are ceramic: blue squares,
+              14 centimetres across.
+            constraint:
+              $shipment.manifest!: Blue ceramic squares (14 cm)
+
+        scaffold:
+          level: guided
+          starterQuery: |
+            query {
+              city(name: "Lisbon") {
+                departingShipments {
+                  id
+                  # This query is unfinished. Add the field that says what
+                  # each shipment contains. The Documentation tab lists the
+                  # fields a shipment has.
+                }
+              }
+            }
+
+        hints:
+          nudge: >
+            One of the three crates holds something that is not ceramic.
+            Find what the papers for each shipment say is inside it.
+          concept: >
+            The query already asks for the id of every shipment that left
+            Lisbon. A field written inside the braces after
+            departingShipments comes back once for each shipment in the
+            list. Add the field for a shipment's contents on a line of its
+            own, under id.
+          schema: >
+            Look at Shipment.manifest.
+          skeleton: |
+            departingShipments { id manifest }
+
+        solution:
+          type: deduction
+          shipment: LIS-0486
+        labels:
+          shipment: Shipment
+
+        claims:
+          - id: not-ceramic
+            prompt: The contents of this shipment are not ceramic.
+            evidenceSets:
+              - facts:
+                  - entity: Shipment:$shipment
+                    field: manifest
+                    equals: Blue slate squares (14 cm)
+              - facts:
+                  - entity: Shipment:$shipment
+                    field: inspection
+                    equals: Inspection:$inspection
+                  - entity: Inspection:$inspection
+                    field: finding
+                    equals: Slate tiles, blue-grey, 14 cm
+
+        resolved: |
+          Deduction accepted. The port expecting that crate will be
+          told it is slate. The harbourmaster there offers to send a
+          sample.
+
+        referenceSolution: |
+          query {
+            city(name: "Lisbon") {
+              departingShipments {
+                id
+                manifest
+              }
+            }
+          }
+
+        next: routes
+
+      routes:
+        location: PT
+        objective: Identify the ceramic shipment that cannot reach Namibia by road.
+
+        briefing: |
+          Two crates of blue ceramic squares are left. An intercepted
+          dispatch says a truck will carry the tiles into Namibia
+          directly from the country that receives them. The tiles are
+          therefore going to a country that shares a land border with
+          Namibia. One of the two crates is going somewhere that
+          shares no such border. Set that crate aside.
+
+          The slate crate still appears in the list of shipments that
+          left Lisbon. You have already dealt with it.
+
+        clues:
+          - text: >
+              Two shipments from Lisbon list blue ceramic squares, 14
+              centimetres across.
+            constraint:
+              $shipment.origin: City:lisbon
+              $shipment.manifest: Blue ceramic squares (14 cm)
+          - text: >
+              An intercepted dispatch says the truck will cross into
+              Namibia directly from the country receiving the tiles.
+            constraint:
+              $shipment.destination.country.borders!: Country:NA
+
+        scaffold:
+          level: guided
+          starterQuery: |
+            query {
+              city(name: "Lisbon") {
+                departingShipments {
+                  id
+                  manifest
+                  # This query is unfinished. Add the field that says
+                  # where each shipment is going. The Documentation tab
+                  # lists the fields a shipment has.
+                }
+              }
+            }
+
+        hints:
+          nudge: >
+            For each of the two ceramic shipments, find the country it is
+            going to. Then find the countries that share a border with that
+            country. One of the two countries has no border with Namibia.
+            A country with no land borders comes back with an empty list,
+            and you can cite an empty list like any other row.
+          concept: >
+            A shipment's destination is a record, not a single value. A
+            field that holds a record needs braces after it, with the
+            fields you want from that record inside the braces. The fields
+            inside one pair of braces are called a selection.
+          schema: >
+            Look at Shipment.destination, City.country, and
+            Country.borders.
+          skeleton: |
+            destination { name country { name borders { name } } }
+
+        solution:
+          type: deduction
+          shipment: LIS-0522
+        labels:
+          shipment: Shipment
+
+        claims:
+          - id: no-road
+            prompt: The country receiving this shipment has no land border with Namibia.
+            evidenceSets:
+              - facts:
+                  - entity: Shipment:$shipment
+                    field: destination
+                    equals: City:$city
+                  - entity: City:$city
+                    field: country
+                    equals: Country:$country
+                  - entity: Country:$country
+                    field: borders
+                    excludes: Country:NA
+              - facts:
+                  - entity: Shipment:$shipment
+                    field: destination
+                    equals: City:$city
+                  - entity: City:$city
+                    field: country
+                    equals: Country:$country
+                  - entity: Country:NA
+                    field: borders
+                    excludes: Country:$country
+
+        resolved: |
+          Deduction accepted. Praia's harbourmaster asks to see the
+          truck that can drive from an island to the Namibian border.
+
+        referenceSolution: |
+          query {
+            city(name: "Lisbon") {
+              departingShipments {
+                id
+                manifest
+                destination {
+                  name
+                  country {
+                    name
+                    borders {
+                      name
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+        next: travel-order
+
+      travel-order:
+        location: PT
+        introduces: travel-order
+        objective: Identify the shipment carrying the tiles and the country receiving it.
+
+        briefing: |
+          One crate is left, and customs will send you after it. To
+          travel, you complete a travel order. A travel order makes two
+          claims about one shipment, and each claim needs evidence of
+          its own. You do not say which claim a citation is for: the
+          form matches each citation to the claim it proves. The form
+          also asks you to choose the country the shipment is going to.
+
+          You do not need a new query. The responses you already have
+          hold every fact this order needs, and they are still in the
+          Results panel. Open the remaining shipment as a lead, cite
+          the evidence for both claims, and travel.
 
         clues:
           - text: >
@@ -594,37 +836,38 @@ This example follows *The Vanishing Azulejos* as it was first built, with two st
               Namibia directly from the country receiving the shipment.
             constraint:
               $shipment.destination.country.borders: Country:NA
+              $shipment.destination.country: $country
 
         scaffold:
           level: guided
-          starterQuery: |
-            query {
-              city(name: "Lisbon") {
-                departingShipments {
-                  id
-                  manifest
-                  # Where is each shipment going?
-                }
-              }
-            }
+          carryOver: true
 
         hints:
           nudge: >
-            Some manifests fit the registrar's description. Which
-            of those routes fits the intercepted dispatch?
+            You have set two crates aside: the slate, and the ceramic crate
+            going to an island. The crate that is left is the lead for this
+            travel order.
           concept: >
-            A field that returns an object needs its own selection
-            in braces.
+            This stage needs no new query. Your last response is still in
+            the Results panel. Find the remaining shipment in it. Press Cite
+            on that shipment's manifest row for the first claim. Then find
+            the borders row under that shipment's destination and country,
+            and press Cite on the borders row for the second claim.
           schema: >
-            Look at Shipment.destination, City.country, and
-            Country.borders.
+            The facts came from Shipment.manifest, Shipment.destination,
+            City.country, and Country.borders.
           skeleton: |
-            destination { name country { name borders { name } } }
+            Rows to cite under the remaining shipment:
+            manifest
+            destination, then country, then borders
 
         solution:
           type: destination
           shipment: LIS-0417
           country: AO
+        labels:
+          shipment: Shipment
+          country: Country receiving the shipment
 
         claims:
           - id: manifest
@@ -665,75 +908,29 @@ This example follows *The Vanishing Azulejos* as it was first built, with two st
                     field: borders
                     includes: Country:$country
 
-        leadOutcomes:
-          LIS-0486:
-            refutation:
-              claim: manifest
-              facts:
-                - entity: Shipment:$shipment
-                  field: manifest
-                  equals: Blue slate squares (14 cm)
-            ruledOut: |
-              Cape Town confirms the measurements. The harbourmaster
-              offers to send a sample of the slate.
-            fieldCheck: |
-              The crate contains blue slate. The harbourmaster
-              suggests consulting the manifest's description of the goods.
-          LIS-0522:
-            refutation:
-              claim: route
-              facts:
-                - entity: Shipment:$shipment
-                  field: destination
-                  equals: City:$city
-                - entity: City:$city
-                  field: country
-                  equals: Country:$country
-                - entity: Country:$country
-                  field: borders
-                  excludes: Country:NA
-            ruledOut: |
-              The ceramic squares in Praia fit the description. The
-              harbourmaster asks to see the truck that can drive from
-              an island to the Namibian border.
-            fieldCheck: |
-              Praia confirms the size and material. The harbourmaster
-              asks which land border the truck is meant to cross.
-          LIS-0417:
-            fieldCheck: |
-              Luanda has opened a file on the shipment. The freight
-              office asks for citations for the whole travel order.
+        resolved: |
+          Travel order approved. You land in Luanda as the depot
+          finishes logging the morning's arrivals.
 
-        referenceSolution: |
-          query {
-            city(name: "Lisbon") {
-              departingShipments {
-                id
-                manifest
-                destination {
-                  name
-                  country {
-                    name
-                    borders {
-                      name
-                    }
-                  }
-                }
-              }
-            }
-          }
+        referenceSolution: []
 
         next: luanda
 
       luanda:
         location: AO
+        introduces: deduction
         objective: Identify who authorized the crate's transfer to the replacement consignee.
 
         briefing: |
-          The crate arrived under a replacement consignee label.
-          Two transfer orders name different consignees and have
+          Someone has relabelled the crate. The replacement label gives
+          a new consignee, which is the company that is to receive it.
+          Two transfer orders give different consignees and carry
           different signatures. Find who signed the order that
           matches the label on the crate.
+
+          This deduction is about more than one record. The form asks
+          you to choose three: the transfer order, the shipment the
+          order is for, and the operative who authorized the order.
 
         clues:
           - text: >
@@ -741,7 +938,7 @@ This example follows *The Vanishing Azulejos* as it was first built, with two st
             constraint:
               $shipment: Shipment:LIS-0417
           - text: >
-              The transfer order must name the consignee on that label.
+              The transfer order must give the same consignee as that label.
             constraint:
               $shipment.transferOrders: $order
               $order.consignee: $shipment.intake.consignee
@@ -757,11 +954,13 @@ This example follows *The Vanishing Azulejos* as it was first built, with two st
 
         hints:
           nudge: >
-            Check who the depot says should receive the crate, then
-            look for that same name on the two orders.
+            First find who the depot says should receive the crate. Then
+            look for the same company on the two transfer orders.
           concept: >
-            Select fields inside both the intake record and the
-            transfer orders. Follow the matching order to its signer.
+            Each arriving shipment holds an intake record and a list of
+            transfer orders. Open both with braces, and ask for the
+            consignee inside each. Then, inside the transfer orders, open
+            the field that says who authorized the order.
           schema: >
             Look at City.arrivingShipments, Shipment.intake,
             Shipment.transferOrders, and TransferOrder.authorizedBy.
@@ -774,13 +973,17 @@ This example follows *The Vanishing Azulejos* as it was first built, with two st
 
         solution:
           type: deduction
-          shipment: LIS-0417
           order: LUA-012
+          shipment: LIS-0417
           operative: NIGHTJAR
+        labels:
+          order: Transfer order
+          shipment: For shipment
+          operative: Authorized by
 
         claims:
           - id: matching-order
-            prompt: This order names the consignee on the crate's replacement label.
+            prompt: This order gives the same consignee as the crate's replacement label.
             evidenceSets:
               - facts:
                   - entity: Shipment:$shipment
@@ -823,6 +1026,10 @@ This example follows *The Vanishing Azulejos* as it was first built, with two st
                     field: signedBy
                     equals: Operative:$operative
 
+        resolved: |
+          Deduction accepted. The depot holds the crate against
+          order LUA-012.
+
         referenceSolution: |
           query {
             city(name: "Luanda") {
@@ -846,11 +1053,13 @@ The countries receiving the Luanda and Cape Town shipments both border Namibia. 
 | LIS-0486 | Cape Town, South Africa | Blue slate squares (14 cm) | Yes |
 | LIS-0522 | Praia, Cabo Verde | Blue ceramic squares (14 cm) | No |
 
-Each claim can be supported in two ways. The port inspector's finding describes the goods in different words from the manifest: slate for the Cape Town crate and glazed ceramic for the other two. Namibia's own list of borders confirms the route from the other side.
+The first stage asks for the crate that is not ceramic, which is LIS-0486. The second asks for the ceramic crate that cannot reach Namibia by road, which is LIS-0522. Each of these crates is the answer to its own stage, so neither stage authors a refutation, and the player meets ruling out for the first time in *The Guest Register*. The third stage asks for the crate that is left. It sends no query: its two claims rest on the manifest and the route that the first two stages retrieved.
 
-In Luanda, the intake record and the unloading receipt both give the consignee on the replacement label as Parallax Freight. Order LUA-012 names Parallax Freight and was signed by NIGHTJAR. The other order, LUA-011, names Lantern Export and was signed by COPPER_KITE. The order's signature and the authorization log both identify its signer. Both evidence paths are available at clearance 1.
+Each claim can be supported in two ways. The port inspector's finding describes the goods in different words from the manifest: slate for the Cape Town crate and glazed ceramic for the other two. Namibia's own list of borders confirms the route from the other side, and shows from the other side that Cabo Verde is not on it.
 
-Both starter queries supply the `name` argument. The Lisbon query guides the player to the missing destination selection. The Luanda query leaves the player to choose which shipment records and nested fields to retrieve. Arguments are taught at the next clearance level.
+In Luanda, the intake record and the unloading receipt both give the consignee on the replacement label as Parallax Freight. Order LUA-012 gives Parallax Freight and was signed by NIGHTJAR. The other order, LUA-011, gives Lantern Export and was signed by COPPER_KITE. The order's signature and the authorization log both identify its signer. Both evidence paths are available at clearance 1.
+
+Every starter query supplies the `name` argument. The first Lisbon query leaves out the `manifest` field, and the second leaves out the destination selection. The Luanda query leaves the player to choose which shipment records and nested fields to retrieve. Arguments are taught at the next clearance level.
 
 The content model should eventually support branching investigations, multiple acceptable solutions, variant pools (Section 3.12), and connections between missions.
 
@@ -870,7 +1079,7 @@ A build-time validation process should check:
 - Verify that every claim has at least two supporting evidence sets and that no supporting set contains another. Each authored set must be retrievable at the mission's clearance. The tests accept complete sets with extra citations and reject incomplete sets or facts from unrelated leads unless the cited facts form another complete set.
 - Verify that each authored refutation is retrievable at the mission's clearance and refutes the named claim for that lead. A field check must be reachable with a supported claim and an unverified claim, must charge the quoted cost, and must leave the stage open. A viable lead stays open after its field check.
 - **Citations:** Every evidence set that the stage's reference solution retrieves can be assembled by Cite controls on its response, in the draft of the lead the set is about, and no Cite control leaves out a fact of the set that lies on the path to its row. The solvability and field-check steps cite through the same controls. This checks the citations the interface builds, not only the facts the engine accepts. A reference solution retrieves one set for each claim and need not retrieve the alternatives, so the check does not reach an alternative set that only a different query returns.
-- **Pacing:** The rules of Section 3.15 hold. Validation works out which mechanics a stage uses from what the stage authors: a clock on its mission, a refutation, a field check, a travel solution, and a solution that identifies more than one record. It fails when a stage uses a mechanic that neither it nor an earlier stage in the course introduces, when a stage introduces more than one, when a mission after the first introduces more than one, and when a stage declares a mechanic it does not use.
+- **Pacing:** The rules of Section 3.15 hold. Validation works out which mechanics a stage uses from what the stage authors: a clock on its mission, a refutation, a field check, a travel solution, and a deduction that identifies more than one record. Every stage uses citing. It fails when a stage uses a mechanic that neither it nor an earlier stage in the course introduces, when a mission after the first introduces more than one, when two stages introduce the same mechanic, and when a stage declares a mechanic it does not use. The format gives a stage one `introduces` entry, so a stage cannot introduce two.
 - **Solvability:** The reference solution executes without error and yields the required evidence. The time it spends sets the mission's budget (Section 3.3).
 - **Request weight:** Every reference solution fits under the weight limit. In the mission that teaches pagination, the logs requested whole exceed the limit, and the reference solution pages through them under it.
 - **Curriculum order:** A mission requires only concepts taught at or below its clearance, and its reference solution uses the concept it claims to teach.
@@ -1191,7 +1400,7 @@ To complete this milestone, a player must be able to compare and cite query find
 
 ### Milestone 5 — 1.0: Evidence the Player Can Follow
 
-This milestone finishes clearance levels 1 through 5. It adds no clearance level. Its tasks are in priority order. The order puts the opening of the game first: a beginner who is lost in the first case does not reach anything built after it. The first two tasks are built.
+This milestone finishes clearance levels 1 through 5. It adds no clearance level. Its tasks are in priority order. The order puts the opening of the game first: a beginner who is lost in the first case does not reach anything built after it. The first four tasks are built.
 
 - Make a citation carry every fact on its path that an evidence set can use (Section 3.2), and test the code that builds citations. Add the validation check that every evidence set can be assembled from Cite controls (Section 5.5).
 - Show under each claim the cited facts that count toward it, show on the Cite control which lead's draft it feeds, and distinguish facts that do not connect from a fact that is missing.

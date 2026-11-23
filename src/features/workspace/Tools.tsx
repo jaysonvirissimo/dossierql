@@ -65,8 +65,8 @@ function CasePanel() {
       )}
       <h3>Case file</h3>
       <p>
-        {env.mission.title} · clearance {env.mission.clearance} · budget{" "}
-        {hours(state.budget)}
+        {env.mission.title} · clearance {env.mission.clearance}
+        {env.mission.clock && ` · budget ${hours(state.budget)}`}
       </p>
       {confirming ? (
         <p className="note note--warn">
@@ -95,7 +95,8 @@ function CasePanel() {
           Restart the investigation…
         </button>
       )}
-      {state.clock === "active" &&
+      {env.mission.clock &&
+        state.clock === "active" &&
         (passing ? (
           <p className="note note--warn">
             {env.mission.clock.onExpiry === "continue"
@@ -155,8 +156,11 @@ function HintsPanel() {
       <p className="tool__lede">
         {timed
           ? `Help costs time. The four hints cost ${COSTS.hints.join(", ")} hours in turn, ${String(HINT_LADDER_COST)} in all. Viewing the solution costs ${hours(COSTS.solutionReveal)}.`
-          : "The deadline has passed, so help is free."}{" "}
-        The documentation and glossary are always free.
+          : state.clock === "none"
+            ? "This case has no clock, so help costs nothing. Each hint says more than the one before it."
+            : "The deadline has passed, so help is free."}{" "}
+        {state.clock !== "none" &&
+          "The documentation and glossary are always free."}
       </p>
       <ol className="hints">
         {HINT_STEPS.map(([key, purpose], index) => (
@@ -186,13 +190,19 @@ function HintsPanel() {
           disabled={closed}
           onClick={() => dispatch({ type: "hint" })}
         >
-          Take hint {step + 1} of 4 ({timed ? hours(hintCost(state)) : "free"})
+          Take hint {step + 1} of 4
+          {state.clock !== "none" &&
+            ` (${timed ? hours(hintCost(state)) : "free"})`}
         </button>
       )}
       <h3>Solution</h3>
       {stageState.solutionRevealed ? (
         <>
-          <p>The stage's reference solution:</p>
+          <p>
+            {referenceOperations(stage).length === 0
+              ? "This stage needs no new query. The facts it asks for are in the responses you already have."
+              : "The stage's reference solution:"}
+          </p>
           {referenceOperations(stage).map(({ operation, variables }, index) => (
             <div key={index}>
               <pre className="hint__code" data-testid="reference-solution">
@@ -212,8 +222,9 @@ function HintsPanel() {
           className="button"
           onClick={() => dispatch({ type: "reveal" })}
         >
-          View the solution (
-          {revealCost(state) > 0 ? hours(revealCost(state)) : "free"})
+          View the solution
+          {state.clock !== "none" &&
+            ` (${revealCost(state) > 0 ? hours(revealCost(state)) : "free"})`}
         </button>
       )}
     </div>

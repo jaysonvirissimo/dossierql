@@ -5,6 +5,7 @@ import {
   expectClean,
   LISBON,
   LUANDA,
+  MANIFESTS,
   openCase,
   openTool,
   press,
@@ -32,14 +33,6 @@ async function cite(page: Page, shipment: string, row: string): Promise<void> {
   );
 }
 
-async function solveLisbon(page: Page): Promise<void> {
-  await cite(page, "LIS-0417", "manifest");
-  await cite(page, "LIS-0417", "borders");
-  await draft(page)
-    .getByLabel("Destination country")
-    .selectOption({ label: "Angola" });
-}
-
 async function solveLuanda(page: Page): Promise<void> {
   await send(page, LUANDA);
   const order = record(page, "LUA-012");
@@ -64,73 +57,94 @@ async function solveLuanda(page: Page): Promise<void> {
     .selectOption("NIGHTJAR");
 }
 
-test("the Azulejos case, by keyboard at 1024 pixels, held on time", async ({
+test("the Azulejos case, by keyboard at 1024 pixels, with no clock", async ({
   page,
 }) => {
   await openCase(page, "vanishing-azulejos");
 
   // The editor, results and draft are all on screen with no sideways scroll.
   await expect(page.getByRole("heading", { name: "Results" })).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Travel order" }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Deduction" })).toBeVisible();
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
   );
   expect(overflow).toBeLessThanOrEqual(0);
-  await expect(clock(page)).toContainText(
-    "Buyer collects the crate in 27 hours",
-  );
+  // The first case has no clock and quotes no price.
+  await expect(clock(page)).toHaveCount(0);
+  await expect(page.getByTestId("transmit")).toHaveText("Transmit");
 
-  // The starter query has a gap, and the clerk returns it at no cost.
-  await send(page, LISBON.replace("manifest", "manifest { text }"));
-  await expect(page.getByText("No time was spent.")).toBeVisible();
+  // A request the archive cannot read comes back with the clerk's note.
+  await send(page, MANIFESTS.replace("manifest", "manifest { text }"));
+  await expect(
+    page.getByText(/returned your request without processing it/),
+  ).toBeVisible();
   await expect(
     page.getByText(/single value with nothing inside/),
   ).toBeVisible();
-  await expect(clock(page)).toContainText("27 of 27 hours left");
+  await expect(page.getByText("No time was spent.")).toHaveCount(0);
 
-  await send(page, LISBON);
-  await expect(clock(page)).toContainText("26 of 27 hours left");
-
-  // Cite findings straight from the response. Each lands in its own lead.
+  // Stage 1: one finding, cited for the single claim on the form.
+  await send(page, MANIFESTS);
   await cite(page, "LIS-0486", "manifest");
   await expect(
     draft(page).getByRole("tab", { name: "LIS-0486" }),
   ).toHaveAttribute("aria-selected", "true");
-  await expect(draft(page)).toContainText("Contradicted");
-
-  // Rule out one wrong lead, free.
-  await press(draft(page).getByRole("button", { name: /Rule out this lead/ }));
-  await expect(draft(page)).toContainText(
-    "offers to send a sample of the slate",
+  await expect(draft(page).locator(".claim")).toHaveCount(1);
+  await expect(
+    draft(page).locator(".claim[data-status=supported]"),
+  ).toHaveCount(1);
+  await press(draft(page).getByRole("button", { name: "Submit deduction" }));
+  await expect(draft(page)).toContainText("offers to send a");
+  await expect(draft(page)).not.toContainText("no time spent");
+  await expect(page.locator(".casebar")).toContainText(
+    "cannot reach Namibia by road",
   );
-  await expect(draft(page)).toContainText("no time spent");
-  await expect(clock(page)).toContainText("26 of 27 hours left");
+  // Nobody has travelled, so the response stays on the desk.
+  await expect(record(page, "LIS-0486")).toBeVisible();
 
-  // A different lead with one supported claim and one unverified: field check.
-  await cite(page, "LIS-0522", "manifest");
+  // A hint costs nothing here.
+  await openTool(page, "Hints");
+  await expect(page.locator(".tools__panel")).toContainText(
+    "This case has no clock, so help costs nothing.",
+  );
+  await press(
+    page.getByRole("button", { name: "Take hint 1 of 4", exact: true }),
+  );
+  await expect(page.locator(".tools__panel")).toContainText(
+    "For each of the two ceramic shipments",
+  );
+  await expect(
+    page.getByRole("button", { name: "View the solution", exact: true }),
+  ).toBeVisible();
+
+  // Stage 2: a nested row carries every fact on the way down to it.
+  await send(page, LISBON);
+  await cite(page, "LIS-0522", "borders");
   await expect(
     draft(page).getByRole("tab", { name: "LIS-0522" }),
   ).toHaveAttribute("aria-selected", "true");
-  const check = draft(page).getByRole("button", {
-    name: /Order a field check/,
-  });
-  await expect(check).toContainText("3 hours");
-  await press(check);
-  await expect(draft(page)).toContainText(
-    "which land border the truck is meant to cross",
-  );
-  await expect(clock(page)).toContainText("23 of 27 hours left");
+  await expect(
+    draft(page).locator(".claim[data-status=supported]"),
+  ).toHaveCount(1);
+  await expect(
+    draft(page).locator(".claim[data-status=supported] .claim__facts li"),
+  ).toHaveCount(3);
+  await draft(page).locator(".citation summary").first().click();
+  await expect(
+    draft(page).getByRole("button", { name: "Source: transmission 2" }).first(),
+  ).toBeVisible();
+  await press(draft(page).getByRole("button", { name: "Submit deduction" }));
+  await expect(draft(page)).toContainText("drive from an island");
+
+  // Stage 3: the travel order, from evidence already on the desk.
   await expect(
     page.getByRole("heading", { name: "Travel order" }),
   ).toBeVisible();
-
-  // The right lead: a complete travel order.
-  await solveLisbon(page);
-  await expect(
-    draft(page).getByRole("tab", { name: "LIS-0417" }),
-  ).toHaveAttribute("aria-selected", "true");
+  await cite(page, "LIS-0417", "manifest");
+  await cite(page, "LIS-0417", "borders");
+  await draft(page)
+    .getByLabel("Country receiving the shipment")
+    .selectOption({ label: "Angola" });
   await expect(
     draft(page).locator(".claim[data-status=supported]"),
   ).toHaveCount(2);
@@ -147,38 +161,23 @@ test("the Azulejos case, by keyboard at 1024 pixels, held on time", async ({
     record(page, "LIS-0522").getByRole("button", { name: /^Cite id,/ }),
   ).toHaveText("Cite for LIS-0522");
 
-  // Drafts stay with their shipments, and a cited fact links to its source.
-  await press(draft(page).getByRole("tab", { name: /LIS-0522/ }));
-  await expect(draft(page).locator(".citation")).toHaveCount(1);
-  await press(draft(page).getByRole("tab", { name: /LIS-0417/ }));
-  await expect(draft(page).locator(".citation")).toHaveCount(2);
-  await draft(page).locator(".citation summary").first().click();
-  await expect(
-    draft(page).getByRole("button", { name: "Source: transmission 1" }).first(),
-  ).toBeVisible();
-
-  const travel = draft(page).getByRole("button", { name: /^Travel/ });
-  await expect(travel).toContainText("4 hours");
-  await press(travel);
+  await press(draft(page).getByRole("button", { name: "Travel", exact: true }));
   await expect(page.locator(".casebar")).toContainText("Angola");
-  await expect(clock(page)).toContainText("19 of 27 hours left");
-  // The new stage opens on a clean results panel, with Lisbon's kept.
+  // A new country opens on a clean results panel, with Lisbon's kept.
   await expect(
     page.getByText("Nothing has been transmitted from here yet."),
   ).toBeVisible();
   await expect(page.locator(".finding__record")).toHaveCount(0);
 
-  // A reload keeps the stage, the clock, the evidence and the lead history.
+  // A reload keeps the stage, the evidence and the history of the case.
   await page.reload();
   await expect(page.locator(".casebar")).toContainText("Angola");
-  await expect(clock(page)).toContainText("19 of 27 hours left");
+  await expect(clock(page)).toHaveCount(0);
   await openTool(page, "Case");
   await expect(page.locator(".dispatches")).toContainText(
-    "ruled out · LIS-0486",
+    /accepted · LIS-0486/i,
   );
-  await expect(page.locator(".dispatches")).toContainText(
-    "field check · LIS-0522",
-  );
+  await expect(page.locator(".dispatches")).toContainText(/travel · LIS-0417/i);
   await openTool(page, "Evidence");
   await expect(page.locator(".tools__panel")).toContainText(
     "Every fact your queries have returned",
@@ -197,63 +196,31 @@ test("the Azulejos case, by keyboard at 1024 pixels, held on time", async ({
   await expect(page.getByTestId("stamp")).toHaveText("HOLD ISSUED");
   await expect(page.getByText("NIGHTJAR's name circled")).toBeVisible();
   await expect(page.getByText("Fields and nested selections")).toBeVisible();
+  await expect(page.getByText(/to spare/)).toHaveCount(0);
 
   // The completion is on the record, with the help used.
   await page.goto("./#/");
   const file = page.locator(".case", { hasText: "The Vanishing Azulejos" });
-  await expect(file).toContainText("Completed independently");
+  await expect(file).toContainText("Completed with hints");
 });
 
-test("the Azulejos case, finished after the buyer collects the crate", async ({
+test("a mid-case reload keeps the drafts of a stage that shares the desk", async ({
   page,
 }) => {
   await openCase(page, "vanishing-azulejos");
-  await send(page, LISBON);
-  await solveLisbon(page);
+  await send(page, MANIFESTS);
   await cite(page, "LIS-0486", "manifest");
-  await press(draft(page).getByRole("button", { name: /Rule out this lead/ }));
+  await press(draft(page).getByRole("button", { name: "Submit deduction" }));
+  await send(page, LISBON);
+  await cite(page, "LIS-0522", "borders");
 
-  await openTool(page, "Case");
-  await press(page.getByRole("button", { name: "Let the deadline pass…" }));
-  await press(
-    page.getByRole("button", { name: "Let the deadline pass", exact: true }),
-  );
-  await expect(clock(page)).toContainText("Buyer has collected the crate");
-  await expect(clock(page)).toContainText("Continuing untimed");
-
-  // A reload keeps the late state with the evidence and both drafts.
   await page.reload();
-  await expect(clock(page)).toContainText("Buyer has collected the crate");
-  await press(draft(page).getByRole("tab", { name: /LIS-0417/ }));
+  await expect(page.locator(".casebar")).toContainText(
+    "cannot reach Namibia by road",
+  );
+  await expect(record(page, "LIS-0522")).toBeVisible();
   await expect(
     draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(2);
-  await expect(
-    draft(page).getByRole("tab", { name: /LIS-0486/ }),
-  ).toContainText("ruled out");
-
-  // After the deadline the solution is free to view.
-  await openTool(page, "Hints");
-  await press(page.getByRole("button", { name: "View the solution (free)" }));
-  await expect(page.getByTestId("reference-solution")).toContainText(
-    "departingShipments",
-  );
-
-  await press(draft(page).getByRole("button", { name: "Travel (free)" }));
-  await expect(page.locator(".casebar")).toContainText("Angola");
-  await solveLuanda(page);
-  await press(draft(page).getByRole("button", { name: "Submit deduction" }));
-
-  await expect(
-    page.getByRole("heading", { name: "Resolved after the deadline" }),
-  ).toBeVisible();
-  await expect(page.getByTestId("stamp")).toHaveText("COLLECTED");
-  await expect(
-    page.getByText("The buyer has collected the crate."),
-  ).toBeVisible();
-
-  await page.goto("./#/");
-  const file = page.locator(".case", { hasText: "The Vanishing Azulejos" });
-  await expect(file).toContainText("Completed with the solution revealed");
-  await expect(file).toContainText("Resolved after the deadline");
+  ).toHaveCount(1);
+  await expect(draft(page).locator(".citation")).toHaveCount(1);
 });

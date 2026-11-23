@@ -1,11 +1,14 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { parse } from "yaml";
 import { loadContent } from "../../scripts/load-content.ts";
 import { buildCatalog } from "../content/catalog.ts";
-import type { Stage } from "../content/types.ts";
+import type { Mission, Stage } from "../content/types.ts";
 import { COSTS } from "./clock.ts";
 import { reviewDraft } from "./draft.ts";
 import {
   act,
+  deskStages,
   fieldCheckCost,
   startMission,
   type Action,
@@ -25,7 +28,18 @@ function envFor(id: string): Env {
   };
 }
 
-const env = envFor("vanishing-azulejos");
+/**
+ * The engine is tested against a fixture that uses every mechanic in one
+ * stage: a clock that continues after its deadline, two refutations, and
+ * field checks. No case in the course has all of these at once (SDD 3.15).
+ */
+const fixture = parse(
+  readFileSync(
+    new URL("./fixtures/every-mechanic.yaml", import.meta.url),
+    "utf8",
+  ),
+) as Mission;
+const env: Env = { ...envFor("vanishing-azulejos"), mission: fixture };
 const lisbon = env.mission.stages.lisbon as Stage;
 const luanda = env.mission.stages.luanda as Stage;
 
@@ -427,7 +441,7 @@ function luandaSolved(from: MissionState): MissionState {
   );
 }
 
-describe("finishing The Vanishing Azulejos", () => {
+describe("finishing a case with two stages and a clock", () => {
   it("completes on time, independently", () => {
     const arrived = act(env, lisbonSolved(), {
       type: "proceed",
@@ -558,5 +572,109 @@ describe("help", () => {
     expect(state.stageId).toBe("istanbul");
     expect(state.stages.istanbul!.editor).toBe(trieste.referenceSolution);
     expect(state.stages.istanbul!.variables).toContain("Trieste");
+  });
+});
+
+describe("a case with no clock", () => {
+  const untimed = envFor("vanishing-azulejos");
+  const stages = untimed.mission.stages;
+  const go = (state: MissionState, ...actions: Action[]): MissionState =>
+    actions.reduce((s, action) => act(untimed, s, action).state, state);
+  const open = (): MissionState => go(startMission(untimed), { type: "begin" });
+  const send = (state: MissionState, stageId: string): MissionState =>
+    go(
+      state,
+      { type: "edit", editor: stages[stageId]!.referenceSolution as string },
+      { type: "transmit" },
+    );
+
+  it("prices nothing and cannot expire", () => {
+    const start = open();
+    expect(start.clock).toBe("none");
+    expect(start.budget).toBe(0);
+    const sent = send(start, "manifests");
+    expect(sent.transmissions[0]?.cost).toBe(0);
+    const helped = go(sent, { type: "hint" }, { type: "reveal" });
+    expect(helped.hoursLeft).toBe(0);
+    expect(helped.clock).toBe("none");
+    expect(helped.stages.manifests!.hintStep).toBe(1);
+    expect(helped.stages.manifests!.solutionRevealed).toBe(true);
+    const passed = act(untimed, helped, { type: "let-deadline-pass" });
+    expect(passed.state).toBe(helped);
+  });
+
+  it("moves to the next stage in the same country without a journey", () => {
+    const cited = go(
+      send(open(), "manifests"),
+      cite("LIS-0486", "manifest", "Shipment:LIS-0486.manifest"),
+    );
+    const out = act(untimed, cited, { type: "proceed", leadId: "LIS-0486" });
+    expect(out.state.stageId).toBe("routes");
+    expect(out.notice).toMatchObject({
+      kind: "dispatch",
+      dispatch: { kind: "accepted", cost: 0 },
+    });
+    expect(deskStages(untimed.mission, "travel-order")).toEqual([
+      "manifests",
+      "routes",
+      "travel-order",
+    ]);
+    expect(deskStages(untimed.mission, "luanda")).toEqual(["luanda"]);
+  });
+
+  it("completes the travel order from facts already in the ledger, on time", () => {
+    let state = go(
+      send(open(), "manifests"),
+      cite("LIS-0486", "manifest", "Shipment:LIS-0486.manifest"),
+      { type: "proceed", leadId: "LIS-0486" },
+    );
+    state = go(
+      send(state, "routes"),
+      cite("LIS-0522", "route", ...ROUTE_0522),
+      { type: "proceed", leadId: "LIS-0522" },
+    );
+    expect(state.stageId).toBe("travel-order");
+    const sentSoFar = state.transmissions.length;
+    const travelled = act(
+      untimed,
+      go(
+        state,
+        cite("LIS-0417", "cargo", "Shipment:LIS-0417.manifest"),
+        cite("LIS-0417", "route", ...ROUTE_0417),
+        { type: "name", leadId: "LIS-0417", binding: "country", value: "AO" },
+      ),
+      { type: "proceed", leadId: "LIS-0417" },
+    );
+    expect(travelled.state.stageId).toBe("luanda");
+    expect(travelled.state.transmissions).toHaveLength(sentSoFar);
+    expect(travelled.notice).toMatchObject({
+      dispatch: { kind: "travel", cost: 0 },
+    });
+    state = go(
+      send(travelled.state, "luanda"),
+      cite(
+        "LUA-012",
+        "label",
+        "Shipment:LIS-0417.intake",
+        "IntakeRecord:INT-LUA-0417.consignee",
+        "Shipment:LIS-0417.transferOrders",
+        "TransferOrder:LUA-012.consignee",
+      ),
+      cite("LUA-012", "signer", "TransferOrder:LUA-012.authorizedBy"),
+      {
+        type: "name",
+        leadId: "LUA-012",
+        binding: "shipment",
+        value: "LIS-0417",
+      },
+      {
+        type: "name",
+        leadId: "LUA-012",
+        binding: "operative",
+        value: "NIGHTJAR",
+      },
+    );
+    const out = act(untimed, state, { type: "proceed", leadId: "LUA-012" });
+    expect(out.state.outcome).toEqual({ mode: "independent", late: false });
   });
 });

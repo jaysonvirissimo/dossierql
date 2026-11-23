@@ -72,15 +72,14 @@ export function OrientationRoute() {
           <h2>Three things to know</h2>
           <ul>
             <li>
-              Sending a query costs one hour of a case's time, however much it
-              asks for. Reading and thinking are free, and nothing runs on a
-              real clock.
+              A request the archive cannot read is not processed. It comes back
+              with a note from the records clerk saying where to look. Correct
+              the request and transmit it again.
             </li>
             <li>
-              A request the archive cannot read costs nothing. It comes back
-              with a note from the records clerk saying where to look. A request
-              the archive can read costs its hour, even when the answer was not
-              the one you needed.
+              The first case has no clock. You can transmit as many queries as
+              you like. The second case brings in a clock, and that clock counts
+              hours in the story, never real time.
             </li>
             <li>
               The Documentation tab lists everything the archive holds. The{" "}

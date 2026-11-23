@@ -127,7 +127,9 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
               You resolved the case {MODE_TEXT[mode]}
               {late
                 ? ", after the deadline had passed."
-                : `, with ${plural(state.hoursLeft, "hour")} to spare.`}
+                : state.clock === "none"
+                  ? "."
+                  : `, with ${plural(state.hoursLeft, "hour")} to spare.`}
             </p>
             {promoted && (
               <p className="note">

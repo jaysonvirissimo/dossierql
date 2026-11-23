@@ -35,6 +35,7 @@ debrief:
 stages:
   genoa:
     location: IT
+    introduces: clock
     objective: Identify the shipment carrying the chronometer and the country receiving it.
 
     briefing: |
@@ -43,6 +44,12 @@ stages:
       seal. The buyer has cabled instructions about payment, and
       the bureaucracy would like the crate identified before the
       steamer sails.
+
+      This is the first case with a clock. The clock counts hours
+      in the story, not real time. Each query you transmit costs
+      one hour, however much the query asks for. A request that
+      the records clerk returns unread costs nothing. The section
+      below gives the deadline and the other prices.
 
     clues:
       - text: >
@@ -126,43 +133,6 @@ stages:
               - entity: Currency:XOF
                 field: countries
                 includes: Country:$country
-
-    leadOutcomes:
-      GEN-0236:
-        location: CM
-        refutation:
-          claim: currency
-          facts:
-            - entity: Shipment:$shipment
-              field: destination
-              equals: City:$city
-            - entity: City:$city
-              field: country
-              equals: Country:$country
-            - entity: Country:$country
-              field: currency
-              equals: Currency:XAF
-        ruledOut: |
-          Douala has a chronometer of the right description. The
-          port cashier notes that his francs are the Central African
-          kind and that the buyer asked for the other.
-        fieldCheck: |
-          Douala confirms a brass chronometer on gimbals. The port
-          cashier asks which franc the buyer's cable asked for.
-      GEN-0240:
-        location: CI
-        refutation:
-          claim: contents
-          facts:
-            - entity: Shipment:$shipment
-              field: manifest
-              equals: Ship's barometer, brass, gimballed
-        ruledOut: |
-          Abidjan pays in the right francs. The crate holds a
-          barometer, which the harbourmaster reports is falling.
-        fieldCheck: |
-          Abidjan confirms the currency. The harbourmaster suggests
-          reading what the manifest says the instrument measures.
 
     resolved: |
       Deduction accepted. Dakar customs has the crate on the bench.

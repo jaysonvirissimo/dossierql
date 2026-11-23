@@ -1,11 +1,13 @@
 import {
   bindingTypes,
   leadBinding,
+  referenceOperations,
   solutionBindings,
 } from "../../content/types.ts";
 import { travelHours } from "../../engine/clock.ts";
 import { emptyDraft, reviewDraft } from "../../engine/draft.ts";
 import {
+  deskStages,
   fieldCheckCost,
   knownRecords,
   proceedCost,
@@ -42,10 +44,12 @@ export function DraftPanel() {
     knownRecords(state, type)
       .map((id) => ({ id, label: labelOf(refOf(type, id), state.ledger) }))
       .sort((a, b) => a.label.localeCompare(b.label));
-  // Leads are offered from what this stage's transmissions turned up.
+  // Leads are offered from what the transmissions sent from this desk
+  // turned up. Stages in one country share a desk.
+  const desk = deskStages(env.mission, state.stageId);
   const here = new Set<string>();
   for (const sent of state.transmissions) {
-    if (sent.stageId !== state.stageId) continue;
+    if (!desk.includes(sent.stageId)) continue;
     for (const { key } of sent.facts) {
       const fact = state.ledger[key]?.fact;
       if (!fact) continue;
@@ -102,7 +106,9 @@ export function DraftPanel() {
   };
   const unsupported =
     review?.claims.filter((c) => c.status !== "supported").length ?? 0;
-  const cost = (n: number) => (timed && n > 0 ? hours(n) : "free");
+  // A case with no clock prices nothing, so its buttons quote no price.
+  const cost = (n: number) =>
+    state.clock === "none" ? "" : ` (${timed && n > 0 ? hours(n) : "free"})`;
   // A journey is priced to the country the draft names, when it names one.
   const named = others
     .filter(([name]) => types[name] === "Country")
@@ -172,7 +178,11 @@ export function DraftPanel() {
       {!draft || !review ? (
         <div className="draft__empty">
           <ol className="draft__steps">
-            <li>Transmit a query and read the results.</li>
+            <li>
+              {referenceOperations(stage).length === 0
+                ? "Read the results you already have. This stage needs no new query."
+                : "Transmit a query and read the results."}
+            </li>
             <li>Open a lead: the {words(leadType)} you think is the answer.</li>
             <li>
               Press Cite on the result rows that prove each claim about that
@@ -379,8 +389,8 @@ export function DraftPanel() {
                   dispatch({ type: "field-check", leadId: draft.leadId })
                 }
               >
-                Order a field check (
-                {cost(fieldCheckCost(env, state, draft.leadId))})
+                Order a field check
+                {cost(fieldCheckCost(env, state, draft.leadId))}
               </button>
             )}
             <button
@@ -391,7 +401,7 @@ export function DraftPanel() {
                 dispatch({ type: "proceed", leadId: draft.leadId })
               }
             >
-              {travel ? `Travel (${cost(journey)})` : "Submit deduction"}
+              {travel ? `Travel${cost(journey)}` : "Submit deduction"}
             </button>
           </div>
           {!review.allSupported && !draft.ruledOut && (
@@ -432,9 +442,11 @@ export function DraftPanel() {
           <div className="note dispatch">
             <p className="label">
               Dispatch
-              {notice.dispatch.cost > 0
-                ? ` · ${hours(notice.dispatch.cost)} spent`
-                : " · no time spent"}
+              {state.clock === "none"
+                ? ""
+                : notice.dispatch.cost > 0
+                  ? ` · ${hours(notice.dispatch.cost)} spent`
+                  : " · no time spent"}
             </p>
             <p>{notice.dispatch.text}</p>
           </div>

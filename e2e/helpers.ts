@@ -119,6 +119,15 @@ export async function openTool(page: Page, name: string): Promise<void> {
   await press(page.getByRole("tab", { name, exact: true }));
 }
 
+export const MANIFESTS = `query {
+  city(name: "Lisbon") {
+    departingShipments {
+      id
+      manifest
+    }
+  }
+}`;
+
 export const LISBON = `query {
   city(name: "Lisbon") {
     departingShipments {

@@ -38,6 +38,7 @@ debrief:
 stages:
   luanda:
     location: AO
+    introduces: ruling-out
     objective: Identify the sighting that is NIGHTJAR and the country it was in.
 
     briefing: |
@@ -45,6 +46,12 @@ stages:
       night. Three sightings have been filed under the codename.
       The registry holds a great many files, and the clerk asks
       that you request the one you need.
+
+      Two of the three sightings are of somebody else, and in this
+      case you can strike them off. Open a sighting as a lead and
+      cite a fact that contradicts one of the claims about it. The
+      form marks that claim as contradicted and offers to rule the
+      lead out. Ruling out a lead costs no time.
 
     clues:
       - text: >
@@ -159,9 +166,6 @@ stages:
         ruledOut: |
           Mombasa's guest signed as H. Brandt. The registry files
           that name under COPPER_KITE, who is entitled to a holiday.
-        fieldCheck: |
-          Mombasa confirms the guest spoke Swahili. The desk clerk
-          asks whose file the name H. Brandt is kept in.
       SGT-034:
         location: MZ
         refutation:
@@ -179,14 +183,6 @@ stages:
         ruledOut: |
           Maputo's guest gave the right name. The post office adds
           that nobody there bargains in Swahili, least of all the porter.
-        fieldCheck: |
-          Maputo confirms the name M. Calloway. The postmaster asks
-          which languages the porter is supposed to have overheard.
-      SGT-031:
-        location: TZ
-        fieldCheck: |
-          Zanzibar City has a guest of that name. The hotel asks for
-          a travel order with every claim cited before it shows the register.
 
     resolved: |
       Travel order approved. The hotel in Zanzibar City produces

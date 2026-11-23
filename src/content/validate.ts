@@ -39,6 +39,7 @@ import {
   type Concept,
   type FactPattern,
   type Literal,
+  type Mechanic,
   type Mission,
   type Stage,
 } from "./types.ts";
@@ -179,14 +180,17 @@ function side(value: Literal): Side {
 interface Constraint {
   left: Side;
   right: Side;
+  /** Written with `!` after the path: the path must not reach the value. */
+  negated: boolean;
   clue: number;
 }
 
 function constraintsOf(stage: Stage): Constraint[] {
   return stage.clues.flatMap((clue, index) =>
     Object.entries(clue.constraint).map(([key, value]) => ({
-      left: side(key),
+      left: side(key.replace(/!$/, "")),
       right: side(value),
+      negated: key.endsWith("!"),
       clue: index,
     })),
   );
@@ -229,7 +233,7 @@ export function solve(
       const left = evaluate(store, schema, types, c.left, bindings);
       const right = evaluate(store, schema, types, c.right, bindings);
       if (left === undefined || right === undefined) return true;
-      return left.some((value) => right.includes(value));
+      return left.some((value) => right.includes(value)) !== c.negated;
     });
   const assign = (index: number, bindings: Bindings) => {
     if (found.length >= limit) return;
@@ -307,8 +311,8 @@ function proseOf(mission: Mission): Passage[] {
   const out = [
     plain("title", mission.title),
     plain("summary", mission.summary),
-    plain("clock.countdown", mission.clock.countdown),
-    plain("clock.expired", mission.clock.expired),
+    plain("clock.countdown", mission.clock?.countdown),
+    plain("clock.expired", mission.clock?.expired),
     rendered("debrief.onTime", mission.debrief.onTime),
     rendered("debrief.afterDeadline", mission.debrief.afterDeadline),
     rendered("debrief.comparison", mission.debrief.comparison),
@@ -1159,7 +1163,15 @@ function checkSolvable(
     return;
   }
   const spent = state.budget - state.hoursLeft;
-  if (
+  if (!mission.clock) {
+    if (state.budget !== 0 || spent !== 0) {
+      report(
+        mission.id,
+        "solvability",
+        "A mission with no clock spends no time.",
+      );
+    }
+  } else if (
     state.budget !== budget.total ||
     spent !== budget.travel + budget.transmissions
   ) {
@@ -1243,6 +1255,83 @@ function checkCurriculum(
       );
     }
   }
+}
+
+/** A mission's stages in the order a player meets them. */
+function stageChain(mission: Mission): [string, Stage][] {
+  const chain: [string, Stage][] = [];
+  let id: string | undefined = mission.startingStage;
+  while (id && !chain.some(([seen]) => seen === id)) {
+    const stage: Stage | undefined = mission.stages[id];
+    if (!stage) break;
+    chain.push([id, stage]);
+    id = stage.next;
+  }
+  return chain;
+}
+
+/** The casework mechanics a stage uses, read from what it authors. */
+export function mechanicsUsed(mission: Mission, stage: Stage): Mechanic[] {
+  const outcomes = Object.values(stage.leadOutcomes ?? {});
+  const used: Mechanic[] = ["citing"];
+  if (stage.solution.type === "destination") used.push("travel-order");
+  else if (solutionBindings(stage).length > 1) used.push("deduction");
+  if (mission.clock) used.push("clock");
+  if (outcomes.some((o) => o.refutation)) used.push("ruling-out");
+  if (outcomes.some((o) => o.fieldCheck !== undefined)) {
+    used.push("field-check");
+  }
+  return used;
+}
+
+/** Pacing (SDD 3.15): a mechanic is introduced once, before it is used. */
+function checkPacing(catalog: Catalog, report: Report): void {
+  const introduced = new Set<Mechanic>();
+  const reported = new Set<Mechanic>();
+  catalog.missions.forEach((mission, index) => {
+    let here = 0;
+    for (const [id, stage] of stageChain(mission)) {
+      const at = `${mission.id}.stages.${id}`;
+      const used = mechanicsUsed(mission, stage);
+      const declared = stage.introduces;
+      if (declared) {
+        here++;
+        if (!used.includes(declared)) {
+          report(
+            `${at}.introduces`,
+            "pacing",
+            `The stage introduces ${declared} and does not use it.`,
+          );
+        }
+        if (introduced.has(declared)) {
+          report(
+            `${at}.introduces`,
+            "pacing",
+            `An earlier stage already introduces ${declared}.`,
+          );
+        }
+        introduced.add(declared);
+      }
+      for (const mechanic of used) {
+        if (!introduced.has(mechanic) && !reported.has(mechanic)) {
+          report(
+            at,
+            "pacing",
+            `The stage uses ${mechanic}, which no stage up to this one introduces.`,
+          );
+          // Reported once, where the mechanic first appears.
+          reported.add(mechanic);
+        }
+      }
+    }
+    if (index > 0 && here > 1) {
+      report(
+        mission.id,
+        "pacing",
+        "A mission after the first introduces at most one mechanic.",
+      );
+    }
+  });
 }
 
 function checkCourseShape(catalog: Catalog, report: Report): void {
@@ -1603,6 +1692,7 @@ export function validateContent(raw: RawContent): Issue[] {
     if (issues.length === before) checkSolvable(mission, catalog, report);
   }
   checkCourseShape(catalog, report);
+  checkPacing(catalog, report);
   checkDrills(catalog, report);
   checkReferenceText(catalog, report);
   return issues;

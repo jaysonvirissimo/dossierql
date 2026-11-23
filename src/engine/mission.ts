@@ -53,7 +53,14 @@ export interface TransmissionRecord {
 export interface Dispatch {
   n: number;
   stageId: string;
-  kind: "ruled-out" | "field-check" | "travel" | "deadline" | "resolved";
+  /** `accepted` closes a stage whose next stage is in the same country. */
+  kind:
+    | "ruled-out"
+    | "field-check"
+    | "accepted"
+    | "travel"
+    | "deadline"
+    | "resolved";
   leadId?: string;
   text: string;
   cost: number;
@@ -70,10 +77,11 @@ export interface StageState {
 }
 
 /**
- * `active` counts down. `continuing` is the first mission's untimed
- * continuation. `ended` is an attempt the deadline closed.
+ * `none` is a mission with no clock, where nothing is priced. `active`
+ * counts down. `continuing` is an untimed continuation after a deadline.
+ * `ended` is an attempt the deadline closed.
  */
-export type ClockState = "active" | "continuing" | "ended";
+export type ClockState = "none" | "active" | "continuing" | "ended";
 
 export interface MissionState {
   missionId: string;
@@ -142,14 +150,14 @@ function openStage(stage: Stage, previous?: StageState): StageState {
 export function startMission(env: Env): MissionState {
   const { mission } = env;
   const stage = stageOf(mission, mission.startingStage);
-  const budget = computeBudget(mission, env.world).total;
+  const budget = mission.clock ? computeBudget(mission, env.world).total : 0;
   return {
     missionId: mission.id,
     status: "briefing",
     stageId: mission.startingStage,
     budget,
     hoursLeft: budget,
-    clock: "active",
+    clock: mission.clock ? "active" : "none",
     ledger: {},
     pins: [],
     transmissions: [],
@@ -167,6 +175,28 @@ export function stageOf(mission: Mission, id: string): Stage {
   const stage = mission.stages[id];
   if (!stage) throw new Error(`Mission ${mission.id} has no stage ${id}.`);
   return stage;
+}
+
+/**
+ * The stages that share the current desk: the current stage and the stages
+ * straight before it in the same country. Their responses stay on screen
+ * together, because nobody has travelled.
+ */
+export function deskStages(mission: Mission, stageId: string): string[] {
+  const chain: string[] = [];
+  let id: string | undefined = mission.startingStage;
+  while (id && mission.stages[id] && !chain.includes(id)) {
+    chain.push(id);
+    id = mission.stages[id]?.next;
+  }
+  const at = chain.indexOf(stageId);
+  if (at < 0) return [stageId];
+  const location = stageOf(mission, stageId).location;
+  let from = at;
+  while (from > 0 && mission.stages[chain[from - 1]!]?.location === location) {
+    from--;
+  }
+  return chain.slice(from, at + 1);
 }
 
 function current(state: MissionState): StageState {
@@ -233,8 +263,10 @@ export function fieldCheckCost(
 }
 
 function expire(env: Env, state: MissionState): MissionState {
+  const clock = env.mission.clock;
+  if (!clock) return state;
   const n = state.counter + 1;
-  const continuing = env.mission.clock.onExpiry === "continue";
+  const continuing = clock.onExpiry === "continue";
   return {
     ...state,
     counter: n,
@@ -246,7 +278,7 @@ function expire(env: Env, state: MissionState): MissionState {
         n,
         stageId: state.stageId,
         kind: "deadline",
-        text: env.mission.clock.expired,
+        text: clock.expired,
         cost: 0,
       },
     ],
@@ -413,12 +445,17 @@ function doProceed(env: Env, state: MissionState, leadId: string): Outcome {
   const cost = proceedCost(env, state);
   const label = stage.solution.type === "destination" ? "This journey" : "This";
   return charge(env, state, cost, label, (paid) => {
+    const next = stage.next;
+    const journey =
+      next !== undefined &&
+      stageOf(env.mission, next).location !== stage.location;
     const text =
       stage.resolved ??
-      (stage.next ? "Travel order approved." : "Deduction accepted.");
-    const next = stage.next;
+      (stage.solution.type === "destination"
+        ? "Travel order approved."
+        : "Deduction accepted.");
     const added = addDispatch(paid, {
-      kind: next ? "travel" : "resolved",
+      kind: journey ? "travel" : next ? "accepted" : "resolved",
       leadId,
       text,
       cost: paid.clock === "active" ? cost : 0,
@@ -440,7 +477,7 @@ function doProceed(env: Env, state: MissionState, leadId: string): Outcome {
     }
     const outcome = {
       mode: completionMode(paid),
-      late: paid.clock !== "active",
+      late: paid.clock === "continuing",
     };
     return {
       state: { ...added.state, status: "complete", outcome },
