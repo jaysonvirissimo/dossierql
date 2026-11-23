@@ -35,7 +35,8 @@ Shipment:
     origin: valparaiso
     destination: callao
     shipper: CL-MERIDIAN-FWD
-    consignee: PE-MERIDIAN-FRT
+    intake: INT-CAL-0733
+    unloadingReceipt: UNL-CAL-0733
   VAL-0740:
     manifest: Dried fruit, 80 boxes
     origin: valparaiso
@@ -168,7 +169,13 @@ Inspection:
   INS-SOU-0915: { finding: "Glazed ceramic tiles, blue, 14 cm" }
   INS-SOU-0921: { finding: "Slate tiles, blue-grey, 14 cm" }
 
+IntakeRecord:
+  INT-CAL-0733: { consignee: PE-MERIDIAN-FRT }
+
 UnloadingReceipt:
+  UNL-CAL-0733:
+    labelConsignee: PE-MERIDIAN-FRT
+    contents: Printing plates, 6 cases
   UNL-DAR-0158: { contents: "Ledgers, written up" }
   UNL-MBA-0102: { contents: "Ledgers, written up" }
   UNL-MPM-0144: { contents: "Ledgers, unused" }

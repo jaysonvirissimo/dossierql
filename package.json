@@ -1,6 +1,13 @@
 {
   "name": "dossierql",
   "private": true,
+  "description": "A browser game that teaches GraphQL through espionage casework.",
+  "homepage": "https://virissimo.info/dossierql/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaysonvirissimo/dossierql.git"
+  },
+  "bugs": "https://github.com/jaysonvirissimo/dossierql/issues",
   "version": "0.1.0",
   "type": "module",
   "scripts": {

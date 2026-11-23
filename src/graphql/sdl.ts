@@ -103,7 +103,7 @@ export const SDL = /* GraphQL */ `
     destination: City!
     "The company that sent the goods."
     shipper: Company
-    "The company that is to receive the goods."
+    "The company the shipping papers give as receiving the goods."
     consignee: Company
     "The customs inspection at the port of departure, if one was made."
     inspection: Inspection
@@ -135,7 +135,7 @@ export const SDL = /* GraphQL */ `
     director: Operative @clearance(level: 2)
     "The operative who signs off the company's books."
     auditor: Operative @clearance(level: 4)
-    "Shipments consigned to the company."
+    "Shipments whose shipping papers give the company as the consignee."
     shipments: [Shipment!]! @inverse(of: "consignee") @clearance(level: 2)
   }
 

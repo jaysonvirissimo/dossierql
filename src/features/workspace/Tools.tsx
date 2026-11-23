@@ -1,9 +1,13 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { useGame } from "../../app/GameProvider.tsx";
-import { referenceOperations } from "../../content/types.ts";
+import {
+  bindingTypes,
+  leadBinding,
+  referenceOperations,
+} from "../../content/types.ts";
 import { COSTS, HINT_LADDER_COST } from "../../engine/clock.ts";
 import { hintCost, revealCost } from "../../engine/mission.ts";
-import { parseRef } from "../../graphql/store.ts";
+import { parseRef, refOf } from "../../graphql/store.ts";
 import { Prose } from "../Prose.tsx";
 import { SchemaDocs } from "../SchemaDocs.tsx";
 import { useWorkspace } from "./context.ts";
@@ -34,6 +38,12 @@ function CasePanel() {
   const [passing, setPassing] = useState(false);
   const here = state.dispatches.filter((d) => d.stageId === state.stageId);
   const earlier = state.dispatches.filter((d) => d.stageId !== state.stageId);
+  // A dispatch is headed with the lead as the player knows it, by its name.
+  const leadName = (stageId: string, leadId: string) => {
+    const at = env.mission.stages[stageId];
+    const type = at ? bindingTypes(at)[leadBinding(at)] : undefined;
+    return type ? labelOf(refOf(type, leadId), state.ledger) : leadId;
+  };
   return (
     <div className="tool">
       <h3>Objective</h3>
@@ -54,7 +64,9 @@ function CasePanel() {
               <li key={dispatch.n} className="dispatch">
                 <span className="label">
                   {words(dispatch.kind.replace("-", " "))}
-                  {dispatch.leadId ? ` · ${dispatch.leadId}` : ""}
+                  {dispatch.leadId
+                    ? ` · ${leadName(dispatch.stageId, dispatch.leadId)}`
+                    : ""}
                   {dispatch.cost > 0 ? ` · ${hours(dispatch.cost)}` : ""}
                 </span>
                 <Prose text={dispatch.text} />

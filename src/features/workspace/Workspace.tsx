@@ -330,7 +330,7 @@ export default function Workspace({ mission }: { mission: Mission }) {
             </header>
             {stage.scaffold.level === "none" && !stage.scaffold.carryOver && (
               <p className="terminal__blank">
-                The form is blank, so you write the whole query. The
+                The editor is blank, so you write the whole query. The
                 Documentation tab lists what the archive holds, and reading the
                 documentation costs no time.
               </p>

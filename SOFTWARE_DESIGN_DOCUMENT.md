@@ -352,6 +352,7 @@ The course follows these rules:
 - A mission introduces at most one GraphQL concept (Section 3.7). After the first case, a mission introduces at most one casework mechanic.
 - The first case is the one exception to the limit on mechanics, because casework has to start somewhere. It introduces three, each in a short stage of its own.
 - A stage uses a mechanic only if that stage or an earlier one in the course introduces it. A case before *The Guest Register* therefore authors no refutation, and a case before *The Quiet Consignee* offers no field check.
+- The stage that introduces a mechanic gives the player a reason to use it. A player who writes the query the briefing leads to should find themselves where the mechanic applies. In *The Quiet Consignee* the shipping papers leave the consignee blank. A player who looks up a company by its name can cite who directs it, but cannot yet show that it is to receive the cases, and that is when the form offers a field check. The check's dispatch points to the depot's intake record, which settles the claim.
 - A mechanic that arrives after 1.0, such as warrants, takes a row in the table and a case of its own.
 
 From clearance 3 onward, every mechanic of 1.0 is in play and a case introduces its GraphQL concept alone.
@@ -1330,7 +1331,7 @@ Suggested coverage:
 
 Every authored mission must include a reference solution. Continuous integration plays each mission using its reference solution, computes the mission's budget from the time spent, and fails if the mission cannot be completed.
 
-The test suite gates deployment. A build that fails any test or validation check is not published. The build also fails if the site to be published refers to any other origin.
+The test suite gates deployment. A build that fails any test or validation check is not published. The build also fails if the site to be published refers to any other origin. The one exception is the footer's link to the game's source repository, which the browser requests only when the player follows it.
 
 ### 10.1 Playtesting
 

@@ -170,6 +170,10 @@ export function App() {
           Factbook, mledoze/countries (ODbL) and Natural Earth. Every character,
           agency and crime is invented.
         </p>
+        <p>
+          The source code is{" "}
+          <a href="https://github.com/jaysonvirissimo/dossierql">on GitHub</a>.
+        </p>
       </footer>
     </>
   );

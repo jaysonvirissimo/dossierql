@@ -5,6 +5,8 @@ intelligence analyst with a terminal onto the agency's archive. Every case is
 solved by querying it, citing what came back, and drawing a conclusion the
 evidence supports.
 
+Play it at <https://virissimo.info/dossierql/>.
+
 The design is in [SOFTWARE_DESIGN_DOCUMENT.md](SOFTWARE_DESIGN_DOCUMENT.md).
 This repository implements it up to the Educational MVP: clearance levels 1
 to 5, with a teaching case and an assessment for each of nested selections,

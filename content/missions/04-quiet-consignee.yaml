@@ -8,8 +8,9 @@ teaches: null
 practises: [nested-selections, arguments]
 requires: [nested-selections, arguments]
 summary: >
-  Customs in Callao is holding six cases of printing plates. Two companies
-  with nearly the same name have an interest.
+  Customs in Callao is holding six cases of printing plates. The papers
+  leave the consignee blank, and two companies with nearly the same name
+  have asked after them.
 motif: plate
 clock:
   countdown: Customs releases the cases in {remaining}
@@ -23,10 +24,18 @@ debrief:
     who arrives with a receipt for something else entirely.
   stampOnTime: HELD
   comparison: >
-    The reference solution asks for one shipment, with the shipment's
-    identifier as the argument. Inside the shipment it opens both
-    companies, and inside each company it opens the director. That is one
-    argument, three levels of braces, and one transmission.
+    The shipping papers for VAL-0733 give a shipper and leave the
+    consignee empty. A query that asks for the shipment's `consignee`
+    therefore gets nothing back. The reference solution does not ask for
+    it. It asks for one shipment, with the shipment's identifier as the
+    argument. Inside the shipment it opens the shipper and the shipper's
+    director. They show that Meridian Forwarding sent the cases, and
+    that its director, UMBER_SKUA, is not the operative to identify. It
+    also opens `intake`, the record the depot in Callao wrote when the
+    cases came ashore. Inside the intake record it opens the consignee,
+    Meridian Freight, and inside the company it opens the director.
+    That is one argument and one transmission. A field check on
+    Meridian Freight points to the same intake record, for two hours.
   geography: >
     Callao is the port of Lima, on Peru's Pacific coast. Valparaíso,
     where the cases were loaded, is Chile's main port on the same coast.
@@ -38,25 +47,30 @@ stages:
     objective: Identify the company that is to receive VAL-0733 and the operative who directs that company.
 
     briefing: |
-      Customs in Callao has held shipment VAL-0733. Two companies
-      called Meridian appear on its papers, one at each end of the
-      voyage. The bureaucracy wants the receiving company and its
-      director, and has asked not to be given the sender by mistake.
+      Customs in Callao has held shipment VAL-0733. The shipping
+      papers give the sender and leave the consignee blank. Two
+      companies have asked customs about the cases: Meridian
+      Forwarding and Meridian Freight. The bureaucracy wants the
+      receiving company and its director, and has asked not to be
+      given the sender by mistake.
 
-      This case adds the field check. Suppose you have supported
-      one claim about a lead and cannot yet support the other. The
-      form then offers to order a field check. The office in that
-      lead's country looks into the lead and sends back a dispatch
-      that says where to look next. A field check costs hours, and
-      the button shows how many before you press it. The case
-      stays open afterwards.
+      This case adds the field check. You may find who directs a
+      company before you find any record that shows the company is
+      to receive the cases. The form then has one claim supported
+      and one not, and it shows a button, Order a field check. If
+      you press it, the office in that company's country looks
+      into the lead and sends back a dispatch. The dispatch says
+      which record to look at next. A field check costs hours, and
+      the button shows how many. The case stays open afterwards,
+      with your citations in place.
 
     clues:
       - text: >
           Customs wants the party that is to receive VAL-0733, not the
           party that sent it.
         constraint:
-          $company.shipments: Shipment:VAL-0733
+          $intake: IntakeRecord:INT-CAL-0733
+          $intake.consignee: $company
       - text: >
           The person to identify is that company's director.
         constraint:
@@ -67,17 +81,19 @@ stages:
 
     hints:
       nudge: >
-        The shipment's papers give a shipper and a consignee. Only one
-        of the two is receiving the cases.
+        The shipping papers leave the consignee blank. The depot in
+        Callao kept its own record of the cases when they came ashore,
+        and that record says who is to receive them.
       concept: >
         Ask for the one shipment by giving its identifier as an argument,
-        in parentheses. Inside the shipment's braces, open each company.
-        Inside each company, open its director.
+        in parentheses. Inside the shipment's braces, open the depot's
+        intake record. Inside the intake record, open the consignee, and
+        inside the consignee, open its director.
       schema: >
-        Look at Shipment.shipper, Shipment.consignee, and
+        Look at Shipment.intake, IntakeRecord.consignee, and
         Company.director.
       skeleton: |
-        shipment(id: "VAL-0733") { shipper { name } consignee { name director { codename } } }
+        shipment(id: "VAL-0733") { shipper { name } intake { consignee { name director { codename } } } }
 
     solution:
       type: deduction
@@ -93,12 +109,18 @@ stages:
         evidenceSets:
           - facts:
               - entity: Shipment:VAL-0733
+                field: intake
+                equals: IntakeRecord:$intake
+              - entity: IntakeRecord:$intake
                 field: consignee
                 equals: Company:$company
           - facts:
-              - entity: Company:$company
-                field: shipments
-                includes: Shipment:VAL-0733
+              - entity: Shipment:VAL-0733
+                field: unloadingReceipt
+                equals: UnloadingReceipt:$receipt
+              - entity: UnloadingReceipt:$receipt
+                field: labelConsignee
+                equals: Company:$company
       - id: director
         prompt: This operative directs the company.
         evidenceSets:
@@ -125,7 +147,16 @@ stages:
           that a company seldom posts things to itself.
         fieldCheck: |
           Valparaíso confirms who directs Meridian Forwarding. The
-          shipping clerk asks which end of the voyage customs meant.
+          shipping clerk adds that the company is on the papers
+          already, as the shipper, and asks which end of the voyage
+          customs meant.
+      PE-MERIDIAN-FRT:
+        location: PE
+        fieldCheck: |
+          Callao confirms that a clerk from Meridian Freight has been
+          at the quay twice, asking after six cases. The depot wrote
+          the cases up when they came ashore, and its intake record
+          for VAL-0733 says who is to receive them.
 
     resolved: |
       Deduction accepted. Customs keeps the cases.
@@ -139,10 +170,12 @@ stages:
               codename
             }
           }
-          consignee {
-            name
-            director {
-              codename
+          intake {
+            consignee {
+              name
+              director {
+                codename
+              }
             }
           }
         }

@@ -25,7 +25,7 @@ test.afterEach(() => {
 const CONSIGNEE = `query {
   shipment(id: "VAL-0733") {
     shipper { name director { codename } }
-    consignee { name director { codename } }
+    intake { consignee { name director { codename } } }
   }
 }`;
 

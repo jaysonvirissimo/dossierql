@@ -719,6 +719,67 @@ describe("ruling out in The Guest Register", () => {
   });
 });
 
+describe("field check in The Quiet Consignee", () => {
+  const callao = envFor("quiet-consignee");
+  const stage = callao.mission.stages.callao!;
+  const play = (state: MissionState, ...actions: Action[]) =>
+    actions.reduce((s, action) => act(callao, s, action).state, state);
+  const send = (state: MissionState, editor: string) =>
+    play(state, { type: "edit", editor }, { type: "transmit" });
+
+  it("offers a check on the right company before the intake record is seen", () => {
+    const looked = send(
+      play(startMission(callao), { type: "begin" }),
+      'query { company(name: "Meridian Freight") { name director { codename } } }',
+    );
+    const cited = play(
+      looked,
+      cite("PE-MERIDIAN-FRT", "director", "Company:PE-MERIDIAN-FRT.director"),
+      {
+        type: "name",
+        leadId: "PE-MERIDIAN-FRT",
+        binding: "operative",
+        value: "PEWTER_SWIFT",
+      },
+    );
+    const draft = cited.stages.callao!.drafts["PE-MERIDIAN-FRT"]!;
+    const review = reviewDraft(stage, draft, cited.ledger);
+    expect(review.claims.map((c) => c.status)).toEqual(["open", "supported"]);
+    expect(review.canFieldCheck).toBe(true);
+    expect(fieldCheckCost(callao, cited, "PE-MERIDIAN-FRT")).toBe(2);
+
+    const checked = act(callao, cited, {
+      type: "field-check",
+      leadId: "PE-MERIDIAN-FRT",
+    });
+    expect(checked.notice?.kind).toBe("dispatch");
+    expect(checked.state.hoursLeft).toBe(cited.hoursLeft - 2);
+    expect(checked.state.stageId).toBe("callao");
+    expect(checked.state.status).not.toBe("complete");
+
+    // The dispatch points to the intake record, which settles the claim.
+    const found = play(
+      send(
+        checked.state,
+        'query { shipment(id: "VAL-0733") { intake { consignee { name } } } }',
+      ),
+      cite(
+        "PE-MERIDIAN-FRT",
+        "consignee",
+        "Shipment:VAL-0733.intake",
+        "IntakeRecord:INT-CAL-0733.consignee",
+      ),
+    );
+    const after = reviewDraft(
+      stage,
+      found.stages.callao!.drafts["PE-MERIDIAN-FRT"]!,
+      found.ledger,
+    );
+    expect(after.allSupported).toBe(true);
+    expect(after.canProceed).toBe(true);
+  });
+});
+
 describe("formatted", () => {
   it("lays a request over several lines and keeps the word query if typed", () => {
     expect(formatted('query { country(name: "Chile") { name } }')).toBe(

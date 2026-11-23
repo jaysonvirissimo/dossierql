@@ -157,7 +157,8 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
             <h2 id="compare-title">Your transmissions and the reference</h2>
             <p>
               You sent {plural(state.transmissions.length, "transmission")}. The
-              reference solution sends {reference.length}.
+              reference solution sends{" "}
+              {plural(reference.length, "transmission")}.
             </p>
             <Prose text={mission.debrief.comparison} />
             {usedNote && <p className="note">{usedNote}</p>}

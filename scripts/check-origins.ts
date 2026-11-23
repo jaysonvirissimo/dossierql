@@ -20,6 +20,8 @@ const INERT = [
   /^https:\/\/(?:www\.)?graphql\.org\//,
   /^https:\/\/spec\.graphql\.org\//,
   /^https:\/\/github\.com\/graphql\//,
+  // The footer's link to the game's own source, followed only by choice.
+  /^https:\/\/github\.com\/jaysonvirissimo\/dossierql$/,
   /^https?:\/\/localhost\b/,
   /^https?:\/\/example\.com\b/,
 ];
