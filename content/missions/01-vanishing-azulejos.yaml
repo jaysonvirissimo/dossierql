@@ -19,16 +19,17 @@ debrief:
     with NIGHTJAR's name circled.
   stampOnTime: HOLD ISSUED
   comparison: >
-    The first query in Lisbon asked for one field, `manifest`, on each
-    shipment in a list. The reference solution for the second question
+    The reference solution's first query in Lisbon asks for one field,
+    `manifest`, on each shipment in a list. The reference solution for the second question
     opens each shipment's destination, then that city's country, then that
     country's borders, all in one request. Each pair of braces follows a
     link to the next record, and the whole route comes back in a single
     transmission. The travel order needed no query, because both of its
     claims rest on facts those two responses had already returned. In
     Luanda, the reference solution nests again. Inside each arriving
-    shipment it opens the depot's intake record and both transfer orders,
-    and inside each order it opens the operative who signed it. The label
+    shipment it opens the depot's intake record and the shipment's
+    transfer orders, and inside each order it opens the operative who
+    signed it. The label
     and the two orders come back side by side.
   geography: >
     Angola borders Namibia along the Cunene and Okavango rivers. Cabo
@@ -74,6 +75,8 @@ stages:
           city(name: "Lisbon") {
             departingShipments {
               id
+              # A line that starts with # is a note for you. The archive
+              # ignores it, so you can leave it in or delete it.
               # This query is unfinished. Add the field that says what
               # each shipment contains. The Documentation tab lists the
               # fields a shipment has.

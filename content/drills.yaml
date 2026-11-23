@@ -10,9 +10,9 @@
     asks for one record, and the part in parentheses says which record: the
     country whose name is Portugal. The inner braces hold the fields you
     want from that record. At present they hold one field, `name`, and the
-    archive returns that field and nothing more. Fields go one to a line,
-    with no commas between them. Add a second field: ask for the country's
-    `capital` as well.
+    archive returns that field and nothing more. Put a space or a new line
+    between two fields, and no comma. One field to a line is easiest to
+    read. Add a second field: ask for the country's `capital` as well.
   starter: |
     query {
       country(name: "Portugal") {

@@ -10,6 +10,7 @@ import {
   act,
   deskStages,
   fieldCheckCost,
+  formatted,
   startMission,
   type Action,
   type Env,
@@ -676,5 +677,55 @@ describe("a case with no clock", () => {
     );
     const out = act(untimed, state, { type: "proceed", leadId: "LUA-012" });
     expect(out.state.outcome).toEqual({ mode: "independent", late: false });
+  });
+});
+
+describe("ruling out in The Guest Register", () => {
+  const guest = envFor("guest-register");
+  const play = (state: MissionState, ...actions: Action[]) =>
+    actions.reduce((s, action) => act(guest, s, action).state, state);
+
+  it("rules out both wrong sightings from the reference query alone", () => {
+    const sent = play(
+      startMission(guest),
+      { type: "begin" },
+      {
+        type: "edit",
+        editor: guest.mission.stages.luanda!.referenceSolution as string,
+      },
+      { type: "transmit" },
+    );
+    const out = play(
+      sent,
+      cite(
+        "SGT-027",
+        "name",
+        "Sighting:SGT-027.nameGiven",
+        "Operative:NIGHTJAR.coverNames",
+      ),
+      { type: "rule-out", leadId: "SGT-027" },
+      cite(
+        "SGT-034",
+        "language",
+        "Sighting:SGT-034.city",
+        "City:maputo.country",
+        "Country:MZ.languages",
+      ),
+      { type: "rule-out", leadId: "SGT-034" },
+    );
+    const drafts = out.stages.luanda!.drafts;
+    expect(drafts["SGT-027"]?.ruledOut).toBe(true);
+    expect(drafts["SGT-034"]?.ruledOut).toBe(true);
+  });
+});
+
+describe("formatted", () => {
+  it("lays a request over several lines and keeps the word query if typed", () => {
+    expect(formatted('query { country(name: "Chile") { name } }')).toBe(
+      'query {\n  country(name: "Chile") {\n    name\n  }\n}',
+    );
+    expect(formatted('{ country(name: "Chile") { name } }')).toBe(
+      '{\n  country(name: "Chile") {\n    name\n  }\n}',
+    );
   });
 });

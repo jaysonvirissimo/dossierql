@@ -34,13 +34,20 @@ test("a player who knows GraphQL is promoted by placement", async ({
 }) => {
   await page.goto("./#/");
   await expect(page.locator(".shell-bar__rank")).toHaveText("Clearance 1");
-  const locked = page.locator(".case", { hasText: "Three Couriers" });
+  const locked = page.locator(".case", {
+    has: page.locator(".case__title", { hasText: "Three Couriers" }),
+  });
   await expect(locked).toContainText("Locked: needs clearance 3");
+  await expect(locked).toContainText(
+    "Pass the level 2 assessment, The Quiet Consignee, to open this case.",
+  );
 
   // The level 2 assessment is open to anyone. It waits in the placement
   // group, and is marked as a placement.
   await press(page.locator(".placements summary"));
-  const assessment = page.locator(".case", { hasText: "The Quiet Consignee" });
+  const assessment = page.locator(".case", {
+    has: page.locator(".case__title", { hasText: "The Quiet Consignee" }),
+  });
   await expect(assessment).toContainText("Placement");
   await page.goto("./#/mission/quiet-consignee");
   await expect(
@@ -97,13 +104,17 @@ test("a player who knows GraphQL is promoted by placement", async ({
   await expect(cards.locator(".card:not(.card--sealed)")).toHaveCount(2);
   await page.goto("./#/");
   await expect(
-    page.locator(".case", { hasText: "Three Couriers" }),
+    page.locator(".case", {
+      has: page.locator(".case__title", { hasText: "Three Couriers" }),
+    }),
   ).not.toContainText("Locked");
   // The desk points a promoted player at the new level.
   await expect(page.locator(".case--next")).toHaveCount(1);
   await expect(page.locator(".case--next")).toContainText("Three Couriers");
   await expect(
-    page.locator(".case", { hasText: "The Paymaster" }),
+    page.locator(".case", {
+      has: page.locator(".case__title", { hasText: "The Paymaster" }),
+    }),
   ).toContainText("Locked: needs clearance 4");
 });
 
@@ -118,6 +129,10 @@ test("a placement finished with the solution revealed does not promote", async (
   await page
     .getByLabel("Open a lead")
     .selectOption({ label: "Meridian Freight" });
+  // The list shows the lead that is open.
+  await expect(
+    page.getByLabel("Open a lead").locator("option:checked"),
+  ).toHaveText("Meridian Freight");
   const consignee = page.locator(".finding").filter({
     has: page.locator(":scope > .finding__row .finding__name", {
       hasText: /^consignee$/,

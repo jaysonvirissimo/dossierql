@@ -223,7 +223,7 @@ export default function Workspace({ mission }: { mission: Mission }) {
                 <p className="note">
                   First time at the terminal? The{" "}
                   <a href={href({ name: "training" })}>training range</a> shows
-                  how to write a request, in about five minutes.
+                  how to write a request, in about six minutes.
                 </p>
               )}
             {placement && (

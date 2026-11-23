@@ -126,7 +126,8 @@ export function DraftPanel() {
         <label className="draft__open">
           <span className="label">Open a lead</span>
           <select
-            value=""
+            // Shows the open lead, so the choice is seen to have taken.
+            value={known.some(({ id }) => id === active) ? (active ?? "") : ""}
             disabled={closed || known.length === 0}
             onChange={(event) => {
               if (event.target.value) {

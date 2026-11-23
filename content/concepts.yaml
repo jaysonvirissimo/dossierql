@@ -22,7 +22,7 @@
   title: Arguments
   clearance: 2
   summary: >
-    The registry holds dozens of operatives, and `operative` returns only
+    The registry holds many operatives, and `operative` returns only
     one of them. You say which one in parentheses after the field:
     `operative(codename: "NIGHTJAR")`. The part in parentheses is an
     argument. The documentation lists the arguments that each field accepts.

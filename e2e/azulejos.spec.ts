@@ -200,7 +200,9 @@ test("the Azulejos case, by keyboard at 1024 pixels, with no clock", async ({
 
   // The completion is on the record, with the help used.
   await page.goto("./#/");
-  const file = page.locator(".case", { hasText: "The Vanishing Azulejos" });
+  const file = page.locator(".case", {
+    has: page.locator(".case__title", { hasText: "The Vanishing Azulejos" }),
+  });
   await expect(file).toContainText("Completed with hints");
 });
 

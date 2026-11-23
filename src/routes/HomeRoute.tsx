@@ -42,6 +42,10 @@ function CaseCard({
   const { course, standing, save } = useGame();
   const completion = standing.completions[mission.id];
   const locked = availability(mission, standing) === "locked";
+  // The assessment that opens a locked case.
+  const gate = course.missions.find(
+    (m) => m.kind === "assessment" && m.clearance === mission.clearance - 1,
+  );
   const investigation = save.investigations[mission.id]?.state;
   const inProgress = underway(investigation);
   const placement =
@@ -94,7 +98,8 @@ function CaseCard({
         </ul>
         {locked ? (
           <p className="case__locked">
-            Pass the level {mission.clearance - 1} assessment to open this case.
+            Pass the level {mission.clearance - 1} assessment
+            {gate ? `, ${gate.title},` : ""} to open this case.
           </p>
         ) : (
           <p className="case__go">

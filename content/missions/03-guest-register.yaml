@@ -26,11 +26,14 @@ debrief:
     In Luanda, the reference solution gives `operative` a codename as its
     [argument](glossary:argument): `operative(codename: "NIGHTJAR")`. The argument picks one
     record out of the registry, so the result holds one file and not
-    sixteen. In Zanzibar City, the reference solution asks for two things
+    the whole registry. In Zanzibar City, the reference solution asks for two things
     directly inside the outer braces of one query: a cover name, with
     `coverName(name: "Dr. Lund")`, and a city, with
     `city(name: "Zanzibar City")`. Two questions in one query are still a
-    single transmission.
+    single transmission. The argument has to match the name exactly, title
+    and full stop included. `coverName(name: "Dr. Lund")` returns the cover
+    name that MARBLE_HERON travels under. It never returns the look-alike,
+    D. Lund, which the registry files under TIN_FALCON.
   geography: >
     Swahili is an official language of Tanzania and Kenya. Mozambique,
     just to the south, has Portuguese as its official language.
@@ -160,12 +163,13 @@ stages:
             - entity: Sighting:$sighting
               field: nameGiven
               equals: CoverName:$name
-            - entity: CoverName:$name
-              field: operative
-              equals: Operative:COPPER_KITE
+            - entity: Operative:NIGHTJAR
+              field: coverNames
+              excludes: CoverName:$name
         ruledOut: |
-          Mombasa's guest signed as H. Brandt. The registry files
-          that name under COPPER_KITE, who is entitled to a holiday.
+          Mombasa's guest signed as H. Brandt, a name that is not in
+          NIGHTJAR's file. The registry files it under COPPER_KITE, who
+          is entitled to a holiday.
       SGT-034:
         location: MZ
         refutation:

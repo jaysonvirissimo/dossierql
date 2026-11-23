@@ -1,4 +1,4 @@
-import { parse, print, type GraphQLError } from "graphql";
+import { Kind, parse, print, type GraphQLError } from "graphql";
 import {
   leadBinding,
   type Mission,
@@ -35,6 +35,22 @@ export interface ResultError {
   path?: (string | number)[];
   line?: number;
   column?: number;
+}
+
+/**
+ * A request laid out over several lines for the debrief. The printer drops
+ * the word `query` from a request that has no name, so it is put back when
+ * the player typed it.
+ */
+export function formatted(operation: string): string {
+  const doc = parse(operation);
+  const printed = print(doc);
+  const typed = doc.definitions.some(
+    (d) =>
+      d.kind === Kind.OPERATION_DEFINITION &&
+      d.loc?.startToken.value === "query",
+  );
+  return typed && printed.startsWith("{") ? `query ${printed}` : printed;
 }
 
 export interface TransmissionRecord {
@@ -386,7 +402,7 @@ function doTransmit(env: Env, state: MissionState): Outcome {
       n,
       stageId: paid.stageId,
       operation: stage.editor,
-      formatted: print(parse(stage.editor)),
+      formatted: formatted(stage.editor),
       variables: stage.variables,
       data: sent.result.data ?? null,
       errors,

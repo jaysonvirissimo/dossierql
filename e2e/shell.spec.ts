@@ -135,7 +135,9 @@ test("progress can be reset, and preferences are kept", async ({ page }) => {
   await openCase(page, "vanishing-azulejos");
   await page.goto("./#/");
   await expect(
-    page.locator(".case", { hasText: "The Vanishing Azulejos" }),
+    page.locator(".case", {
+      has: page.locator(".case__title", { hasText: "The Vanishing Azulejos" }),
+    }),
   ).toContainText("In progress");
 
   await page.goto("./#/settings");
@@ -148,7 +150,9 @@ test("progress can be reset, and preferences are kept", async ({ page }) => {
   await expect(page.getByLabel(/Reduce motion/)).toBeChecked();
   await page.goto("./#/");
   await expect(
-    page.locator(".case", { hasText: "The Vanishing Azulejos" }),
+    page.locator(".case", {
+      has: page.locator(".case__title", { hasText: "The Vanishing Azulejos" }),
+    }),
   ).not.toContainText("In progress");
 });
 

@@ -39,10 +39,13 @@ export const SDL = /* GraphQL */ `
     name: String!
     "The name of the capital."
     capital: String
+    "The continent the country is counted in."
     continent: Continent
     "Countries that share a land border with this one."
     borders: [Country!]!
+    "Languages spoken in the country."
     languages: [Language!]!
+    "The currency the country uses."
     currency: Currency
     "Cities in this country that the archive holds a file on."
     cities: [City!]! @inverse(of: "country")
@@ -52,6 +55,7 @@ export const SDL = /* GraphQL */ `
   type Continent {
     "The continent's name in English."
     name: String!
+    "Countries counted in this continent."
     countries: [Country!]! @inverse(of: "continent")
   }
 
@@ -77,6 +81,7 @@ export const SDL = /* GraphQL */ `
   type City {
     "The city's name in English."
     name: String!
+    "The country the city is in."
     country: Country!
     "Shipments that left this city."
     departingShipments: [Shipment!]! @inverse(of: "origin")
@@ -92,7 +97,9 @@ export const SDL = /* GraphQL */ `
     id: ID!
     "The goods as the shipper declared them."
     manifest: String!
+    "The city the shipment left from."
     origin: City!
+    "The city the shipment is bound for."
     destination: City!
     "The company that sent the goods."
     shipper: Company
@@ -114,6 +121,7 @@ export const SDL = /* GraphQL */ `
     id: ID!
     "The goods as the inspector described them."
     finding: String!
+    "The shipment that was inspected."
     shipment: Shipment @inverse(of: "inspection")
   }
 
@@ -121,6 +129,7 @@ export const SDL = /* GraphQL */ `
   type Company {
     "The company's registered name."
     name: String!
+    "The country where the company is registered."
     registeredIn: Country
     "The operative who directs the company."
     director: Operative @clearance(level: 2)
@@ -152,6 +161,7 @@ export const SDL = /* GraphQL */ `
   type TransferOrder {
     "The order's identifier."
     id: ID!
+    "The company the order hands the shipment to."
     consignee: Company
     "The operative whose signature is on the order."
     authorizedBy: Operative
@@ -163,6 +173,7 @@ export const SDL = /* GraphQL */ `
   type AuthorizationLog {
     "The log entry's identifier."
     id: ID!
+    "The operative who signed, according to the registry."
     signedBy: Operative
   }
 
@@ -172,11 +183,15 @@ export const SDL = /* GraphQL */ `
     codename: String!
     "The cover names that the operative is known to travel under."
     coverNames: [CoverName!]! @clearance(level: 2)
+    "Reported sightings filed under this operative."
     sightings: [Sighting!]! @inverse(of: "operative") @clearance(level: 2)
     "Companies the operative directs."
     directorships: [Company!]! @inverse(of: "director") @clearance(level: 2)
+    "The organization the operative belongs to."
     organization: Organization @clearance(level: 3)
+    "Operatives known to work with this one."
     knownAssociates: [Operative!]! @clearance(level: 3)
+    "The city where the operative was last seen."
     lastKnownLocation: City @clearance(level: 3)
     "The operative this one reports to."
     handler: Operative @clearance(level: 3)
@@ -198,6 +213,7 @@ export const SDL = /* GraphQL */ `
   type Sighting @clearance(level: 2) {
     "The report's identifier."
     id: ID!
+    "The city where the person was seen."
     city: City!
     "The operative the report was filed under."
     operative: Operative
@@ -211,6 +227,7 @@ export const SDL = /* GraphQL */ `
   type Organization @clearance(level: 3) {
     "The organization's name."
     name: String!
+    "Operatives who belong to the organization."
     members: [Operative!]! @inverse(of: "organization")
   }
 `;

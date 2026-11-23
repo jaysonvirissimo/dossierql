@@ -1,4 +1,10 @@
-import { getNamedType, isObjectType, type GraphQLObjectType } from "graphql";
+import {
+  getNamedType,
+  getNullableType,
+  isListType,
+  isObjectType,
+  type GraphQLObjectType,
+} from "graphql";
 import { useMemo } from "react";
 import { schemaFor } from "../graphql/schema.ts";
 
@@ -24,10 +30,21 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
         documentation costs no time.
       </p>
       <p className="tool__lede">
+        Every query starts at the first entry below, <code>Query</code>. Write{" "}
+        <code>query</code> and a pair of braces, and put one of its fields
+        inside the braces. For example,{" "}
+        <code>
+          query {"{"} city(name: "Lisbon") {"{"} name {"}"} {"}"}
+        </code>{" "}
+        uses the field <code>city</code> from <code>Query</code>, and asks for
+        that city&apos;s <code>name</code>.
+      </p>
+      <p className="tool__lede">
         How to read an entry. Each line is one field: the field, a colon, and
         what the field returns. For example, <code>capital: String</code> is a
         field called <code>capital</code> that returns text. <code>ID</code> is
-        an identifier, such as a shipment's reference number.{" "}
+        an identifier, such as a shipment's reference number. In a query you
+        write an identifier in double quotes, as you write text.{" "}
         <code>[Country!]!</code> means a list of Country records. A field that
         returns a record needs braces after it, with the fields you want from
         that record inside the braces.
@@ -73,9 +90,11 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
                 </dt>
                 <dd>
                   {field.description ?? ""}
-                  {isObjectType(getNamedType(field.type))
-                    ? ` Returns ${String(getNamedType(field.type))}, which is a record, so this field needs braces after it.`
-                    : " Holds a single value, so this field takes no braces."}
+                  {!isObjectType(getNamedType(field.type))
+                    ? " Holds a single value, so this field takes no braces."
+                    : isListType(getNullableType(field.type))
+                      ? ` Returns a list of ${String(getNamedType(field.type))} records, so this field needs braces after it. The fields inside the braces come back once for each record in the list.`
+                      : ` Returns one ${String(getNamedType(field.type))} record, so this field needs braces after it.`}
                 </dd>
               </div>
             ))}

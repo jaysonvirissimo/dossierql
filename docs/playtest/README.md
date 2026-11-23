@@ -50,4 +50,7 @@ the game communicates on screen. Run both before a mission ships (SDD 10.1).
   material on screen is sufficient. It does not show that a beginner will
   find it, or how long that takes (SDD section 9).
 
+Sessions with people follow [beginner-sessions.md](beginner-sessions.md),
+the observer's script for the first round of sessions with beginners.
+
 Reports go in `docs/playtest/reports/`, named `<kind>-<mission or level>-<date>.md`.
