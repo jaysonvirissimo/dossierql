@@ -25,7 +25,7 @@ Experienced developers should still find the later missions interesting, because
 ### 1.3 Goals
 
 - Make GraphQL the means of solving every mystery. A mission should not be solvable from general knowledge alone.
-- Teach GraphQL progressively. Each mission introduces or practises a named concept, from basic selections to mutations.
+- Teach GraphQL progressively. Each mission introduces or practises a named concept, from basic selections to mutations and subscriptions.
 - Introduce the game a little at a time as well. A player never has to learn several GraphQL ideas or several parts of the casework in one sitting (Section 3.15).
 - Encourage exploration, deduction, and independent problem-solving rather than reproducing predetermined queries.
 - Incorporate real geographical facts, providing incidental geography education.
@@ -41,7 +41,7 @@ At least initially, the project will not require:
 - A backend API, hosted database, or server-side GraphQL execution.
 - Real-time geographical or economic data.
 - Procedurally generated investigations, now or later. Every case is authored, so that its queries can be run before its text is written, its reference solution can be checked, and the mission can be playtested. Seeded variants of hand-authored missions (Section 3.12) are in scope after the MVP.
-- Comprehensive coverage of every GraphQL feature. Subscriptions and schema authoring are out of scope.
+- Schema authoring. The game teaches every part of the GraphQL specification that writing an operation uses (Section 3.7), subscriptions included, and none of the parts that define a schema. A subscription delivers its events as game hours pass, never on a real clock.
 - Combat, action sequences, or complex character movement.
 - Real-time pressure. The mission clock counts game hours, and nothing in the game is timed against a real clock.
 - Telemetry or analytics.
@@ -130,7 +130,7 @@ Each mission after the first has a budget of hours. Actions spend it while the c
 
 | Action | Provisional cost |
 |---|---|
-| Transmission (one executed query or mutation) | 1 hour |
+| Transmission (one executed query or mutation, or one subscription opened) | 1 hour |
 | Travel or field check | Several hours, depending on distance |
 | Hint | 1 to 8 hours, rising with each step of the hint ladder |
 | Solution reveal | More than all the hints together |
@@ -170,7 +170,7 @@ A flat cost for each transmission leaves one habit unpriced, which is asking for
 Weight arrives in two steps, so that the player has read the number before it constrains them:
 
 - From clearance 6, every result states the weight of its request in `extensions`, and nothing depends on it.
-- From clearance 8, the clerk refuses a request above the weight limit. Like a query that fails validation, it is returned before transmission and costs nothing. The refusal states the request's weight and the limit.
+- From clearance 9, the clerk refuses a request above the weight limit. Like a query that fails validation, it is returned before transmission and costs nothing. The refusal states the request's weight and the limit.
 
 Weight is a limit and never a price. A transmission under the limit costs one hour whatever it weighs, so one nested query still costs the same as one flat query, and hours remain the only thing the player spends. Budgets are computed as before. The limit follows the clearance in force (Section 3.8), as the schema does, and every reference solution must fit under it (Section 5.5).
 
@@ -210,14 +210,17 @@ Concepts are introduced in a fixed order. Each is tied to a clearance level and 
 | 4 | Fragments | Keep the same fields in a suspect's dossier and in nested dossiers for their associates by writing the selection once | MVP |
 | 5 | Variables | Carry a query into a second city and change its input in the variables panel | MVP |
 | 6 | Introspection | Explore a newly seized archive that has no documentation | Later |
-| 7 | Unions and inline fragments | Read a case file whose records are of mixed kinds | Later |
-| 8 | Pagination | Work through surveillance logs too heavy for the records clerk to release in one request | Later |
-| 9 | Directives | Request costly detail only when a standing query needs it | Later |
-| 10 | Mutations | File travel orders and warrants through the terminal | Later |
+| 7 | Interfaces and inline fragments | Read a case file whose documents are of different kinds but share a filing stamp | Later |
+| 8 | Unions | Read an intercept log whose entries are unrelated kinds of record | Later |
+| 9 | Pagination | Work through surveillance logs too heavy for the records clerk to release in one request | Later |
+| 10 | Directives | Request costly detail only when a standing query needs it | Later |
+| 11 | Mutations | File travel orders and expense claims through the terminal | Later |
+| 12 | Input objects | Apply for a warrant on the bureaucracy's form | Later |
+| 13 | Subscriptions | Keep a standing watch on a port, whose events arrive as game hours pass | Later |
 
 Exploring a schema is taught from the first mission, through the documentation panel. Writing introspection queries by hand waits for clearance 6, where an undocumented archive gives the player a reason to.
 
-Request weight (Section 3.3) is not a concept of its own. It is the story reason for pagination. The weight limit comes into force at clearance 8, where the surveillance logs exceed it and paging is the tool that brings a request under it. Directives practise the same economy at clearance 9, where `@include` and `@skip` drop heavy detail from a standing query that does not need it.
+Request weight (Section 3.3) is not a concept of its own. It is the story reason for pagination. The weight limit comes into force at clearance 9, where the surveillance logs exceed it and paging is the tool that brings a request under it. Directives practise the same economy at clearance 10, where `@include` and `@skip` drop heavy detail from a standing query that does not need it.
 
 Each mission declares the concept it teaches, the concepts it practises, and the concepts it requires. The course as a whole follows four rules:
 
@@ -227,6 +230,47 @@ Each mission declares the concept it teaches, the concepts it practises, and the
 - Each clearance level ends with an **assessment mission**. It teaches no GraphQL concept, starts with a blank editor, and uses a different case and data to see whether players can apply the concepts learned so far.
 
 These rules govern GraphQL concepts. Section 3.15 sets the matching limit on how much of the casework a stage or a mission may introduce.
+
+#### Steps
+
+Much of the language is smaller than a concept: a number written as an argument, a variable with a default value, a field marked deprecated. Each of these is a **step**. A step is introduced in one stage of a teaching mission, and that stage introduces nothing else: neither the mission's concept nor another step (Section 3.15). A later mission practises the step, as one practises a concept. A step has no level, no concept card, and no kata of its own, and an assessment introduces none.
+
+The stage that introduces a step gives the player the reason to take it, as the stage that introduces a mechanic does. A page size arrives where the logs are too long to read whole. An enum arrives where a search has to be narrowed to one kind of record.
+
+#### Coverage of the specification
+
+A player who finishes the game has written or read every part of the GraphQL specification that writing an operation uses, as of its September 2026 edition. The parts that define a schema are not taught (Section 1.4), and neither are proposals that the specification does not include, such as `@defer` and `@stream`.
+
+Clearances 1 to 5 are complete in 1.0 and keep their missions. They cover these parts of the language:
+
+| Clearance | Covered |
+|---|---|
+| 1 | Fields, nested selections, and lists in a result. Comments, in the first case's starter. The rule that a field returning a record needs braces and a field returning a value takes none, and how to read type notation and `!` (the documentation panel). An error shown as the archive sent it, with the clerk's note beneath |
+| 2 | Arguments, with text and ID values. Required and optional arguments, shown by `!` in the documentation panel |
+| 3 | Aliases. The error for two fields that would share a name in the response, explained by the clerk. Partial results, with an error's `path` |
+| 4 | Named fragments, spread in several places, with a type condition on an object type |
+| 5 | Variables, declared with the type the documentation gives the argument. Operation names and the `query` keyword |
+
+Three parts that belong at clearance 1 are covered by one sentence each rather than by a stage. Commas between fields are allowed and ignored (the first drill). The word `query` may be left out of a request that starts with a brace (the glossary entry for a query). A result lists its fields in the order the query asked for them (the glossary entry for a result).
+
+From clearance 6, each teaching mission introduces its concept in its first stage and at most one step in each later stage. The cells name what each stage introduces.
+
+| Clearance | Stage 1: the concept | Stage 2 | Stage 3 | Stage 4 |
+|---|---|---|---|---|
+| 6 | Introspection: `__schema { types { name } }`, and reading the schema's root types | `__type(name:)`, with its fields and their descriptions | Reading a type through introspection: its kind, `ofType` through lists and `!`, and scalars, including a custom scalar | `__typename`, on records the archive hands over without a label |
+| 7 | An interface: asking for the fields that every kind of document shares | An inline fragment, `... on Telegram { text }`, for the fields of one kind | An argument on a field inside the query, as in `documents(city: "Valparaíso")` | A true-or-false value, as in `documents(sealed: true)` |
+| 8 | A union: every field inside an inline fragment, and `__typename` to tell the entries apart | An enum value, written without quotes, as in `search(kind: VESSEL)` | A list value, as in `kinds: [VESSEL, COMPANY]`. The debrief adds that a single value is accepted where a list is expected | A named fragment for one member of the union, spread inside its selection |
+| 9 | A page size, as in `entries(first: 10)`, the first number the player writes | Cursors: `pageInfo { hasNextPage endCursor }`, then `after:` | A variable that may be left out, such as `$after: String` on the first page, and `null` as a value | How `null` travels upward: a classified entry in a list whose entries may not be null blanks the whole list, and the error says why |
+| 10 | `@include(if: $detail)` | `@skip` | A directive on a group of fields: an inline fragment with no type condition, or a fragment spread | A fragment that spreads another fragment |
+| 11 | A mutation with simple arguments, which returns a receipt for the paperwork | Several mutation fields in one request, which run in the order written, each under an alias | A decimal number, as in an expense claim's `amount: 412.5` | None |
+| 12 | An input object, as in `requestWarrant(input: { … })` | A block string, `"""…"""`, for a sworn statement, with escapes in ordinary strings | A variable with a default value, as in `$urgency: Urgency = ROUTINE` | An input object that takes exactly one of its fields, marked `@oneOf`, where a warrant names either an operative or a company |
+| 13 | A subscription, with its single top-level field | Several operations in one document, and choosing which one to transmit | Deprecation: an old polling field marked `@deprecated` in favour of the subscription, and `includeDeprecated: true` in introspection | None |
+
+Each step comes after what it depends on. The true-or-false value at clearance 7 comes before the directive that takes one at clearance 10. Arguments inside a query come before the page size, and enums before the enum default at clearance 12.
+
+Some uses need nothing new and are practised rather than introduced: a variable whose type is a list or an input type, an input object sent as a variable, and fragments and `__typename` on interfaces and unions. Declaring such a variable follows the rule of clearance 5, which copies the type from the documentation.
+
+The records clerk explains, at the level of the construct, the rules of the specification that a request can break without the player meaning to: a variable or fragment that is never used, a fragment spread that can never apply, two operations with the same name, and a subscription with more than one top-level field (Section 7.5).
 
 The curriculum governs what is taught and what a mission needs. It does not restrict what the terminal accepts: any valid GraphQL that the player's schema supports will execute at any time.
 
@@ -317,7 +361,7 @@ Three katas arrive with 1.0 (Section 11), one for each technique that a case can
 - **Fragments:** add a field in one place so that it appears on every record that shares the selection.
 - **Variables:** reuse an operation for a different city by changing only the JSON input.
 
-Katas for the other concepts arrive after 1.0. So do exercises that ask the player to predict a response before sending the request, which need an interaction the game does not yet have.
+Katas for the other concepts arrive after 1.0, one for each concept of Section 3.7. A step has no kata. So do exercises that ask the player to predict a response before sending the request, which need an interaction the game does not yet have.
 
 ### 3.12 Replay
 
@@ -358,14 +402,14 @@ A **casework mechanic** is a part of the game that the player has to learn in or
 
 The course follows these rules:
 
-- A stage introduces at most one GraphQL step and at most one casework mechanic. A GraphQL step is a new concept, or one more level of nesting than the player has written before.
+- A stage introduces at most one GraphQL step and at most one casework mechanic. A GraphQL step is a new concept, a step of Section 3.7, or one more level of nesting than the player has written before.
 - A mission introduces at most one GraphQL concept (Section 3.7). After the first case, a mission introduces at most one casework mechanic.
 - The first case is the one exception to the limit on mechanics, because casework has to start somewhere. It introduces three, each in a short stage of its own.
 - A stage uses a mechanic only if that stage or an earlier one in the course introduces it. A case before *The Guest Register* therefore authors no refutation, and a case before *The Quiet Consignee* offers no field check.
 - The stage that introduces a mechanic gives the player a reason to use it. A player who writes the query the briefing leads to should find themselves where the mechanic applies. In *The Quiet Consignee* the shipping papers leave the consignee blank. A player who looks up a company by its name can cite who directs it, but cannot yet show that it is to receive the cases, and that is when the form offers a field check. The check's dispatch points to the depot's intake record, which settles the claim.
 - A mechanic that arrives after 1.0, such as warrants, takes a row in the table and a case of its own.
 
-From clearance 3 onward, every mechanic of 1.0 is in play and a case introduces its GraphQL concept alone.
+From clearance 3 onward, every mechanic of 1.0 is in play and a case introduces its GraphQL concept alone. From clearance 6, a teaching mission introduces its concept in its first stage and at most one step in each later stage (Section 3.7), and it has at most four stages.
 
 A player who skips ahead by placement (Section 3.8) meets every mechanic of the case they chose at once. That is their choice, and the assessment's briefing still explains the clock.
 
@@ -536,7 +580,7 @@ A record classified above the player's clearance produces an ordinary GraphQL pa
       ]
     }
 
-At the highest clearance level, game actions become available as mutations. An illustrative warrant application:
+At clearance 11, game actions become available as mutations, and from clearance 12 a warrant is applied for with an input object. An illustrative warrant application:
 
     mutation {
       requestWarrant(input: {
@@ -547,6 +591,8 @@ At the highest clearance level, game actions become available as mutations. An i
         reasons
       }
     }
+
+The levels after 1.0 need these schema features, each at the clearance of the step or concept that uses it (Section 3.7): fields that take arguments inside a query, including a true-or-false argument; a `Document` interface with several kinds of document; a union returned by a search; enums, and arguments that take a list; a custom scalar; paginated logs whose entries may not be null, with classified entries among them; input types, one of them marked `@oneOf`; a mutation root; a subscription root; and a polling field marked `@deprecated` in favour of a subscription.
 
 Schema design should balance educational usefulness, realism, discoverability, and implementation simplicity.
 
@@ -1091,6 +1137,7 @@ A build-time validation process should check:
 - **Solvability:** The reference solution executes without error and yields the required evidence. The time it spends sets the mission's budget (Section 3.3).
 - **Request weight:** Every reference solution fits under the weight limit. In the mission that teaches pagination, the logs requested whole exceed the limit, and the reference solution pages through them under it.
 - **Curriculum order:** A mission requires only concepts taught at or below its clearance, and its reference solution uses the concept it claims to teach.
+- **Steps:** From clearance 6, each stage declares the step of Section 3.7 it introduces, if any. A stage introduces at most one step or concept, the step is one the coverage table lists at the mission's clearance, a later mission practises it, and mission text uses the step's glossary term only from its clearance.
 - **Course shape:** The rules of Section 3.7 hold. Every taught concept is practised later, every clearance level ends with an assessment mission, and every mission file in the content directory is part of the course. A coda is left out of these rules about levels and out of the check that the course order promotes the player to each mission's clearance. It has one stage, no clock, teaches nothing, introduces no mechanic, and is the only coda and the last mission of its campaign, at the clearance of the campaign's last case.
 - **Starter queries:** A stage's starter query does not, unchanged, yield the required evidence.
 - **Training drills:** Each drill's reference transmits without error at clearance 1 and returns the expected facts, and its starter query does not.
@@ -1195,9 +1242,13 @@ The application will expose a local execution interface to the editor and game e
 
 It takes an operation, its variables, and the clearance level in force (Section 3.8). It returns the standard GraphQL result together with the facts that result contains and their response paths.
 
-Once request weight is implemented (Section 3.3), the result's `extensions` carry the weight from clearance 6. From clearance 8, a request above the limit is refused before execution with an ordinary GraphQL error that states the weight and the limit.
+Once request weight is implemented (Section 3.3), the result's `extensions` carry the weight from clearance 6. From clearance 9, a request above the limit is refused before execution with an ordinary GraphQL error that states the weight and the limit.
 
 Operations should support normal GraphQL functionality, including schema validation, variables, fragments, aliases, directives, and introspection, within the schema for the given clearance.
+
+A document may hold several operations. From clearance 13 the terminal lets the player choose which one to transmit, and sends its name as the operation to run.
+
+A subscription runs locally, as a stream of events that the game clock drives. Opening it is one transmission. While it is open, each event that the case's data schedules for an hour that has passed is delivered as a result and adds its facts to the ledger. No event is delivered on a real-time clock.
 
 The implementation should preserve ordinary GraphQL result and error semantics. Error annotations are produced separately by the feedback system and never replace or reword the original errors.
 
@@ -1217,6 +1268,7 @@ Actions:
 - Travel to a destination with fully supported claims, or order a field check where the mission offers one.
 - Submit a deduction with citations.
 - Apply for a warrant with citations.
+- Open a standing watch, which is a subscription, or close it. Opening one is a transmission.
 - Let the deadline pass, or restart the investigation.
 
 Travel and deductions are available as controls in the interface from the first mission, and warrants from the first mission that ends in an arrest. Once the player reaches the clearance level that teaches mutations, the same actions can also be performed through the terminal, and missions at that level ask for the paperwork to be filed that way. Both routes call the same engine actions.
@@ -1268,7 +1320,7 @@ After the MVP, the player can export their progress as a file and import it agai
 
 Responsible for everything the game says about the player's GraphQL:
 
-- Annotating validation and execution errors in the records clerk's voice.
+- Annotating validation and execution errors in the records clerk's voice, including the rules of the specification that a request can break unintentionally (Section 3.7). A note names a technique only from the clearance at which the glossary introduces it.
 - Annotating a request refused for its weight, naming the selection that weighs the most.
 - Serving the hint ladder and the solution reveal, stating their cost in advance, and charging it.
 - Assembling the debrief, including the comparison with the reference solution.
@@ -1332,7 +1384,7 @@ Testing should prioritize deterministic game behavior and content correctness.
 Suggested coverage:
 
 - **Unit tests** cover GraphQL resolvers, mission transitions, evidence recording and source links, and claim evaluation. Verify that a grouped citation attaches only retrieved facts with their source paths. Check that reviewing a draft or ruling out a lead costs no time, that list refutations require complete results, and that a confirmed field check spends the quoted cost without advancing the stage. Verify that a final-hour action resolves before expiry, a solution reveal is free after expiry, and clearance is derived correctly from completions, including placement with the solution reveal, without it, and after a reveal in an earlier attempt.
-- **Schema tests:** Each clearance level exposes exactly its intended types and fields, including through introspection. Classified records return partial data with errors. A placement attempt runs against the schema of the clearance in force. Once request weight is implemented, weight is reported from clearance 6 and enforced from clearance 8, a refused request spends no time and records no facts, and a request under the limit costs one hour whatever it weighs.
+- **Schema tests:** Each clearance level exposes exactly its intended types and fields, including through introspection. Classified records return partial data with errors. A placement attempt runs against the schema of the clearance in force. Once request weight is implemented, weight is reported from clearance 6 and enforced from clearance 9, a refused request spends no time and records no facts, and a request under the limit costs one hour whatever it weighs.
 - **Content tests:** The validation checks of Section 5.5, run against every mission. These recompute what a mission asserts from the data and do not trust the authored answer.
 - **Integration tests:** Execute representative GraphQL operations against actual game data.
 - **Persistence tests:** Saved data from an older format version, a changed mission, and unavailable storage are each handled as Section 7.4 describes. The Vim keybindings preference survives a reload, a change of mission, and a progress reset, both when on and when off.
@@ -1435,8 +1487,9 @@ This milestone finishes clearance levels 1 through 5. It adds no clearance level
 
 Where this document says that a feature arrives after the MVP, and Milestone 5 does not list it, the feature arrives after 1.0.
 
-- Clearance levels 6 through 10, from introspection to mutations. The adversary is identified in these levels and not before.
-- Request weight, reported with the clearance 6 missions and limited with the clearance 8 missions that teach pagination.
+- Clearance levels 6 through 13, from introspection to subscriptions, with the steps of Section 3.7. The adversary is identified in these levels and not before.
+- Request weight, reported with the clearance 6 missions and limited with the clearance 9 missions that teach pagination.
+- Validation of steps (Section 5.5).
 - Warrants and missions that end in an arrest.
 - Conflicting reports and source reliability.
 - Game actions as mutations.
@@ -1468,7 +1521,7 @@ Where this document says that a feature arrives after the MVP, and Milestone 5 d
 
 The **Mission Clock** counts the game hours until the deadline event. Its budget comes from the reference solution, and transmissions, travel, field checks, and other paid actions spend it.
 
-**Request Weight:** The number of records a request could return, computed before transmission. From clearance 8 the records clerk refuses a request above the weight limit, at no cost in hours.
+**Request Weight:** The number of records a request could return, computed before transmission. From clearance 9 the records clerk refuses a request above the weight limit, at no cost in hours.
 
 **Evidence:** A fact that has appeared in one of the player's query results.
 
@@ -1489,6 +1542,26 @@ A **Deduction** is a conclusion the player submits with citations.
 **Clearance:** The player's rank, earned by passing assessment missions. It determines the missions available and the schema visible.
 
 **Learning Objective:** The GraphQL concept a mission is designed to teach.
+
+**Concept:** A part of GraphQL that has its own clearance level, teaching mission, assessment, concept card, and kata (Section 3.7).
+
+**Step:** A part of GraphQL smaller than a concept, such as a number written as an argument. It is introduced alone, in one stage of a teaching mission, and practised later (Section 3.7).
+
+**Interface:** A type that names fields several kinds of record share. A query asks for those fields directly and for the rest in an inline fragment.
+
+**Union:** A type whose value is one of several unrelated kinds of record. Every field is asked for in an inline fragment.
+
+**Enum:** A type whose values are a fixed list of names, written without quotes.
+
+**Input Object:** A group of named values passed as one argument, written in braces.
+
+**Directive:** An instruction written after `@`, such as `@include`, that changes how part of a request is executed.
+
+**Mutation:** An operation that changes the archive, such as filing a travel order.
+
+**Subscription:** An operation that stays open and delivers a result for each event. In the game, events arrive as game hours pass.
+
+**Cursor:** A marker in a paginated list that says where the next page begins.
 
 **Reference Solution:** An authored set of operations that solves a stage. It is used for testing, for the solution reveal, and for the debrief.
 

@@ -8,8 +8,9 @@
     `country(name: "Portugal")`, the part in parentheses says which
     country you want. The braces after it hold the fields you want back
     from that country. At present they hold one field, `name`. Put each
-    field on its own line, with no comma between fields. Add `capital`
-    on the line after `name`.
+    field on its own line, which is easiest to read. Unlike JSON, a query
+    needs no commas between fields, and the archive ignores any you add.
+    Add `capital` on the line after `name`.
   starter: |
     query {
       country(name: "Portugal") {

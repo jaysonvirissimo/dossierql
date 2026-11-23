@@ -9,7 +9,8 @@
     A request for information from the archive. You write the fields you
     want, in the shape you want them back, and the archive fills in the
     values. A query begins with the word `query` and a pair of braces. You
-    can ask for more than one thing directly inside those braces.
+    can ask for more than one thing directly inside those braces. You may
+    leave out the word `query` and start the request with its outer brace.
 - id: transmission
   term: transmission
   clearance: 1
@@ -66,8 +67,9 @@
   matches: [results, response]
   definition: >
     What the archive sends back for a query. A result holds data in the
-    same shape as the query. If the archive could not answer part of the
-    query, the result also holds a list of errors.
+    same shape as the query, with the fields in the order you asked for
+    them. If the archive could not answer part of the query, the result
+    also holds a list of errors.
 - id: evidence
   term: evidence
   clearance: 1
