@@ -143,11 +143,17 @@ test("a placement finished with the solution revealed does not promote", async (
       .locator(":scope > .finding__row")
       .getByRole("button", { name: /^Cite (.* → )?consignee(,|$)/ }),
   );
+  const fieldCheck = draft(page).getByRole("button", {
+    name: /Order a field check/,
+  });
+  await expect(fieldCheck).toBeVisible();
   await press(
     consignee
       .locator(".finding__nested")
       .getByRole("button", { name: /^Cite (.* → )?director(,|$)/ }),
   );
+  await expect(draft(page)).toContainText("Needs a choice");
+  await expect(fieldCheck).toHaveCount(0);
   await draft(page)
     .getByRole("combobox", { name: "Director" })
     .selectOption("PEWTER_SWIFT");

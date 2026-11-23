@@ -222,7 +222,6 @@ export function reviewDraft(
   const correct = solutionBindings(stage).every(
     ([name, id]) => fixed[name] === id,
   );
-  const supportedCount = claims.filter((c) => c.status === "supported").length;
   return {
     claims,
     unrelated,
@@ -236,8 +235,11 @@ export function reviewDraft(
       !draft.fieldChecked &&
       !draft.ruledOut &&
       !refuted &&
-      supportedCount >= 1 &&
-      supportedCount < claims.length,
+      claims.some((claim) => claim.status === "supported") &&
+      claims.some(
+        (claim) =>
+          claim.status === "open" && Object.keys(claim.shows).length === 0,
+      ),
     canProceed: allSupported && correct && !draft.ruledOut,
   };
 }

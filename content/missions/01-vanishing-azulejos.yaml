@@ -52,14 +52,12 @@ stages:
       the manifest says a crate holds something other than tiles,
       that is evidence enough.
 
-      Customs accepts nothing without evidence. The Deduction form
-      states a claim about one shipment. The shipment you are
-      making the claim about is called a lead. When a response
-      shows a fact that proves the claim, press Cite beside that
-      fact. Every row of a response has a Cite button, so choose
-      the row that shows the fact itself. The fact is copied onto
-      the form as a [citation](glossary:citation). When the form
-      shows the claim as supported, submit the deduction.
+      The Deduction form makes a claim about one shipment. The
+      shipment you make the claim about is your lead. In Results,
+      find the row that proves the claim. Press Cite beside that
+      row. When the button shows a shipment's ID, Cite opens that
+      shipment's draft and adds the fact as a [citation](glossary:citation).
+      When the claim shows Supported, press Submit deduction.
 
     clues:
       - text: >
@@ -144,7 +142,7 @@ stages:
 
   routes:
     location: PT
-    objective: Identify the ceramic shipment that cannot reach Namibia by road.
+    objective: Identify the ceramic shipment going to a country that does not border Namibia.
 
     briefing: |
       Two crates of blue ceramic squares are left. An intercepted
@@ -154,8 +152,9 @@ stages:
       Namibia. One of the two crates is going somewhere that
       shares no such border. Set that crate aside.
 
-      The slate crate still appears in the list of shipments that
-      left Lisbon. You have already dealt with it.
+      Use the manifests to find the two ceramic shipments. The
+      claim on this form is about the border, so cite the route
+      evidence for the shipment you set aside.
 
     clues:
       - text: >
@@ -265,17 +264,15 @@ stages:
     objective: Identify the shipment carrying the tiles and the country receiving it.
 
     briefing: |
-      One crate is left, and customs will send you after it. To
-      travel, you complete a travel order. A travel order makes two
-      claims about one shipment, and each claim needs evidence of
-      its own. You do not say which claim a citation is for: the
-      form matches each citation to the claim it proves. The form
-      also asks you to choose the country the shipment is going to.
+      One crate is left, and customs will send you after it. The
+      Travel order makes two claims about that shipment. One claim
+      is about the contents and one is about the route. Your
+      earlier responses in Results already hold the evidence for both.
 
-      You do not need a new query. The responses you already have
-      hold every fact this order needs, and they are still in the
-      Results panel. Open the remaining shipment as a lead, cite
-      the evidence for both claims, and travel.
+      Cite the facts about the remaining shipment. The form matches
+      each citation to the claim it supports. Choose the receiving
+      country to record your answer. When both claims show Supported,
+      press Travel.
 
     clues:
       - text: >
@@ -386,7 +383,7 @@ stages:
 
     clues:
       - text: >
-          The depot logged the label attached to LIS-0417 on arrival.
+          The depot's intake record gives the label attached to LIS-0417 on arrival.
         constraint:
           $shipment: Shipment:LIS-0417
       - text: >

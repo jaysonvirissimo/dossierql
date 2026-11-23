@@ -51,6 +51,9 @@ stages:
       the records clerk returns unread costs nothing. The section
       below gives the deadline and the other prices.
 
+      The terminal starts with an empty editor. To check how a query
+      begins, open Documentation and read the Query entry.
+
     clues:
       - text: >
           All four shipments left Genoa.

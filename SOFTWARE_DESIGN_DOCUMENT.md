@@ -186,7 +186,7 @@ The bureaucracy returns missing or unrelated citations for correction. Once a wa
 
 Give players a credible reason to investigate a wrong lead and let them examine leads in any order. A player who cites a refutation can mark that lead **Ruled out** without spending mission hours. File a short dispatch that acknowledges what made the lead plausible and points to the fact that rules it out. Keep the lead and its citations available for review.
 
-Before travel, show the cost and any claims that still need evidence. When a mission offers a **field check**, a player with at least one supported claim, at least one unverified claim, and no cited refutation can choose to spend the quoted travel hours on a provisional lead. The field check returns a dispatch and leaves the player at the same stage with their evidence intact. A wrong lead gets a dead-end dispatch that explains the gap. A viable lead can receive a provisional acknowledgement. These dispatches point back to the archive so the player can verify the lead with GraphQL.
+Before travel, show the cost and any claims that still need evidence. When a mission offers a **field check**, a player with at least one supported claim, at least one claim that still needs evidence, and no cited refutation can choose to spend the quoted travel hours on a provisional lead. A claim with complete citations and an empty answer box needs a form choice. Once the draft has all its evidence, show the required choices and withhold the field check. The field check returns a dispatch and leaves the player at the same stage with their evidence intact. A wrong lead gets a dead-end dispatch that explains the gap. A viable lead can receive a provisional acknowledgement. These dispatches point back to the archive so the player can verify the lead with GraphQL.
 
 Ruling out and field checks are casework mechanics, and each arrives in its own case (Section 3.15). Ruling out first appears in *The Guest Register* and field checks in *The Quiet Consignee*. A case before those does not author a refutation or a field check, and its wrong leads are simply leads whose claims cannot be supported.
 
@@ -374,7 +374,7 @@ A player who skips ahead by placement (Section 3.8) meets every mechanic of the 
 | Stage | Objective | New GraphQL step | New casework mechanic |
 |---|---|---|---|
 | 1. Lisbon, the manifests | Identify the crate that cannot be the tiles. One of the three manifests describes slate. | None. The query asks for a field on each record in a list, as the drills did. | Citing |
-| 2. Lisbon, the routes | Identify the crate that cannot reach Namibia by road. One of the two ceramic shipments is bound for an island. | Nested selections: from a shipment to its destination, that city's country, and that country's borders | None |
+| 2. Lisbon, the routes | Identify the ceramic crate going to a country that does not border Namibia. One of the two ceramic shipments is bound for an island. | Nested selections: from a shipment to its destination, that city's country, and that country's borders | None |
 | 3. Lisbon, the travel order | Send the hold to the country that receives the remaining crate. | None. The evidence is already in the ledger. | Travel order |
 | 4. Luanda | Identify who signed the transfer order that matches the replacement label. | Two records opened side by side under one shipment | Deduction over several records |
 
@@ -613,14 +613,12 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
           cannot hold all three, and asks you to set aside one crate
           at a time. Start with any crate that does not hold tiles.
 
-          Customs accepts nothing without evidence. The Deduction form
-          states a claim about one shipment. The shipment you are
-          making the claim about is called a lead. When a response
-          shows a fact that proves the claim, press Cite beside that
-          fact. Every row of a response has a Cite button, so choose
-          the row that shows the fact itself. The fact is copied onto
-          the form as a [citation](glossary:citation). When the form
-          shows the claim as supported, submit the deduction.
+          The Deduction form makes a claim about one shipment. The
+          shipment you make the claim about is your lead. In Results,
+          find the row that proves the claim. Press Cite beside that
+          row. When the button shows a shipment's ID, Cite opens that
+          shipment's draft and adds the fact as a [citation](glossary:citation).
+          When the claim shows Supported, press Submit deduction.
 
         clues:
           - text: >
@@ -703,7 +701,7 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
 
       routes:
         location: PT
-        objective: Identify the ceramic shipment that cannot reach Namibia by road.
+        objective: Identify the ceramic shipment going to a country that does not border Namibia.
 
         briefing: |
           Two crates of blue ceramic squares are left. An intercepted
@@ -713,8 +711,9 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
           Namibia. One of the two crates is going somewhere that
           shares no such border. Set that crate aside.
 
-          The slate crate still appears in the list of shipments that
-          left Lisbon. You have already dealt with it.
+          Use the manifests to find the two ceramic shipments. The
+          claim on this form is about the border, so cite the route
+          evidence for the shipment you set aside.
 
         clues:
           - text: >
@@ -824,17 +823,15 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
         objective: Identify the shipment carrying the tiles and the country receiving it.
 
         briefing: |
-          One crate is left, and customs will send you after it. To
-          travel, you complete a travel order. A travel order makes two
-          claims about one shipment, and each claim needs evidence of
-          its own. You do not say which claim a citation is for: the
-          form matches each citation to the claim it proves. The form
-          also asks you to choose the country the shipment is going to.
+          One crate is left, and customs will send you after it. The
+          Travel order makes two claims about that shipment. One claim
+          is about the contents and one is about the route. Your
+          earlier responses in Results already hold the evidence for both.
 
-          You do not need a new query. The responses you already have
-          hold every fact this order needs, and they are still in the
-          Results panel. Open the remaining shipment as a lead, cite
-          the evidence for both claims, and travel.
+          Cite the facts about the remaining shipment. The form matches
+          each citation to the claim it supports. Choose the receiving
+          country to record your answer. When both claims show Supported,
+          press Travel.
 
         clues:
           - text: >
@@ -945,7 +942,7 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
 
         clues:
           - text: >
-              The depot logged the label attached to LIS-0417 on arrival.
+              The depot's intake record gives the label attached to LIS-0417 on arrival.
             constraint:
               $shipment: Shipment:LIS-0417
           - text: >
@@ -1064,7 +1061,7 @@ The countries receiving the Luanda and Cape Town shipments both border Namibia. 
 | LIS-0486 | Cape Town, South Africa | Blue slate squares (14 cm) | Yes |
 | LIS-0522 | Praia, Cabo Verde | Blue ceramic squares (14 cm) | No |
 
-The first stage asks for the crate that is not ceramic, which is LIS-0486. The second asks for the ceramic crate that cannot reach Namibia by road, which is LIS-0522. Each of these crates is the answer to its own stage, so neither stage authors a refutation, and the player meets ruling out for the first time in *The Guest Register*. The third stage asks for the crate that is left. It sends no query: its two claims rest on the manifest and the route that the first two stages retrieved.
+The first stage asks for the crate that is not ceramic, which is LIS-0486. The second asks for the ceramic crate going to a country that does not border Namibia, which is LIS-0522. Each of these crates is the answer to its own stage, so neither stage authors a refutation, and the player meets ruling out for the first time in *The Guest Register*. The third stage asks for the crate that is left. It sends no query: its two claims rest on the manifest and the route that the first two stages retrieved.
 
 Each claim can be supported in two ways. The port inspector's finding describes the goods in different words from the manifest: slate for the Cape Town crate and glazed ceramic for the other two. Namibia's own list of borders confirms the route from the other side, and shows from the other side that Cabo Verde is not on it.
 

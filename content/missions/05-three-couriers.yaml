@@ -45,6 +45,9 @@ stages:
       SABLE_IBIS, and TIN_FALCON. The registry has a file on each.
       The clerk would be grateful to fetch them in one trip.
 
+      The response puts each result under its field name. If you ask
+      for the same field twice, see [alias](glossary:alias) in the Glossary.
+
     clues:
       - text: >
           The payment stays inside the Parallax Circle. The courier is

@@ -199,10 +199,13 @@ export function DraftPanel() {
                 ? "Read the results you already have. This stage needs no new query."
                 : "Transmit a query and read the results."}
             </li>
-            <li>Open a lead: the {words(leadType)} you think is the answer.</li>
             <li>
-              Press Cite on the result rows that prove each claim about that
-              lead.
+              Press Cite on the rows that support your claims. A Cite button
+              that shows a {words(leadType)} opens its draft.
+            </li>
+            <li>
+              If Results asks you to open a lead first, choose the{" "}
+              {words(leadType)} your claim is about from the list above.
             </li>
             <li>{travel ? "Travel." : "Submit the deduction."}</li>
           </ol>
@@ -461,7 +464,7 @@ export function DraftPanel() {
                 ? `The facts you cited are complete. Make the ${review.unnamed.length === 1 ? "choice" : "choices"} above to complete the ${formName.toLowerCase()}.`
                 : `${unsupported === 1 ? "1 claim is" : `${String(unsupported)} claims are`} not yet supported, so the ${formName.toLowerCase()} cannot be accepted yet.`}
               {review.canFieldCheck &&
-                " A field check investigates this lead as it stands and leaves the case open."}
+                " A field check sends a dispatch about the missing evidence. Your citations stay in the draft."}
             </p>
           )}
         </div>

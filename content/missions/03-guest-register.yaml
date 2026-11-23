@@ -8,8 +8,8 @@ teaches: arguments
 practises: [nested-selections]
 requires: [nested-selections]
 summary: >
-  NIGHTJAR signed for the crate and left Luanda. Three hotels think they
-  have seen the same guest.
+  The crate's signer has left Luanda. Three hotels think they have seen
+  the same guest.
 motif: register
 clock:
   countdown: NIGHTJAR's contact leaves in {remaining}
@@ -55,6 +55,11 @@ stages:
       cite a fact that contradicts one of the claims about it. The
       form marks that claim as contradicted and offers to rule the
       lead out. Ruling out a lead costs no time.
+
+      The sighting shows which name the guest gave. NIGHTJAR's file
+      lists the operative's cover names. To check whether the name
+      from the sighting is on the list, cite the name given and the
+      complete list of cover names.
 
     clues:
       - text: >

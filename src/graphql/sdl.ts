@@ -173,7 +173,7 @@ export const SDL = /* GraphQL */ `
     consignee: Company
     "The operative whose signature is on the order."
     authorizedBy: Operative
-    "The registry's own log of the signature."
+    "A separate registry record of who signed the order."
     authorizationLog: AuthorizationLog
     "The office that cleared the order."
     clearedBy: Office @clearance(level: 5)

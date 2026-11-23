@@ -50,12 +50,16 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
         that record inside the braces.
       </p>
       <p className="tool__lede">
-        Some fields have a part in parentheses, which says which record you
-        want. For example, <code>city(name: String!): City</code> means: give
-        the name of a city, as text in double quotes, and you get back one City
-        record. Inside parentheses, a <code>!</code> means that you must give
-        that value. Anywhere else, a <code>!</code> means only that the value is
-        never missing, and you can ignore it.{" "}
+        The Query entry shows <code>city(name: String!): City</code>. In your
+        query, write{" "}
+        <code>
+          city(name: "Lisbon") {"{"} name {"}"}
+        </code>{" "}
+        to get Lisbon&apos;s name. In the entry, <code>String!</code> inside the
+        parentheses means you must supply text in double quotes. After the colon
+        outside the parentheses, <code>City</code> tells you what comes back. If
+        the return value has a <code>!</code>, the archive always returns a
+        value.{" "}
         {clearance < 5 ? (
           <>
             You never type a <code>!</code> in a query.

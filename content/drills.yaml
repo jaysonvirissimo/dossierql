@@ -4,15 +4,10 @@
 - id: one-field
   title: Ask for a field
   task: >
-    The records clerk hands you a request form that is already filled in.
-    The form is a query. Read it from the outside in. The word `query` and
-    the outer braces hold the whole request. `country(name: "Portugal")`
-    asks for one record, and the part in parentheses says which record: the
-    country whose name is Portugal. The inner braces hold the fields you
-    want from that record. At present they hold one field, `name`, and the
-    archive returns that field and nothing more. Put a space or a new line
-    between two fields, and no comma. One field to a line is easiest to
-    read. Add a second field: ask for the country's `capital` as well.
+    The clerk has filled in a request for Portugal. Look for `name`
+    inside the braces after `country(name: "Portugal")`. The archive
+    returns the fields you put inside those braces. Put each field on
+    its own line. Add `capital` on the line after `name`.
   starter: |
     query {
       country(name: "Portugal") {
@@ -76,12 +71,10 @@
 - id: lists
   title: Read a list
   task: >
-    Some fields hold a list of records instead of just one. A country's
-    `borders` is one: it holds every country that shares a land border with
-    it. You open a list with braces, the way you opened `country` in the
-    last drill. The fields you put inside the braces come back once for
-    each record in the list. Find the name of each country that borders
-    Kenya.
+    A country's `borders` field lists its land neighbours. In a query,
+    `borders { capital }` asks for the capital of each neighbour. In the
+    response, square brackets mark the list. Use `borders` to find the
+    name of each country that borders Kenya.
   starter: |
     query {
       country(name: "Kenya") {
@@ -162,16 +155,11 @@
 - id: three-links
   title: Follow a chain of three links
   task: >
-    The query below starts at the city of Lisbon, opens its `country`, which
-    is Portugal, and opens Portugal's `borders`. Portugal has one land
-    border, with Spain. The braces after `borders` hold the fields you want
-    from each neighbour, so here they hold the fields for Spain. Spain is a
-    country too, so it has a `borders` list of its own. You open Spain's
-    list by writing another `borders` with braces inside those braces, under
-    `name`. That makes a chain of three links: from the city to its country,
-    from the country to its neighbour, and from the neighbour to its
-    neighbours. Starting from the city of Lisbon, find the name of each
-    country that borders Spain.
+    The query takes you from Lisbon to Portugal to Spain. The starter's
+    innermost braces hold the fields you want from Spain. Inside those
+    braces, `name` gives you Spain's name. On the next line, start a
+    second `borders` at the same indent as `name`. The second list takes
+    you from Spain to its own neighbours. Ask for each neighbour's name.
   starter: |
     query {
       city(name: "Lisbon") {
@@ -211,9 +199,8 @@
       }
     }
   nudge: >
-    The inner `borders { name }` lists Spain. Inside those braces, under
-    `name`, add another `borders { name }` for the countries that border
-    Spain.
+    The starter's `borders { name }` lists Spain. Add a second
+    `borders { name }` next to Spain's `name`, inside the first list's braces.
   payoff: >
     Portugal is in the last list, because a border runs both ways: Portugal
     borders Spain, and Spain borders Portugal. Morocco is there because two

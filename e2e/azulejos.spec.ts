@@ -97,7 +97,7 @@ test("the Azulejos case, by keyboard at 1024 pixels, with no clock", async ({
   await expect(draft(page)).toContainText("offers to send a");
   await expect(draft(page)).not.toContainText("no time spent");
   await expect(page.locator(".casebar")).toContainText(
-    "cannot reach Namibia by road",
+    "going to a country that does not border Namibia",
   );
   // Nobody has travelled, so the response stays on the desk.
   await expect(record(page, "LIS-0486")).toBeVisible();
@@ -227,7 +227,7 @@ test("a mid-case reload keeps the drafts of a stage that shares the desk", async
 
   await page.reload();
   await expect(page.locator(".casebar")).toContainText(
-    "cannot reach Namibia by road",
+    "going to a country that does not border Namibia",
   );
   await expect(record(page, "LIS-0522")).toBeVisible();
   await expect(
