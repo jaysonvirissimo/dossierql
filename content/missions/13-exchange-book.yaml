@@ -1,0 +1,169 @@
+id: exchange-book
+title: The Exchange Book
+campaign: fourth-desk
+order: 2
+clearance: 6
+kind: assessment
+teaches: null
+practises: [nested-selections, arguments, introspection]
+requires: [nested-selections, arguments, introspection]
+summary: >
+  A copy of the minute reached Lusaka Exchange Control. The exchange kept a
+  book apart from its register, and nobody has written documentation for
+  the book either.
+motif: ledger
+clock:
+  countdown: The book goes back under seal in {remaining}
+  expired: The book has gone back under seal
+  onExpiry: end
+startingStage: lusaka
+
+debrief:
+  onTime: |
+    OPAL_WREN signed for 4,000 Zambian kwacha at the counter in Lusaka
+    and carried it to Beira Tile Agency. The inquiry reads the rest of
+    the slip. Its authority, FS-0090, is entry 90 in the register of
+    the First Desk, and the last office on its route is the First Desk.
+
+    GREY_PETREL sent the slip to the exchange, as GREY_PETREL sent
+    every slip in the book.
+  stampOnTime: COURIER IDENTIFIED
+  comparison: >
+    The reference solution transmits three requests. The first lists
+    every type with `__schema`, and finds `exchangeBook` among the fields
+    of `Query`. The second asks `__type(name: "Slip")` for the
+    description and the type of each field. The descriptions tell
+    `courier` apart from `sender`, and `ofType` shows that `route` is a
+    list of `Office` records. The third asks for the slips, with
+    `__typename` inside `courier` to confirm that the courier is an
+    `Operative`. It also asks for the courier's sightings, which give a
+    second route to the claim: a witness in Lusaka saw OPAL_WREN sign
+    for the payment.
+  geography: >
+    The Zambian kwacha takes its name from a word for dawn. Zambia's
+    neighbour Mozambique uses the metical, and Beira is one of the ports
+    through which Zambia's trade reaches the Indian Ocean.
+
+stages:
+  lusaka:
+    location: ZM
+    objective: Identify the operative who carried the money for the payment to Beira Tile Agency.
+
+    briefing: |
+      The copy of the minute led the inquiry to Lusaka Exchange Control.
+      The exchange let some payments through without entering them in
+      its register. It noted each of those payments on a slip, in a book
+      it kept apart from the register. The book has been seized, and the
+      agency has no documentation for it.
+
+      Two operatives appear on the slip for Beira Tile Agency. One of
+      them sent the slip to the exchange. The other carried the money.
+      Identify the operative who carried the money.
+
+    clues:
+      - text: >
+          The slip records a payment to Beira Tile Agency.
+        constraint:
+          $slip.payee: Company:MZ-BEIRA
+      - text: >
+          The operative carried the money for that payment.
+        constraint:
+          $slip.courier: $operative
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        The slip for Beira Tile Agency has a courier and a sender. Read the
+        description of each field before you choose between the two
+        operatives.
+      concept: >
+        Start with __schema to find the field of Query that returns the
+        book. Ask __type for the slip's type to read the descriptions of
+        its fields and what each field returns. Inside a record whose type
+        you do not know, ask for __typename.
+      schema: >
+        Look at Query.exchangeBook, Slip.payee, Slip.courier, Slip.sender,
+        and Operative.sightings.
+      skeleton: |
+        exchangeBook { number payee { name } courier { __typename codename } sender { codename } }
+
+    solution:
+      type: deduction
+      operative: OPAL_WREN
+    labels:
+      operative: Courier
+
+    claims:
+      - id: carried
+        prompt: This operative carried the money for the payment to Beira Tile Agency.
+        evidenceSets:
+          - facts:
+              - entity: Slip:$slip
+                field: payee
+                equals: Company:MZ-BEIRA
+              - entity: Slip:$slip
+                field: courier
+                equals: Operative:$operative
+          - facts:
+              - entity: Operative:$operative
+                field: sightings
+                includes: Sighting:$sighting
+              - entity: Sighting:$sighting
+                field: note
+                equals: >-
+                  Signed at the counter of Lusaka Exchange Control for a
+                  payment to Beira Tile Agency, and left with the money.
+
+    leadOutcomes:
+      GREY_PETREL:
+        refutation:
+          claim: carried
+          facts:
+            - entity: Slip:$slip
+              field: payee
+              equals: Company:MZ-BEIRA
+            - entity: Slip:$slip
+              field: sender
+              equals: Operative:$operative
+        ruledOut: |
+          GREY_PETREL sent the slip for Beira Tile Agency to the exchange.
+          The description of sender says that the sender did not carry
+          the money.
+
+    resolved: |
+      Deduction accepted. OPAL_WREN carried the money for Beira Tile
+      Agency.
+
+    referenceSolution:
+      - |
+        query {
+          __schema {
+            types { name fields { name } }
+          }
+        }
+      - |
+        query {
+          __type(name: "Slip") {
+            fields {
+              name
+              description
+              type {
+                kind
+                name
+                ofType { kind name ofType { kind name ofType { kind name } } }
+              }
+            }
+          }
+        }
+      - |
+        query {
+          exchangeBook {
+            number
+            payee { name }
+            route { name }
+            courier { __typename codename sightings { note } }
+            sender { codename }
+          }
+        }

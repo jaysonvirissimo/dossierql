@@ -164,3 +164,12 @@ describe("citationAt for a refutation", () => {
     });
   });
 });
+
+describe("citationAt on a field that returned nothing", () => {
+  const { at } = reference("the-receipt", "lisbon");
+
+  it("offers no citation, since no claim can ask for null", () => {
+    expect(at("receipt/releasedBy")).toBeNull();
+    expect(at("receipt/releaseOrder/id")).not.toBeNull();
+  });
+});

@@ -16,6 +16,7 @@ import {
 import { factKey, type Fact, type FactOccurrence } from "./facts.ts";
 import { schemaFor } from "./schema.ts";
 import { fieldShape, refOf, type RawRecord, type Store } from "./store.ts";
+import { requestWeight, WEIGHT_REPORTED_FROM } from "./weight.ts";
 
 export interface Transmission {
   operation: string;
@@ -252,9 +253,10 @@ export function transmit(
     occurrences: [],
     resolved: 0,
   };
+  const document = parse(transmission.operation);
   const outcome = execute({
     schema,
-    document: parse(transmission.operation),
+    document,
     variableValues: transmission.variables ?? {},
     contextValue: context,
     fieldResolver: resolveField,
@@ -262,7 +264,13 @@ export function transmit(
   if (outcome instanceof Promise) {
     throw new Error("The archive resolves synchronously.");
   }
-  const result = outcome as ExecutionResult;
+  const result: ExecutionResult =
+    transmission.clearance >= WEIGHT_REPORTED_FROM
+      ? {
+          ...outcome,
+          extensions: { weight: requestWeight(schema, store, document) },
+        }
+      : outcome;
   if (result.data === undefined || result.data === null) {
     // Variables were refused, or an error emptied the whole response.
     const never = context.resolved === 0;

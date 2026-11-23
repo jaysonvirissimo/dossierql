@@ -8,10 +8,10 @@ evidence supports.
 Play it at <https://virissimo.info/dossierql/>.
 
 The design is in [SOFTWARE_DESIGN_DOCUMENT.md](SOFTWARE_DESIGN_DOCUMENT.md).
-This repository implements it up to the Educational MVP: clearance levels 1
-to 5, with a teaching case and an assessment for each of nested selections,
-arguments, aliases, fragments and variables. A training range of five short
-drills comes before the first case.
+This repository implements 1.0 and the first level after it: clearance levels
+1 to 6, with a teaching case and an assessment for each of nested selections,
+arguments, aliases, fragments, variables and introspection. A training range
+of short drills comes before the first case.
 
 The game runs entirely in the browser. There is no backend, no account, and
 no request to any other origin.
@@ -64,6 +64,8 @@ the text a player reads.
 - **One schema, filtered by clearance.** `src/graphql/sdl.ts` marks types and
   fields with `@clearance`. `schemaFor(level)` removes everything above the
   level before building, so validation, documentation and introspection agree.
+  `@undocumented` keeps a type or field out of the documentation panel, so
+  that only introspection describes it.
 - **Facts are recorded during execution.** A single field resolver serves
   every record type and notes each field it resolves. Identity comes from
   the record, so an alias changes the path and not the fact.

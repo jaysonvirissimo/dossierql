@@ -28,18 +28,18 @@ test("every screen has its own route and survives a reload", async ({
   await expect(
     page.getByRole("heading", { name: "The Shadow Network" }),
   ).toBeVisible();
-  await expect(page.locator(".case")).toHaveCount(10);
+  await expect(page.locator(".case")).toHaveCount(12);
 
-  // One way forward: the first case is emphasized, and the five assessments
+  // One way forward: the first case is emphasized, and the six assessments
   // a new player would attempt as placements wait under one entry.
   await expect(page.locator(".case--next")).toHaveCount(1);
   await expect(page.locator(".case--next")).toContainText(
     "The Vanishing Azulejos",
   );
   await expect(page.locator(".case .button--primary")).toHaveCount(1);
-  await expect(page.locator(".placements .case")).toHaveCount(5);
+  await expect(page.locator(".placements .case")).toHaveCount(6);
   await expect(page.locator(".placements summary")).toContainText(
-    "Placement: 5 assessments",
+    "Placement: 6 assessments",
   );
   await expect(page.locator(".placements .case").first()).toBeHidden();
 

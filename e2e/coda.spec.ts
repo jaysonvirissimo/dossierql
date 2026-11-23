@@ -37,7 +37,7 @@ test("the coda stays hidden until the campaign's last case is resolved", async (
   page,
 }) => {
   await seedCompleted(page, [...TO_CLEARANCE_5, "forwarding-address"]);
-  await expect(page.getByText("9 of 10 cases resolved.")).toBeVisible();
+  await expect(page.getByText("9 of 12 cases resolved.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "The Receipt" })).toHaveCount(
     0,
   );
@@ -50,7 +50,7 @@ test("the coda stays hidden until the campaign's last case is resolved", async (
 
 test("the coda ends the campaign without a promotion", async ({ page }) => {
   await seedCompleted(page, TO_CAMPAIGN_END);
-  await expect(page.getByText("10 of 10 cases resolved.")).toBeVisible();
+  await expect(page.getByText("10 of 12 cases resolved.")).toBeVisible();
   const card = page.locator(".case--next");
   await expect(card).toContainText("The Receipt");
   await expect(card).toContainText("Coda");
@@ -112,9 +112,12 @@ test("the coda ends the campaign without a promotion", async ({ page }) => {
   await expect(page.getByText("Added to your tradecraft manual")).toHaveCount(
     0,
   );
-  await expect(page.getByRole("link", { name: /^Next case/ })).toHaveCount(0);
+  // The next campaign opens with the next clearance.
+  await expect(
+    page.getByRole("link", { name: "Next case: The Sealed Cabinet" }),
+  ).toBeVisible();
   await expect(page.locator(".shell-bar__rank")).toHaveText("Clearance 6");
 
   await press(page.getByRole("link", { name: "Back to assignments" }));
-  await expect(page.getByText("10 of 10 cases resolved.")).toBeVisible();
+  await expect(page.getByText("10 of 12 cases resolved.")).toBeVisible();
 });

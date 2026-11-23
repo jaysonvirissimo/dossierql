@@ -64,6 +64,8 @@ export interface TransmissionRecord {
   errors: ResultError[];
   facts: { key: string; path: (string | number)[] }[];
   cost: number;
+  /** The request's weight, stated from clearance 6 (SDD 3.3). */
+  weight?: number;
 }
 
 export interface Dispatch {
@@ -410,6 +412,9 @@ function doTransmit(env: Env, state: MissionState): Outcome {
       errors,
       facts: sent.facts.map(({ fact, path }) => ({ key: fact.key, path })),
       cost: paid.clock === "active" ? COSTS.transmission : 0,
+      ...(typeof sent.result.extensions?.weight === "number"
+        ? { weight: sent.result.extensions.weight }
+        : {}),
     };
     return {
       state: {

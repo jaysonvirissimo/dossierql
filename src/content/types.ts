@@ -6,6 +6,7 @@ export const CONCEPTS = [
   "aliases",
   "fragments",
   "variables",
+  "introspection",
 ] as const;
 export type Concept = (typeof CONCEPTS)[number];
 
@@ -78,6 +79,8 @@ export interface Stage {
   location: string;
   /** The casework mechanic a player first meets in this stage (SDD 3.15). */
   introduces?: Mechanic;
+  /** The GraphQL step a player first meets in this stage (SDD 3.7). */
+  step?: string;
   objective: string;
   briefing: string;
   clues: Clue[];

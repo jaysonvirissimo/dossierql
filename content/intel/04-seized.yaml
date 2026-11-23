@@ -1,0 +1,109 @@
+# Records for clearance 6, from the Fourth Desk's sealed cabinet and from the
+# book Lusaka Exchange Control kept apart from its register. The documentation
+# panel leaves these types out (SDD 4), so only introspection describes them.
+Office:
+  first-desk: { name: First Desk, city: lisbon }
+
+RegisterEntry:
+  fs-0088:
+    serial: 88
+    office: first-desk
+    note: Minute to the Fourth Desk. Release the museum's tiles under order REL-0417.
+  fs-0090:
+    serial: 90
+    office: first-desk
+    note: Lusaka Exchange Control is to let payments to Beira Tile Agency through without entering them in its register.
+  fs-0091:
+    serial: 91
+    office: first-desk
+    note: The papers on docket DKT-0417 are to be held for GILT_MAGPIE.
+  lx-0309:
+    serial: 309
+    office: lusaka-exchange
+    countersignedBy: The duty clerk
+    note: Copy received from the First Desk of the minute on docket DKT-0417.
+
+Drawer:
+  ceramics: { label: Ceramics }
+  freight: { label: Freight }
+  payments: { label: Payments }
+
+Docket:
+  DKT-0417:
+    reference: DKT-0417
+    title: Museum tiles, Lisbon store
+    drawer: ceramics
+    shipment: LIS-0417
+    minute: first-desk
+    mark: fourth-desk
+    circulation: [fourth-desk, lusaka-exchange]
+    opened: FS-0088
+    heldFor: GILT_MAGPIE
+  DKT-0486:
+    reference: DKT-0486
+    title: Slate squares, Lisbon
+    drawer: ceramics
+    shipment: LIS-0486
+    minute: luanda-port
+    mark: fourth-desk
+    circulation: [luanda-port]
+    opened: LP-0860
+  DKT-0522:
+    reference: DKT-0522
+    title: Ceramic squares, Lisbon
+    drawer: ceramics
+    shipment: LIS-0522
+    minute: luanda-port
+    mark: fourth-desk
+    circulation: [luanda-port]
+    opened: LP-0862
+  DKT-0102:
+    reference: DKT-0102
+    title: Cork stoppers, Porto
+    drawer: freight
+    shipment: OPO-0102
+    minute: luanda-port
+    mark: fourth-desk
+    circulation: []
+    opened: LP-0866
+  DKT-0501:
+    reference: DKT-0501
+    title: Payments to Kafue Ceramics Trust
+    drawer: payments
+    minute: lusaka-exchange
+    mark: fourth-desk
+    circulation: []
+    opened: LX-0300
+
+Slip:
+  SLP-301:
+    number: SLP-301
+    payee: MZ-BEIRA
+    amount: 4,000 Zambian kwacha
+    authority: FS-0090
+    route: [lusaka-exchange, first-desk]
+    courier: OPAL_WREN
+    sender: GREY_PETREL
+  SLP-302:
+    number: SLP-302
+    payee: MZ-KAFUE
+    amount: 2,500 Zambian kwacha
+    authority: FD-4133
+    route: [lusaka-exchange, fourth-desk]
+    courier: IRON_FINCH
+    sender: GREY_PETREL
+  SLP-303:
+    number: SLP-303
+    payee: ZM-COPPERBELT
+    amount: 1,800 Zambian kwacha
+    authority: FD-4134
+    route: [lusaka-exchange, fourth-desk]
+    courier: BRASS_PIPIT
+    sender: GREY_PETREL
+
+Sighting:
+  SGT-090:
+    city: lusaka
+    operative: OPAL_WREN
+    nameGiven: frau-keller
+    note: Signed at the counter of Lusaka Exchange Control for a payment to Beira Tile Agency, and left with the money.

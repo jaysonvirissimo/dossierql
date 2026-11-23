@@ -1,4 +1,11 @@
-import { isObjectType, Kind, parse, visit, type GraphQLSchema } from "graphql";
+import {
+  isObjectType,
+  Kind,
+  parse,
+  TypeKind,
+  visit,
+  type GraphQLSchema,
+} from "graphql";
 import {
   clearanceInForce,
   deriveStanding,
@@ -39,6 +46,7 @@ import {
   missionSchema,
 } from "./schema.ts";
 import { glossaryLinks, MARKUP, styleIssues } from "./style.ts";
+import { STEPS, stepById, usesIntrospection } from "./steps.ts";
 import {
   bindingTypes,
   leadBinding,
@@ -267,7 +275,8 @@ export function solve(
 export function conceptsUsed(operation: string): Set<Concept> {
   const used = new Set<Concept>();
   let depth = 0;
-  visit(parse(operation), {
+  const document = parse(operation);
+  visit(document, {
     SelectionSet: {
       enter() {
         depth++;
@@ -284,6 +293,7 @@ export function conceptsUsed(operation: string): Set<Concept> {
     FragmentSpread: () => void used.add("fragments"),
     VariableDefinition: () => void used.add("variables"),
   });
+  if (usesIntrospection(document)) used.add("introspection");
   return used;
 }
 
@@ -377,6 +387,8 @@ const VOCABULARY = [
   "fragment",
   "variable",
   "operation",
+  "introspection",
+  "scalar",
 ];
 
 // ------------------------------------------------------------ the checks
@@ -1321,7 +1333,12 @@ function checkCurriculum(
     ...mission.practises,
     ...mission.requires,
   ]);
-  for (const concept of ["aliases", "fragments", "variables"] as const) {
+  for (const concept of [
+    "aliases",
+    "fragments",
+    "variables",
+    "introspection",
+  ] as const) {
     if (used.has(concept) && !declared.has(concept)) {
       report(
         `${mission.id}.requires`,
@@ -1415,6 +1432,123 @@ function checkPacing(catalog: Catalog, report: Report): void {
         "A mission after the first introduces at most one mechanic.",
       );
     }
+  });
+}
+
+/** The steps of SDD 3.7 that a stage's reference solution uses. */
+function stepsUsed(stage: Stage): Set<string> {
+  const used = new Set<string>();
+  for (const { operation } of referenceOperations(stage)) {
+    let document;
+    try {
+      document = parse(operation);
+    } catch {
+      continue; // Reported by the solvability check.
+    }
+    for (const step of STEPS) if (step.uses(document)) used.add(step.id);
+  }
+  return used;
+}
+
+/**
+ * Steps (SDD 5.5). From clearance 6, a teaching mission introduces its
+ * concept in its first stage and at most one step in each later stage, in at
+ * most four stages. A step belongs to the mission's clearance, is introduced
+ * once, is not used before it is introduced, and is practised by a later
+ * mission. An assessment or a coda introduces none.
+ */
+function checkSteps(catalog: Catalog, report: Report): void {
+  const introducedAt = new Map<string, number>();
+  const glossary = new Map(catalog.glossary.map((g) => [g.term, g]));
+  catalog.missions.forEach((mission, index) => {
+    const chain = stageChain(mission);
+    if (
+      mission.kind === "teaching" &&
+      mission.clearance >= 6 &&
+      chain.length > 4
+    ) {
+      report(
+        mission.id,
+        "steps",
+        "A teaching mission from clearance 6 has at most four stages.",
+      );
+    }
+    chain.forEach(([id, stage], position) => {
+      const at = `${mission.id}.stages.${id}`;
+      const used = stepsUsed(stage);
+      for (const step of used) {
+        const from = introducedAt.get(step);
+        const here = from === undefined && stage.step === step;
+        if (from === undefined && !here) {
+          report(
+            at,
+            "steps",
+            `The reference solution uses the step ${step}, which no stage up to this one introduces.`,
+          );
+          introducedAt.set(step, -1);
+        }
+      }
+      if (stage.step === undefined) return;
+      const step = stepById(stage.step);
+      if (!step) {
+        report(`${at}.step`, "steps", `There is no step ${stage.step}.`);
+        return;
+      }
+      if (mission.kind !== "teaching") {
+        report(
+          `${at}.step`,
+          "steps",
+          "Only a teaching mission introduces a step.",
+        );
+      }
+      if (step.clearance !== mission.clearance) {
+        report(
+          `${at}.step`,
+          "steps",
+          `The step ${step.id} belongs to clearance ${String(step.clearance)}.`,
+        );
+      }
+      if (position === 0 && mission.kind === "teaching") {
+        report(
+          `${at}.step`,
+          "steps",
+          "The first stage introduces the mission's concept, and no step.",
+        );
+      }
+      if (introducedAt.has(step.id)) {
+        report(
+          `${at}.step`,
+          "steps",
+          `An earlier stage already introduces ${step.id}.`,
+        );
+      }
+      introducedAt.set(step.id, index);
+      if (!used.has(step.id)) {
+        report(
+          `${at}.step`,
+          "steps",
+          `The stage introduces ${step.id} and its reference solution does not use it.`,
+        );
+      }
+      const practised = catalog.missions
+        .slice(index + 1)
+        .some((later) =>
+          Object.values(later.stages).some((s) => stepsUsed(s).has(step.id)),
+        );
+      if (!practised) {
+        report(`${at}.step`, "steps", `No later mission practises ${step.id}.`);
+      }
+      if (step.term !== undefined) {
+        const entry = glossary.get(step.term);
+        if (entry?.clearance !== step.clearance) {
+          report(
+            `${at}.step`,
+            "steps",
+            `The glossary introduces "${step.term}" at the step's clearance.`,
+          );
+        }
+      }
+    });
   });
 }
 
@@ -1612,7 +1746,8 @@ function checkHintsAndText(
                 [r.id, r.name, r.codename].includes(quoted as string),
               ),
           );
-        if (!known) {
+        // Introspection asks for a type by its name, as in __type(name: "Docket").
+        if (!known && !schema.getType(quoted as string)) {
           report(
             `${at}.scaffold`,
             "text",
@@ -1622,9 +1757,13 @@ function checkHintsAndText(
       }
     }
   }
-  const ids = new Set(
-    catalog.store.types().flatMap((t) => catalog.store.all(t).map((r) => r.id)),
-  );
+  const ids = new Set([
+    ...catalog.store
+      .types()
+      .flatMap((t) => catalog.store.all(t).map((r) => r.id)),
+    // The kinds of type that introspection reports.
+    ...Object.values(TypeKind),
+  ]);
   for (const { path, text } of proseOf(mission)) {
     const at = `${mission.id}.${path}`;
     // Identifiers and codenames quoted in prose must exist in the data.
@@ -1930,6 +2069,7 @@ export function validateContent(raw: RawContent): Issue[] {
   }
   checkCourseShape(catalog, report);
   checkPacing(catalog, report);
+  checkSteps(catalog, report);
   checkDrills(catalog, report);
   checkKatas(catalog, report);
   checkReferenceText(catalog, report);

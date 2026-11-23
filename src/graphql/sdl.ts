@@ -1,12 +1,15 @@
 /**
  * The archive's schema. `@clearance` marks the lowest clearance at which a
  * type or field exists; `@inverse` derives a list from the field on the other
- * record that points back. Both directives are removed before the schema is
- * served, so players never see them.
+ * record that points back; `@undocumented` keeps a type or field out of the
+ * documentation panel, so that only introspection describes it (SDD 4). The
+ * directives are removed before the schema is served, so players never see
+ * them.
  */
 export const SDL = /* GraphQL */ `
-  directive @clearance(level: Int!) on OBJECT | FIELD_DEFINITION
+  directive @clearance(level: Int!) on OBJECT | SCALAR | FIELD_DEFINITION
   directive @inverse(of: String!) on FIELD_DEFINITION
+  directive @undocumented on OBJECT | SCALAR | FIELD_DEFINITION
 
   type Query {
     "One city, by name."
@@ -37,6 +40,10 @@ export const SDL = /* GraphQL */ `
     travelOrders: [TravelOrder!]! @clearance(level: 5)
     "Every payment order on file."
     paymentOrders: [PaymentOrder!]! @clearance(level: 5)
+    "Every drawer in the Fourth Desk's cabinet, in the order the desk labelled them."
+    cabinet: [Drawer!]! @clearance(level: 6) @undocumented
+    "Every slip in the book that Lusaka Exchange Control kept apart from its register."
+    exchangeBook: [Slip!]! @clearance(level: 6) @undocumented
   }
 
   "A sovereign state."
@@ -306,6 +313,57 @@ export const SDL = /* GraphQL */ `
     "The register entry for the owner's report that the goods were missing."
     lossReport: RegisterEntry
   }
+
+  "A serial in a register, written as the letters of the office that keeps the register, a hyphen, and the number of the entry. FD-4126 is entry 4126 in the register of the Fourth Desk, and FS-0088 is entry 88 in the register of the First Desk."
+  scalar DeskSerial @clearance(level: 6) @undocumented
+
+  "One drawer of the Fourth Desk's cabinet."
+  type Drawer @clearance(level: 6) @undocumented {
+    "The label on the front of the drawer."
+    label: String!
+    "The dockets filed in the drawer."
+    dockets: [Docket!]! @inverse(of: "drawer")
+  }
+
+  "A docket: the folder the Fourth Desk kept for one matter, with every paper on the matter inside it."
+  type Docket @clearance(level: 6) @undocumented {
+    "The reference written on the docket's cover."
+    reference: ID!
+    "The matter, as the desk wrote it on the cover."
+    title: String!
+    "The drawer the docket is filed in."
+    drawer: Drawer!
+    "The consignment the matter concerns, if it concerns one."
+    shipment: Shipment
+    "The office that wrote the minute. A minute is the instruction that a docket is opened on."
+    minute: Office
+    "The office the docket is marked for. That office must carry out the minute. It did not write the minute."
+    mark: Office
+    "Every office that was sent a copy of the minute."
+    circulation: [Office!]!
+    "The entry for the minute, in the register of the office that wrote the minute."
+    opened: DeskSerial!
+    "The party the docket's papers are held for."
+    heldFor: Operative
+  }
+
+  "A slip in the book of Lusaka Exchange Control: a payment the exchange let through without entering it in its register."
+  type Slip @clearance(level: 6) @undocumented {
+    "The number on the slip."
+    number: ID!
+    "The company the money was paid to."
+    payee: Company
+    "The amount, as written on the slip."
+    amount: String!
+    "The serial of the entry that allowed the payment, in the register of the office that allowed it."
+    authority: DeskSerial
+    "Every office the slip passed through, in order."
+    route: [Office!]!
+    "The party who carried the money across."
+    courier: Operative
+    "The party who sent the slip to the exchange. That party did not carry the money."
+    sender: Operative
+  }
 `;
 
-export const MAX_CLEARANCE = 5;
+export const MAX_CLEARANCE = 6;

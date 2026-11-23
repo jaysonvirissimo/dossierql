@@ -10,6 +10,7 @@ import { hintCost, revealCost } from "../../engine/mission.ts";
 import { parseRef, refOf } from "../../graphql/store.ts";
 import { Prose } from "../Prose.tsx";
 import { SchemaDocs } from "../SchemaDocs.tsx";
+import { Clues } from "./Clues.tsx";
 import { useWorkspace } from "./context.ts";
 import {
   describeFact,
@@ -51,11 +52,7 @@ function CasePanel() {
       <h3>Briefing</h3>
       <Prose text={stage.briefing} />
       <h3>Clues</h3>
-      <ul className="clues">
-        {stage.clues.map((clue, index) => (
-          <li key={index}>{clue.text}</li>
-        ))}
-      </ul>
+      <Clues stage={stage} />
       {state.dispatches.length > 0 && (
         <>
           <h3>Dispatches</h3>

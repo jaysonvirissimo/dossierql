@@ -152,7 +152,12 @@ export function HomeRoute() {
       isPlacement(m, course.missions, standing) &&
       !underway(save.investigations[m.id]?.state),
   );
-  const campaign = course.campaigns[0];
+  // The desk is headed by the campaign of the next case in the story.
+  const campaign =
+    course.campaigns.find((c) => c.id === next?.campaign) ??
+    course.campaigns[0];
+  const campaignTitles = new Map(course.campaigns.map((c) => [c.id, c.title]));
+  let shownCampaign: string | undefined;
   const drills = course.drills.length;
   const trained = course.drills.filter((d) =>
     standing.drills.includes(d.id),
@@ -235,12 +240,20 @@ export function HomeRoute() {
             availability(m, course.missions, standing) !== "hidden",
         );
         if (cases.length === 0) return null;
+        const first = cases[0]?.campaign;
+        const opens = shownCampaign !== undefined && first !== shownCampaign;
+        shownCampaign = first;
         return (
           <section
             key={level}
             className="level"
             aria-labelledby={`level-${String(level)}`}
           >
+            {opens && first !== undefined && (
+              <p className="label" data-testid="campaign-opens">
+                {campaignTitles.get(first)}
+              </p>
+            )}
             <h2 id={`level-${String(level)}`} className="level__title">
               Clearance {level}
             </h2>

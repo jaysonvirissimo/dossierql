@@ -6,7 +6,30 @@ import { parseRef } from "../../graphql/store.ts";
 
 export type Ledger = Readonly<Record<string, LedgerEntry>>;
 
-const NAMING_FIELDS = ["name", "codename", "id", "code"];
+const NAMING_FIELDS = [
+  "name",
+  "codename",
+  "id",
+  "code",
+  "reference",
+  "number",
+  "label",
+];
+
+/** What a query returned to identify a record, if anything. */
+function identifiedAs(ref: string, ledger: Ledger): string | null {
+  for (const field of NAMING_FIELDS) {
+    const value = ledger[`${ref}.${field}`]?.fact.value;
+    if (value?.kind === "scalar" && typeof value.value === "string") {
+      return value.value;
+    }
+  }
+  const serial = ledger[`${ref}.serial`]?.fact.value;
+  if (serial?.kind === "scalar" && typeof serial.value === "number") {
+    return `entry ${String(serial.value)}`;
+  }
+  return null;
+}
 
 /** camelCase to plain words: `lastKnownLocation` reads "last known location". */
 export function words(field: string): string {
@@ -15,16 +38,33 @@ export function words(field: string): string {
 
 /**
  * What to call a record, using only what the player's queries returned.
- * A record never named in a result is shown by its filing number.
+ * A record that no result has identified yet is numbered among the records
+ * of its type that are not identified either, in the order the ledger met
+ * them, as in "operative 1, not yet identified". The archive's own filing
+ * key is never shown, because no query returned it.
  */
 export function labelOf(ref: string, ledger: Ledger): string {
-  for (const field of NAMING_FIELDS) {
-    const value = ledger[`${ref}.${field}`]?.fact.value;
-    if (value?.kind === "scalar" && typeof value.value === "string") {
-      return value.value;
+  const known = identifiedAs(ref, ledger);
+  if (known !== null) return known;
+  const { type } = parseRef(ref);
+  const unknown: string[] = [];
+  const note = (other: string | null | undefined) => {
+    if (
+      other &&
+      !unknown.includes(other) &&
+      parseRef(other).type === type &&
+      identifiedAs(other, ledger) === null
+    ) {
+      unknown.push(other);
     }
+  };
+  for (const { fact } of Object.values(ledger)) {
+    note(fact.entity);
+    if (fact.value.kind === "ref") note(fact.value.ref);
+    if (fact.value.kind === "list") fact.value.refs.forEach(note);
   }
-  return parseRef(ref).id;
+  const index = unknown.indexOf(ref);
+  return `${words(type)} ${String(index < 0 ? unknown.length + 1 : index + 1)}, not yet identified`;
 }
 
 export function typeWords(ref: string): string {
@@ -55,7 +95,26 @@ export function describeFact(fact: Fact, ledger: Ledger): string {
 export { pathKey };
 
 export interface Finding extends CitedRow {
+  /** The facts the citation carries, such as "shipment → id". */
   label: string;
+  /**
+   * The row itself, by its fields from the record it sits in. Rows of the
+   * same shape read the same, whatever facts each one carries.
+   */
+  row: string;
+}
+
+/** A row's fields from the record it sits in: after the last list index, or the top-level field. */
+export function rowWords(path: readonly (string | number)[]): string {
+  const last = path.reduce<number>(
+    (at, part, index) => (typeof part === "number" ? index : at),
+    0,
+  );
+  return path
+    .slice(last + 1)
+    .filter((part): part is string => typeof part === "string")
+    .map(words)
+    .join(" → ");
 }
 
 /** The citation behind one row of a response, with the words to show for it. */
@@ -71,7 +130,7 @@ export function findingAt(
   const fields = cited.factKeys.map((key) =>
     words(ledger[key]?.fact.field ?? ""),
   );
-  return { ...cited, label: fields.join(" → ") };
+  return { ...cited, label: fields.join(" → "), row: rowWords(path) };
 }
 
 export function hours(n: number): string {

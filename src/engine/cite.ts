@@ -78,6 +78,13 @@ export function citationAt(
   const lead = leadBinding(stage);
   const leadType = bindingTypes(stage)[lead];
   const ownFact = ledger[own]?.fact;
+  // A field that returned nothing is no evidence: no claim can ask for null.
+  if (
+    (ownFact?.value.kind === "scalar" && ownFact.value.value === null) ||
+    (ownFact?.value.kind === "ref" && ownFact.value.ref === null)
+  ) {
+    return null;
+  }
   // The patterns that say something about the lead itself.
   const marker = ":$" + lead;
   const aboutLead = patterns.filter((p) =>

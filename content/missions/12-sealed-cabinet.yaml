@@ -1,0 +1,544 @@
+id: sealed-cabinet
+title: The Sealed Cabinet
+campaign: fourth-desk
+order: 1
+clearance: 6
+kind: teaching
+teaches: introspection
+practises: [nested-selections, arguments]
+requires: [nested-selections, arguments]
+summary: >
+  The Fourth Desk kept a cabinet outside the agency's registry. Nobody at
+  the agency has written documentation for it, so the archive will have to
+  describe the cabinet itself.
+motif: seal
+clock:
+  countdown: The inquiry reseals the cabinet in {remaining}
+  expired: The inquiry has resealed the cabinet
+  onExpiry: end
+startingStage: cabinet
+
+debrief:
+  onTime: |
+    The inquiry reads docket DKT-0417 from the cover inward. The
+    First Desk wrote the minute that let the museum's tiles go. The
+    Fourth Desk only carried the minute out. A copy went to Lusaka
+    Exchange Control, which keeps a book that the inquiry has not yet
+    seen.
+
+    The papers are held for GILT_MAGPIE, the operative who travelled
+    as The Registrar and who handles the Parallax Circle's paymaster.
+
+    The Fourth Desk's register is countersigned on every line. The
+    First Desk's register is countersigned on none.
+  stampOnTime: MINUTED
+  comparison: >
+    The reference solution asks the archive about itself before it asks
+    for records. It lists every type with
+    `__schema { types { name fields { name } } }`, and finds `cabinet`
+    among the fields of `Query`. It asks `__type(name: "Docket")` for the
+    description of each field, which tells `minute` apart from `mark`.
+    For `circulation` it asks for `ofType` three times, through a `!`, a
+    list, and another `!`, to reach the type `Office`. Inside `heldFor` it
+    asks for `__typename`, which every type has, beside `codename` in the
+    same query.
+  geography: >
+    Lusaka stands on a plateau more than a thousand metres above the sea.
+    Zambia has no coast, and its trade reaches the sea through its
+    neighbours, among them Mozambique, Tanzania, and Angola.
+
+stages:
+  cabinet:
+    location: PT
+    objective: Identify the docket in the Fourth Desk's cabinet that concerns the museum's tiles.
+
+    briefing: |
+      The bureaucracy has put the Fourth Desk's cabinet under seal, and
+      you are to read it. The desk kept the cabinet outside the agency's
+      registry, so nobody at the agency has written documentation for
+      it. The Documentation tab does not list the cabinet.
+
+      The archive can still describe itself. A query that asks for
+      `__schema` gets back a description of the archive, not records
+      from it. A type is a kind of record, such as `City` or `Shipment`,
+      and each entry in the Documentation tab is one type. Inside
+      `__schema`, the field `types` lists every type that the archive
+      holds. Inside `types`, the field `fields` lists
+      the fields of each type. One of the types is `Query`. The fields
+      of `Query` are the fields that a query starts with, such as `city`
+      and `shipment`. Asking the archive to describe itself is called
+      [introspection](glossary:introspection).
+
+      Two fields of `Query` are missing from the Documentation tab. One
+      of them is `cabinet`, which returns the drawers of the cabinet, and
+      each drawer holds dockets. Unlike `city`, `cabinet` takes no
+      argument. The other field belongs to a later case.
+      The list of fields does not say which fields return records and
+      need braces. A later stage shows how to find out, and until then
+      the names of the fields are your guide. A docket is the folder the desk kept for one matter.
+      Identify the docket that concerns the museum's tiles.
+
+    clues:
+      - text: >
+          The museum's tiles left Lisbon in crate LIS-0417.
+        constraint:
+          $docket.shipment: Shipment:LIS-0417
+
+    scaffold:
+      level: guided
+      starterQuery: |
+        query {
+          __schema {
+            types {
+              name
+              # Ask for fields here, with name inside its braces, to
+              # see the fields of each type. In the entry for Query,
+              # find cabinet, which the Documentation tab does not
+              # list. Then write a second query that starts with
+              # cabinet.
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        The cabinet keeps its dockets in drawers. Open each drawer's
+        dockets, and check which docket's shipment is LIS-0417.
+      concept: >
+        Inside __schema, types lists every type, and fields inside types
+        lists the fields of each type. Find the entry for Query, and in it
+        the field cabinet. Your second query starts with cabinet, as a
+        query starts with city.
+      schema: >
+        Look at Query.cabinet, Drawer.dockets, Docket.reference, and
+        Docket.shipment.
+      skeleton: |
+        cabinet { label dockets { reference title shipment { id } } }
+
+    solution:
+      type: deduction
+      docket: DKT-0417
+    labels:
+      docket: Docket
+
+    claims:
+      - id: tiles
+        prompt: The docket concerns the museum's tiles.
+        evidenceSets:
+          - facts:
+              - entity: Docket:$docket
+                field: shipment
+                equals: Shipment:LIS-0417
+          - facts:
+              - entity: Docket:$docket
+                field: title
+                equals: Museum tiles, Lisbon store
+
+    leadOutcomes:
+      DKT-0522:
+        refutation:
+          claim: tiles
+          facts:
+            - entity: Docket:$docket
+              field: shipment
+              equals: Shipment:LIS-0522
+        ruledOut: |
+          Docket DKT-0522 is filed in the same drawer, for the same blue
+          ceramic squares. It is for crate LIS-0522. The museum's tiles
+          travelled as LIS-0417.
+
+    resolved: |
+      Deduction accepted. Docket DKT-0417 is open on your desk. Its cover
+      points to two offices, and the field names do not say which office
+      did what.
+
+    referenceSolution:
+      - |
+        query {
+          __schema {
+            types { name fields { name } }
+          }
+        }
+      - |
+        query {
+          cabinet {
+            label
+            dockets { reference title shipment { id } }
+          }
+        }
+
+    next: minute
+
+  minute:
+    location: PT
+    step: type-lookup
+    objective: Identify the office that wrote the minute that docket DKT-0417 was opened on.
+
+    briefing: |
+      A docket is opened on a minute, which is a written instruction. The
+      cover of docket DKT-0417 has two fields that each return an office:
+      `minute` and `mark`. One of the two offices wrote the minute. The
+      other office was to carry the minute out. The names of the two
+      fields do not say which is which.
+
+      The archive keeps a description of every field. The Documentation
+      tab shows those descriptions for the types it lists. For a type
+      that the tab leaves out, ask the archive for that one type by its
+      name, as in `__type(name: "Docket")`. Inside `__type`, the field
+      `fields` lists the fields of the type. Inside `fields`, ask for
+      `name` and `description`.
+
+    clues:
+      - text: >
+          The office wrote the minute that docket DKT-0417 was opened on.
+        constraint:
+          $docket: Docket:DKT-0417
+          $docket.minute: $office
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          __type(name: "Docket") {
+            fields {
+              name
+              # Ask for the description of each field here.
+              # Then ask for the docket's minute and mark, with the
+              # name of each office, in a second query.
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        Read the descriptions of minute and mark. Then ask for the name of
+        the office in the field whose description says that the office
+        wrote the minute.
+      concept: >
+        The field __type takes the name of a type, in double quotes, and
+        describes that one type. Inside it, fields lists the type's fields,
+        and each field has a name and a description.
+      schema: >
+        Look at Docket.minute, Docket.mark, and Office.name.
+      skeleton: |
+        __type(name: "Docket") { fields { name description } }
+
+    solution:
+      type: deduction
+      office: first-desk
+    labels:
+      office: Office
+
+    claims:
+      - id: minute
+        prompt: This office wrote the minute that docket DKT-0417 was opened on.
+        evidenceSets:
+          - facts:
+              - entity: Docket:$docket
+                field: minute
+                equals: Office:$office
+          - facts:
+              - entity: Office:$office
+                field: register
+                includes: RegisterEntry:$entry
+              - entity: RegisterEntry:$entry
+                field: note
+                equals: >-
+                  Minute to the Fourth Desk. Release the museum's tiles
+                  under order REL-0417.
+
+    leadOutcomes:
+      fourth-desk:
+        refutation:
+          claim: minute
+          facts:
+            - entity: Docket:$docket
+              field: reference
+              equals: DKT-0417
+            - entity: Docket:$docket
+              field: mark
+              equals: Office:$office
+        ruledOut: |
+          The Fourth Desk is the mark on docket DKT-0417. The description
+          of mark says that the office in that field carries the minute
+          out, and did not write it.
+
+    resolved: |
+      Deduction accepted. The First Desk wrote the minute. The mark on the
+      docket is the Fourth Desk, which was to carry the minute out. The cover of the docket also lists the offices
+      that were sent a copy.
+
+    referenceSolution:
+      - |
+        query {
+          __type(name: "Docket") {
+            fields { name description }
+          }
+        }
+      - |
+        query {
+          cabinet {
+            dockets { reference minute { name } mark { name } }
+          }
+        }
+
+    next: copies
+
+  copies:
+    location: PT
+    step: type-kinds
+    objective: Identify the office outside Portugal that was sent a copy of the minute on docket DKT-0417.
+
+    briefing: |
+      The field `circulation` lists the offices that were sent a copy of the
+      minute. Its name does not say how the offices are listed. The field
+      could return each office's name as text, which you ask for with no
+      braces. It could instead return a list of records, which you open
+      with braces and ask fields from. Before you ask for the offices, find
+      out what `circulation` returns. Inside `fields`, ask for each field's
+      `type`, and inside `type`, ask for its `kind` and its `name`.
+
+      Here is an example. The Documentation tab shows the field
+      `transferOrders` of `Shipment` as `[TransferOrder!]!`. Introspection
+      describes that type in four layers. A `!` after a type means that the field always returns a value, and never `null`. The outer layer has the kind
+      `NON_NULL`, for the last `!`, and its name is `null`. Inside it,
+      `ofType` has the kind `LIST`, for the square brackets. Inside that,
+      `ofType` has the kind `NON_NULL` again. Inside that, `ofType` has
+      the kind `OBJECT` and the name `TransferOrder`. So ask for `ofType`
+      inside `ofType`, with `kind` and `name` at each layer, until a name
+      comes back. A type like `[TransferOrder!]!` needs `ofType` three times.
+      Asking for one layer too many does no harm: the extra `ofType` comes
+      back as `null`. A
+      type whose kind is `OBJECT` is a record, so a field that returns it
+      needs braces.
+
+      One more field is worth reading now, though this stage does not
+      need it. The field `opened` returns a type whose kind is `SCALAR`. A
+      [scalar](glossary:scalar) holds a single value, so a field that
+      returns one takes no braces. The archive defined this scalar
+      itself, and called it `DeskSerial`. Its description says how its
+      values are written. The value of `opened` on docket DKT-0417 is
+      FS-0088, which is entry 88 in the register of the First Desk.
+
+    clues:
+      - text: >
+          The office was sent a copy of the minute on docket DKT-0417.
+        constraint:
+          $docket: Docket:DKT-0417
+          $docket.circulation: $office
+      - text: >
+          The office is in Zambia.
+        constraint:
+          $office.city.country: Country:ZM
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          __type(name: "Docket") {
+            fields {
+              name
+              type {
+                kind
+                name
+                # A name of null means that a ! or a list is around
+                # the type. Ask for ofType here, with kind and name
+                # inside it, and again inside that ofType, until a
+                # name comes back. A type like [TransferOrder!]! needs
+                # ofType three times.
+              }
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        The field circulation lists two offices. One office is in Lisbon,
+        and the other is in Zambia.
+      concept: >
+        When a type's name comes back as null, its kind says what is
+        around the type: NON_NULL for a !, or LIST for a list. The field
+        ofType holds the type inside. For circulation, ask for ofType three
+        layers deep to reach a name.
+      schema: >
+        Look at Docket.circulation, Office.city, and City.country.
+      skeleton: |
+        type { kind name ofType { kind name ofType { kind name ofType { kind name } } } }
+
+    solution:
+      type: deduction
+      office: lusaka-exchange
+    labels:
+      office: Office
+
+    claims:
+      - id: copy
+        prompt: This office was sent a copy of the minute on docket DKT-0417.
+        evidenceSets:
+          - facts:
+              - entity: Docket:$docket
+                field: circulation
+                includes: Office:$office
+          - facts:
+              - entity: Office:$office
+                field: register
+                includes: RegisterEntry:$entry
+              - entity: RegisterEntry:$entry
+                field: note
+                equals: >-
+                  Copy received from the First Desk of the minute on
+                  docket DKT-0417.
+      - id: zambia
+        prompt: The office is in Zambia.
+        evidenceSets:
+          - facts:
+              - entity: Office:$office
+                field: city
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:ZM
+          - facts:
+              - entity: Office:$office
+                field: city
+                equals: City:$city
+              - entity: Country:ZM
+                field: cities
+                includes: City:$city
+
+    leadOutcomes:
+      fourth-desk:
+        refutation:
+          claim: zambia
+          facts:
+            - entity: Office:$office
+              field: city
+              equals: City:$city
+            - entity: City:$city
+              field: country
+              equals: Country:PT
+        ruledOut: |
+          The Fourth Desk received its copy in Lisbon. The office you
+          want is outside Portugal.
+
+    resolved: |
+      Deduction accepted. Lusaka Exchange Control received a copy of the
+      minute from the First Desk. One field on the cover of the docket is
+      still unread.
+
+    referenceSolution:
+      - |
+        query {
+          __type(name: "Docket") {
+            fields {
+              name
+              type {
+                kind
+                name
+                ofType { kind name ofType { kind name ofType { kind name } } }
+              }
+            }
+          }
+        }
+      - |
+        query {
+          cabinet {
+            dockets {
+              reference
+              circulation { name city { name country { name } } }
+            }
+          }
+        }
+
+    next: held
+
+  held:
+    location: PT
+    step: typename
+    objective: Identify who the papers on docket DKT-0417 are held for.
+
+    briefing: |
+      The field `heldFor` returns a record, and the description of
+      `heldFor` does not say what type of record it is. A response does
+      not say either: it gives the fields you asked for, and nothing
+      else.
+
+      You can ask any record what type it is. Every type has a field
+      called `__typename`, which returns the name of the record's type.
+      Because every type has it, you can ask for `__typename` before you
+      know any of the record's other fields. If you asked for the types
+      of the fields of `Docket` in the last stage, you have seen the
+      answer already. `__typename` gives it from inside the response,
+      in the same query that asks for the record. Open `heldFor` and ask for
+      `__typename` inside its braces. Then ask for the fields that the
+      Documentation tab lists for that type.
+
+    clues:
+      - text: >
+          The papers on docket DKT-0417 are held for the operative.
+        constraint:
+          $docket: Docket:DKT-0417
+          $docket.heldFor: $operative
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          cabinet {
+            dockets {
+              reference
+              # heldFor returns a record. Open heldFor with braces,
+              # and ask for __typename inside them to learn which
+              # type of record it is.
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        The papers on docket DKT-0417 are held for an operative. Ask for
+        the operative's codename.
+      concept: >
+        Every type has the field __typename, which returns the name of the
+        record's type. Ask for it inside heldFor. The Documentation tab
+        lists the fields of the type that comes back.
+      schema: >
+        Look at Docket.heldFor and Operative.codename.
+      skeleton: |
+        heldFor { __typename codename }
+
+    solution:
+      type: deduction
+      operative: GILT_MAGPIE
+    labels:
+      operative: Operative
+
+    claims:
+      - id: held
+        prompt: The papers on docket DKT-0417 are held for this operative.
+        evidenceSets:
+          - facts:
+              - entity: Docket:$docket
+                field: heldFor
+                equals: Operative:$operative
+          - facts:
+              - entity: Office:first-desk
+                field: register
+                includes: RegisterEntry:$entry
+              - entity: RegisterEntry:$entry
+                field: note
+                equals: >-
+                  The papers on docket DKT-0417 are to be held for
+                  GILT_MAGPIE.
+
+    resolved: |
+      Deduction accepted. The papers on docket DKT-0417 are held for
+      GILT_MAGPIE.
+
+    referenceSolution:
+      - |
+        query {
+          cabinet {
+            dockets { reference heldFor { __typename codename } }
+          }
+        }

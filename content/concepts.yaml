@@ -95,3 +95,27 @@
   payoff: >
     To ask about the next city, you change the value and leave the query
     alone.
+- id: introspection
+  title: Introspection
+  clearance: 6
+  summary: >
+    Introspection is asking the archive to describe itself. In the example,
+    `__type(name: "Docket")` asks the archive to describe the type
+    `Docket`. Inside it, `fields` gives each field's name, its description,
+    and its type. A type with a `!` or a list around it has no name of its
+    own: its `kind` is `NON_NULL` or `LIST`, and `ofType` holds the type
+    inside. To list every type the archive holds, ask for
+    `__schema { types { name } }` instead.
+  example: |
+    query {
+      __type(name: "Docket") {
+        fields {
+          name
+          description
+          type { kind name ofType { kind name } }
+        }
+      }
+    }
+  payoff: >
+    A part of the archive with no documentation still tells you what it
+    holds, what each field means, and what each field returns.

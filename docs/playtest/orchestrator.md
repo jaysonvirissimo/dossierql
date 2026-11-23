@@ -51,6 +51,10 @@ start.
 | `clean-room-solve.md`            | _Three Couriers_                   | `quiet-consignee`      | 3         |
 | `clean-room-solve.md`            | _The Receipt_                      | `registrars-return`    | 6         |
 | `novice-walkthrough.md`          | _The Receipt_                      | `registrars-return`    | 6         |
+| `clean-room-solve.md`            | _The Sealed Cabinet_               | `registrars-return`    | 6         |
+| `novice-walkthrough.md`          | _The Sealed Cabinet_               | `registrars-return`    | 6         |
+| `clean-room-solve.md`            | _The Exchange Book_                | `registrars-return`    | 6         |
+| `novice-walkthrough.md`          | _The Exchange Book_                | `registrars-return`    | 6         |
 | `simulated-sessions.md`, round 1 | the drills and the first two cases | none                   | 1         |
 | `simulated-sessions.md`, round 2 | the path given in the prompt       | in the prompt          | 2         |
 
@@ -59,6 +63,12 @@ start.
   Check that the desk shows it before you hand the page over. For the
   novice walkthrough, set [PRIOR PLAY] to: "You have played every earlier
   case of the campaign, and you remember what its debriefs taught."
+- **_The Sealed Cabinet_ and _The Exchange Book_.** They open the second
+  campaign, at clearance 6. For the novice walkthrough of _The Sealed
+  Cabinet_, set [PRIOR PLAY] to: "You have played every case of the first
+  campaign, and you remember what its debriefs taught. You have never asked
+  an archive to describe itself." For _The Exchange Book_, add: "You have
+  also played The Sealed Cabinet."
 - **The simulated rounds.** Run each round once for each persona, P1 to P4,
   in a fresh context each time. Start round 2 only after round 1's summary
   is written and its fixes are made. If round 1's fixes change the opening,

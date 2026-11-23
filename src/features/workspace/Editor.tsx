@@ -23,6 +23,7 @@ import { tags } from "@lezer/highlight";
 import { graphql } from "cm6-graphql";
 import type { GraphQLSchema } from "graphql";
 import { useEffect, useRef, useState } from "react";
+import { braceBalance } from "./braces.ts";
 
 const theme = EditorView.theme(
   {
@@ -108,6 +109,36 @@ interface EditorProps {
 type Host = HTMLDivElement & { cmView?: EditorView };
 
 /**
+ * The editor closes each brace as it is opened. A player who types the
+ * closing brace on a new line, as they would on paper, would then have one
+ * too many. When every brace is already closed and the next character after
+ * the cursor is a closing brace, typing `}` steps over that brace instead,
+ * and a line left blank by the step is removed.
+ */
+export const stepOverClosingBrace = EditorView.inputHandler.of(
+  (view, from, to, text) => {
+    if (text !== "}" || from !== to) return false;
+    const doc = view.state.doc.toString();
+    if (braceBalance(doc) > 0) return false;
+    const after = /^\s*/.exec(doc.slice(from))?.[0].length ?? 0;
+    if (doc[from + after] !== "}") return false;
+    const line = view.state.doc.lineAt(from);
+    const blank = line.text.trim() === "" && after > 0;
+    view.dispatch({
+      changes: blank ? { from: line.from, to: line.to + 1 } : undefined,
+      selection: {
+        anchor: blank
+          ? from + after + 1 - (line.to + 1 - line.from)
+          : from + after + 1,
+      },
+      scrollIntoView: true,
+      userEvent: "input.type",
+    });
+    return true;
+  },
+);
+
+/**
  * The query editor. It is created once and left alone: the callbacks live
  * in refs so that a re-render never rebuilds it. Tab is not captured, so
  * keyboard users can always leave.
@@ -148,9 +179,13 @@ export function Editor({
           drawSelection(),
           indentOnInput(),
           bracketMatching(),
+          // Ahead of closeBrackets, which would add a second brace.
+          Prec.high(stepOverClosingBrace),
           closeBrackets(),
-          // Suggests the fields that fit where the cursor is.
-          autocompletion(),
+          // Suggests the fields that fit where the cursor is. Nothing is
+          // chosen until the player picks a suggestion, so Enter always
+          // starts a new line.
+          autocompletion({ selectOnOpen: false }),
           highlightActiveLine(),
           EditorView.lineWrapping,
           Prec.highest(

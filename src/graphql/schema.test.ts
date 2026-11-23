@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { loadContent } from "../../scripts/load-content.ts";
 import { buildCatalog } from "../content/catalog.ts";
 import { transmit } from "./execute.ts";
-import { fieldClearance, schemaFor } from "./schema.ts";
+import { fieldClearance, isUndocumented, schemaFor } from "./schema.ts";
 import { MAX_CLEARANCE } from "./sdl.ts";
 
 const catalog = buildCatalog(loadContent().raw);
@@ -66,6 +66,7 @@ const ADDED: Record<number, string[]> = {
     "TransferOrder.clearedBy",
     "TransferOrder.registerEntry",
   ],
+  6: ["Docket", "Drawer", "Slip", "Query.cabinet", "Query.exchangeBook"],
 };
 
 function surface(level: number): { types: string[]; fields: string[] } {
@@ -189,5 +190,82 @@ describe("the schema at each clearance", () => {
       clearance: 2,
     });
     expect(sent.transmitted).toBe(false);
+  });
+});
+
+describe("the Fourth Desk's cabinet at clearance 6", () => {
+  it("is absent below clearance 6, scalar included", () => {
+    const schema = schemaFor(5);
+    expect(schema.getType("Docket")).toBeUndefined();
+    expect(schema.getType("DeskSerial")).toBeUndefined();
+    expect(schemaFor(6).getType("DeskSerial")).toBeDefined();
+  });
+
+  it("describes itself through introspection, though the panel leaves it out", () => {
+    const sent = transmit(catalog.store, {
+      operation: `{
+        __type(name: "Docket") {
+          kind
+          fields { name description type { kind name ofType { kind name } } }
+        }
+      }`,
+      clearance: 6,
+    });
+    expect(sent.result.errors).toBeUndefined();
+    const type = (
+      sent.result.data as {
+        __type: {
+          kind: string;
+          fields: {
+            name: string;
+            description: string;
+            type: { kind: string; name: string | null; ofType: unknown };
+          }[];
+        };
+      }
+    ).__type;
+    expect(type.kind).toBe("OBJECT");
+    const minute = type.fields.find((f) => f.name === "minute");
+    expect(minute?.description).toMatch(/wrote the minute/);
+    const opened = type.fields.find((f) => f.name === "opened");
+    expect(opened?.type).toEqual({
+      kind: "NON_NULL",
+      name: null,
+      ofType: { kind: "SCALAR", name: "DeskSerial" },
+    });
+    expect(sent.facts).toEqual([]);
+    expect(isUndocumented("Docket")).toBe(true);
+    expect(isUndocumented("DeskSerial")).toBe(true);
+    expect(isUndocumented("Query", "cabinet")).toBe(true);
+    expect(isUndocumented("Query", "city")).toBe(false);
+    expect(isUndocumented("Office")).toBe(false);
+  });
+
+  it("hands over the tiles docket with a custom scalar and a record with no label", () => {
+    const sent = transmit(catalog.store, {
+      operation: `{
+        cabinet {
+          label
+          dockets { reference opened heldFor { __typename codename } }
+        }
+      }`,
+      clearance: 6,
+    });
+    expect(sent.result.errors).toBeUndefined();
+    const drawers = (
+      sent.result.data as {
+        cabinet: { label: string; dockets: Record<string, unknown>[] }[];
+      }
+    ).cabinet;
+    expect(drawers.map((d) => d.label)).toEqual([
+      "Ceramics",
+      "Freight",
+      "Payments",
+    ]);
+    expect(drawers[0]?.dockets[0]).toEqual({
+      reference: "DKT-0417",
+      opened: "FS-0088",
+      heldFor: { __typename: "Operative", codename: "GILT_MAGPIE" },
+    });
   });
 });

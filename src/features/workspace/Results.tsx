@@ -4,6 +4,7 @@ import { useGame } from "../../app/GameProvider.tsx";
 import type { ResultError, TransmissionRecord } from "../../engine/mission.ts";
 import { annotate } from "../../feedback/annotate.ts";
 import { useWorkspace } from "./context.ts";
+import { IntrospectionResult, introspectionRoots } from "./Introspection.tsx";
 import { bindingTypes, leadBinding } from "../../content/types.ts";
 import { schemaFor } from "../../graphql/schema.ts";
 import { refOf } from "../../graphql/store.ts";
@@ -37,6 +38,16 @@ function typeName(entity: string): string {
   return entity.slice(0, Math.max(0, entity.indexOf(":")));
 }
 
+/** Where an error was made: its line and column, and its path if it has one. */
+export function whereOf(error: ResultError): string {
+  const line =
+    error.line !== undefined
+      ? `Line ${String(error.line)}, column ${String(error.column ?? 1)}`
+      : "";
+  const path = error.path ? `at ${error.path.join(".")}` : "";
+  return [line, path].filter(Boolean).join(" · ");
+}
+
 export function Errors({
   errors,
   clearance,
@@ -49,22 +60,24 @@ export function Errors({
   const aliasAvailable = course.glossary.some(
     (entry) => entry.id === "alias" && entry.clearance <= clearance,
   );
-  // The same complaint about three fields is worth saying once.
-  const unique = errors.filter(
-    (error, index) =>
-      errors.findIndex((other) => other.message === error.message) === index,
-  );
+  // The same complaint about three fields is said once, with every place
+  // it was made.
+  const groups: { error: ResultError; places: string[] }[] = [];
+  for (const error of errors) {
+    const place = whereOf(error);
+    const group = groups.find((g) => g.error.message === error.message);
+    if (!group) groups.push({ error, places: place ? [place] : [] });
+    else if (place && !group.places.includes(place)) group.places.push(place);
+  }
   return (
     <ul className="errors" aria-label="Errors">
-      {unique.map((error, index) => (
+      {groups.map(({ error, places }, index) => (
         <li key={index} className="error">
           <pre className="error__message">{error.message}</pre>
-          {(error.line !== undefined || error.path) && (
+          {places.length > 0 && (
             <p className="error__where">
-              {error.line !== undefined &&
-                `Line ${String(error.line)}, column ${String(error.column ?? 1)}`}
-              {error.line !== undefined && error.path ? " · " : ""}
-              {error.path && `at ${error.path.join(".")}`}
+              {places.length > 1 && `In ${String(places.length)} places: `}
+              {places.join("; ")}
             </p>
           )}
           <p className="clerk">
@@ -99,13 +112,14 @@ function Findings({
       state.ledger,
       stageState.activeLead,
     );
+    // A row that returned nothing offers nothing to cite.
+    if (!finding) return null;
     const leadId = finding?.leadId ?? stageState.activeLead;
     const draft = leadId ? stageState.drafts[leadId] : undefined;
     const leadName = leadId
       ? labelOf(refOf(leadType, leadId), state.ledger)
       : "";
     const cited =
-      finding !== null &&
       draft?.citations.some(
         (c) => c.factKeys.join("|") === finding.factKeys.join("|"),
       ) === true;
@@ -116,9 +130,9 @@ function Findings({
           type="button"
           className="button button--small"
           disabled={closed || cited}
-          aria-label={`Cite ${finding?.label ?? name}${leadId ? `, into the draft for ${leadName}` : ""}`}
+          aria-label={`Cite ${finding.row || name}${leadId ? `, into the draft for ${leadName}` : ""}`}
+          title={`Cites ${finding.label}`}
           onClick={() => {
-            if (!finding) return;
             if (!leadId) {
               setSaid(
                 "Open a lead in the draft first, then cite this finding.",
@@ -147,7 +161,17 @@ function Findings({
   const entityAt = typeOfIn(record, state.ledger);
   const typeAt = (path: Path): string => {
     const entity = entityAt(path);
-    return entity ? typeWords(entity) : "record";
+    if (entity) return typeWords(entity);
+    // A record whose fields record nothing may still say what it is.
+    let value: unknown = record.data;
+    for (const part of path) {
+      value =
+        value !== null && typeof value === "object"
+          ? (value as Record<string | number, unknown>)[part]
+          : undefined;
+    }
+    const named = isRecord(value) ? value.__typename : undefined;
+    return typeof named === "string" ? words(named) : "record";
   };
   const typesAt = (paths: Path[]) => paths.map((p) => typeName(entityAt(p)));
 
@@ -437,21 +461,40 @@ function Findings({
   if (!isRecord(record.data)) {
     return <p>The archive returned no data.</p>;
   }
+  const meta = introspectionRoots(record.operation);
   const roots = Object.entries(record.data);
   const rootPaths = roots.map(([key]) => [key]);
+  const onlyIntrospection = roots.every(([key]) => meta.has(key));
   // A list asked for directly inside the query's braces, set in columns.
   const rootList = (key: string, list: unknown[]): ReactNode => {
     const paths = list.map((_, index) => [key, index]);
     const group = isPlainList(list) ? null : grouped(list, paths);
     return group ? table(group, paths, key, null) : null;
   };
-  const rootGroup = grouped(
-    roots.map(([, value]) => value),
-    rootPaths,
-  );
+  const rootGroup = onlyIntrospection
+    ? null
+    : grouped(
+        roots.map(([, value]) => value),
+        rootPaths,
+      );
   return (
     <div className="findings">
-      {layout === "columns" ? (
+      {meta.size > 0 && (
+        <p className="findings__legend" data-testid="introspection-legend">
+          Introspection describes the archive, not its records, so it holds no
+          evidence and nothing in it can be cited. Each type is listed with its
+          fields, one line to a field.
+          {JSON.stringify(record.data).includes('"ofType"') && (
+            <>
+              {" "}
+              A type with a <code>!</code> or a list around it is shown layer by
+              layer, outermost first, as in{" "}
+              <code>NON_NULL → LIST → NON_NULL → OBJECT TransferOrder</code>.
+            </>
+          )}
+        </p>
+      )}
+      {onlyIntrospection ? null : layout === "columns" ? (
         <p className="findings__legend">
           Each column is one record and each row is one field, so each cell is
           one fact. A shaded cell is a field that the query did not ask for on
@@ -476,7 +519,7 @@ function Findings({
           </p>
         </>
       )}
-      <p className="findings__legend">
+      <p className="findings__legend" hidden={onlyIntrospection}>
         A Cite button shows which {words(leadType)} gets the citation. For facts
         that belong to no particular {words(leadType)}, the button uses the
         draft you have open. If the button says only Cite, open a lead first.
@@ -502,7 +545,9 @@ function Findings({
         roots.map(([key, value]) => (
           <section key={key} className="findings__root">
             <h3 className="findings__title">{key}</h3>
-            {value === null ? (
+            {meta.has(key) ? (
+              <IntrospectionResult value={value} />
+            ) : value === null ? (
               <p>
                 <em>No record matched.</em>
               </p>
@@ -612,6 +657,12 @@ export function Results() {
               {state.clock !== "none" && " No time was spent."}
             </p>
             <Errors errors={rejected.errors} clearance={env.clearance} />
+            {record && (
+              <p className="note" data-testid="earlier-findings">
+                The findings below are not for this request. They are from
+                transmission {record.n}, which the archive answered earlier.
+              </p>
+            )}
           </div>
         )}
       </div>
@@ -629,6 +680,25 @@ export function Results() {
           {sent !== null && (
             <p className="results__variables" data-testid="sent-with">
               You sent this request with the variables <code>{sent}</code>.
+            </p>
+          )}
+          {record.weight !== undefined && (
+            <p className="results__variables" data-testid="weight">
+              {record.weight === 0 ? (
+                <>
+                  The records clerk weighed this request at 0: it asks for no
+                  records. Introspection and <code>__typename</code> describe
+                  the archive itself, and weigh nothing.
+                </>
+              ) : (
+                <>
+                  The records clerk weighed this request at {record.weight}: it
+                  could return up to {record.weight}{" "}
+                  {record.weight === 1 ? "record" : "records"}.
+                </>
+              )}{" "}
+              The Raw response tab shows the weight under{" "}
+              <code>extensions</code>.
             </p>
           )}
           <div className="tabs" role="tablist" aria-label="Result views">
@@ -668,9 +738,13 @@ export function Results() {
             ) : (
               <pre className="raw" data-testid="raw-response">
                 {JSON.stringify(
-                  record.errors.length
-                    ? { data: record.data, errors: record.errors }
-                    : { data: record.data },
+                  {
+                    data: record.data,
+                    ...(record.errors.length ? { errors: record.errors } : {}),
+                    ...(record.weight !== undefined
+                      ? { extensions: { weight: record.weight } }
+                      : {}),
+                  },
                   null,
                   2,
                 )}

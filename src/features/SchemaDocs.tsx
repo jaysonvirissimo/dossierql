@@ -6,7 +6,7 @@ import {
   type GraphQLObjectType,
 } from "graphql";
 import { useMemo } from "react";
-import { schemaFor } from "../graphql/schema.ts";
+import { isUndocumented, schemaFor } from "../graphql/schema.ts";
 
 /**
  * The archive as it describes itself at one clearance. Read from the schema,
@@ -18,11 +18,19 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
     const query = schema.getQueryType();
     const all = Object.values(schema.getTypeMap()).filter(
       (t): t is GraphQLObjectType =>
-        isObjectType(t) && !t.name.startsWith("__") && t !== query,
+        isObjectType(t) &&
+        !t.name.startsWith("__") &&
+        t !== query &&
+        !isUndocumented(t.name),
     );
     all.sort((a, b) => a.name.localeCompare(b.name));
     return query ? [query, ...all] : all;
   }, [clearance]);
+  const seized = types.some((type) =>
+    Object.keys(type.getFields()).some((field) =>
+      isUndocumented(type.name, field),
+    ),
+  );
   return (
     <div className="tool">
       <p className="tool__lede">
@@ -80,6 +88,15 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
           </>
         )}
       </p>
+      {seized && (
+        <p className="tool__lede" data-testid="undocumented">
+          Not everything the archive holds at clearance {clearance} is in this
+          documentation. Records seized from outside the agency&apos;s registry
+          are in the archive, but nobody at the agency has written documentation
+          for them, so they are not listed here. The archive can still describe
+          them to you. The glossary entry for introspection explains how to ask.
+        </p>
+      )}
       {types.map((type, index) => (
         <details
           key={type.name}
@@ -98,28 +115,30 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
             {type.description && <span> · {type.description}</span>}
           </summary>
           <dl className="doc__fields">
-            {Object.values(type.getFields()).map((field) => (
-              <div key={field.name} className="doc__field">
-                <dt>
-                  <code>
-                    {field.name}
-                    {field.args.length > 0 &&
-                      `(${field.args
-                        .map((a) => `${a.name}: ${String(a.type)}`)
-                        .join(", ")})`}
-                    : {String(field.type)}
-                  </code>
-                </dt>
-                <dd>
-                  {field.description ?? ""}
-                  {!isObjectType(getNamedType(field.type))
-                    ? " Holds a single value, so this field takes no braces."
-                    : isListType(getNullableType(field.type))
-                      ? ` Returns a list of ${String(getNamedType(field.type))} records, so this field needs braces after it. The fields inside the braces come back once for each record in the list.`
-                      : ` Returns one ${String(getNamedType(field.type))} record, so this field needs braces after it.`}
-                </dd>
-              </div>
-            ))}
+            {Object.values(type.getFields())
+              .filter((field) => !isUndocumented(type.name, field.name))
+              .map((field) => (
+                <div key={field.name} className="doc__field">
+                  <dt>
+                    <code>
+                      {field.name}
+                      {field.args.length > 0 &&
+                        `(${field.args
+                          .map((a) => `${a.name}: ${String(a.type)}`)
+                          .join(", ")})`}
+                      : {String(field.type)}
+                    </code>
+                  </dt>
+                  <dd>
+                    {field.description ?? ""}
+                    {!isObjectType(getNamedType(field.type))
+                      ? " Holds a single value, so this field takes no braces."
+                      : isListType(getNullableType(field.type))
+                        ? ` Returns a list of ${String(getNamedType(field.type))} records, so this field needs braces after it. The fields inside the braces come back once for each record in the list.`
+                        : ` Returns one ${String(getNamedType(field.type))} record, so this field needs braces after it.`}
+                  </dd>
+                </div>
+              ))}
           </dl>
         </details>
       ))}

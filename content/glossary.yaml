@@ -151,3 +151,48 @@
     A result that holds both data and errors. A field that the archive
     could not answer comes back as `null`, with an error that says why. The
     rest of the data is still good.
+- id: introspection
+  term: introspection
+  clearance: 6
+  matches: [introspect, introspecting]
+  definition: >
+    Asking the archive to describe itself. Every schema answers two special
+    fields, which you write at the top level of a query, beside fields such
+    as `city`. The first is `__schema`. The query
+    `{ __schema { types { name fields { name } } } }` lists every type the
+    archive holds, with the names of its fields. The second is `__type`.
+    The query `{ __type(name: "Docket") { fields { name description } } }`
+    describes one type, the type `Docket`, and gives the description of
+    each of its fields. The names start with two underscores, so that they
+    never clash with the archive's own fields. To find where a query can
+    start, ask `__type(name: "Query")` for its `fields`. To learn what a
+    field returns, ask for its `type`, and inside `type` for `kind` and
+    `name`. A type with a `!` or a list around it has no name of its own:
+    its `kind` is `NON_NULL` or `LIST`, and `ofType` holds the type
+    inside, so ask for `ofType` again until a name comes back. Inside any
+    record, `__typename` returns the name of the record's type.
+    Introspection describes the archive and not its records, so its
+    results hold no evidence and weigh nothing. Each introspection query
+    is still a transmission.
+- id: scalar
+  term: scalar
+  clearance: 6
+  matches: [scalars]
+  definition: >
+    A type that holds a single value, such as `String`, `Int`, `Boolean`,
+    or `ID`. A field whose type is a scalar takes no braces. An archive can
+    define scalars of its own. Introspection gives such a scalar's `kind`
+    as `SCALAR`, and the scalar's description says how its values are
+    written.
+- id: request-weight
+  term: request weight
+  clearance: 6
+  matches: [weight]
+  definition: >
+    The number of records a request could return. The records clerk works
+    it out before transmitting the request. A list counts for the most
+    records it could hold, and a single value counts for nothing. A
+    request that asks only about the archive itself, through
+    introspection, weighs nothing. From
+    clearance 6, every result states the weight of its request under
+    `extensions`, beside `data`. Nothing depends on the weight yet.

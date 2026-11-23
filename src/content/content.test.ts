@@ -24,12 +24,12 @@ describe("the authored course", () => {
     expect(validateContent(raw)).toEqual([]);
   });
 
-  it("covers clearance 1 to 5 with a teaching mission and an assessment each", () => {
+  it("covers clearance 1 to 6 with a teaching mission and an assessment each", () => {
     const cases = raw.missions.filter((m) => m.kind !== "coda");
-    expect(cases).toHaveLength(10);
+    expect(cases).toHaveLength(12);
   });
 
-  it("ends the campaign with one coda", () => {
+  it("ends the first campaign with one coda", () => {
     expect(
       raw.missions.filter((m) => m.kind === "coda").map((m) => m.id),
     ).toEqual(["the-receipt"]);
@@ -529,5 +529,86 @@ describe("validation fails the build when", () => {
     const copy = structuredClone(raw);
     kata("aliases", copy).payoff = "A fragment would help here.";
     expect(codes(copy)).toContain("terms");
+  });
+});
+
+describe("validation of steps (SDD 3.7) fails the build when a step", () => {
+  const cabinet = "sealed-cabinet";
+  const steps = (content: RawContent) =>
+    validateContent(content)
+      .filter((issue) => issue.code === "steps")
+      .map((issue) => issue.message);
+
+  it("is not one the course lists", () => {
+    expect(
+      steps(mutated(cabinet, (m) => (m.stages.minute!.step = "nothing"))),
+    ).toContain("There is no step nothing.");
+  });
+
+  it("is introduced in the first stage, beside the concept", () => {
+    expect(
+      steps(mutated(cabinet, (m) => (m.stages.cabinet!.step = "typename"))),
+    ).toContain(
+      "The first stage introduces the mission's concept, and no step.",
+    );
+  });
+
+  it("is introduced by an assessment", () => {
+    expect(
+      steps(
+        mutated("exchange-book", (m) => (m.stages.lusaka!.step = "typename")),
+      ),
+    ).toContain("Only a teaching mission introduces a step.");
+  });
+
+  it("is used before the stage that introduces it", () => {
+    const issues = steps(
+      mutated(cabinet, (m) => {
+        m.stages.cabinet!.referenceSolution = [
+          `query { cabinet { label dockets { __typename reference title shipment { id } } } }`,
+        ];
+      }),
+    );
+    expect(issues.join(" ")).toMatch(
+      /uses the step typename, which no stage up to this one introduces/,
+    );
+  });
+
+  it("is introduced and not used", () => {
+    expect(
+      steps(
+        mutated(cabinet, (m) => {
+          m.stages.held!.referenceSolution = [
+            `query { cabinet { dockets { reference heldFor { codename } } } }`,
+          ];
+        }),
+      ),
+    ).toContain(
+      "The stage introduces typename and its reference solution does not use it.",
+    );
+  });
+
+  it("is never practised by a later mission", () => {
+    expect(
+      steps(
+        mutated("exchange-book", (m) => {
+          const operations = m.stages.lusaka!.referenceSolution as string[];
+          m.stages.lusaka!.referenceSolution = operations.map((o) =>
+            o.replace("__typename ", ""),
+          );
+        }),
+      ),
+    ).toContain("No later mission practises typename.");
+  });
+
+  it("belongs to another clearance", () => {
+    expect(
+      steps(
+        mutated(
+          "forwarding-address",
+          (m) => (m.stages.istanbul!.step = "typename"),
+        ),
+      ).join(" "),
+    ).toMatch(/belongs to clearance 6/);
   });
 });

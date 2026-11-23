@@ -33,6 +33,11 @@ describe("annotate", () => {
     ],
     ["a value with a selection", `{ cities { name { x } } }`, /single value/],
     [
+      "a closing brace too many",
+      `{ cities { name } } }`,
+      /adds a closing brace each time/,
+    ],
+    [
       "one field asked twice",
       `{ operative(codename: "A") { codename } operative(codename: "B") { codename } }`,
       /an alias in front of each one/,
@@ -102,5 +107,14 @@ describe("annotate", () => {
     expect(note).toContain('asking for "company" once per transmission');
     expect(note).not.toMatch(/alias|glossary/);
     expect(styleIssues(note!)).toEqual([]);
+  });
+
+  it("sends the player to introspection for a type the panel leaves out", () => {
+    const [note] = notes(`{ cabinet { contents } }`, 6);
+    expect(note).toContain("not in the documentation panel");
+    expect(note).toContain("glossary entry for introspection");
+    expect(styleIssues(note!)).toEqual([]);
+    const [documented] = notes(`{ cities { population } }`, 6);
+    expect(documented).toContain("The documentation panel lists");
   });
 });

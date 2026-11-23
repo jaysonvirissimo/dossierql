@@ -21,6 +21,7 @@ import {
 import { schemaFor } from "../../graphql/schema.ts";
 import { href } from "../../routes/parseRoute.ts";
 import { Prose } from "../Prose.tsx";
+import { Clues } from "./Clues.tsx";
 import { WorkspaceContext, type WorkspaceValue } from "./context.ts";
 import { hours } from "./describe.ts";
 import { DraftPanel } from "./DraftPanel.tsx";
@@ -197,11 +198,7 @@ export default function Workspace({ mission }: { mission: Mission }) {
             <h2>Objective</h2>
             <p>{stage.objective}</p>
             <h2>Initial intelligence</h2>
-            <ul className="clues">
-              {stage.clues.map((clue, index) => (
-                <li key={index}>{clue.text}</li>
-              ))}
-            </ul>
+            <Clues stage={stage} />
             {mission.clock && (
               <>
                 <h2>The clock</h2>

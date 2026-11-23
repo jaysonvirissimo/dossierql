@@ -32,6 +32,7 @@ const claim = z.strictObject({
 const stage = z.strictObject({
   location: z.string().regex(/^[A-Z]{2}$/),
   introduces: z.enum(MECHANICS).optional(),
+  step: z.string().optional(),
   objective: text,
   briefing: text,
   clues: z

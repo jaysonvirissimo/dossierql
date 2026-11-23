@@ -1,4 +1,5 @@
 import type { ResultError } from "../engine/mission.ts";
+import { isUndocumented } from "../graphql/schema.ts";
 
 /**
  * The records clerk's note beneath an error. A note says where to look and
@@ -44,6 +45,11 @@ const RULES: Rule[] = [
       `The clerk does not recognise the word${near(e)} in that position. A request begins with the word query. Anything you define after the query's closing brace also begins with a word the archive knows. The glossary shows how each is written.`,
   },
   {
+    test: /^Syntax Error: Unexpected "\}"/,
+    note: (_m, e) =>
+      `The request has a closing brace${near(e)} with no opening brace to match it. The editor adds a closing brace each time you type an opening brace, so a closing brace you type yourself can be one too many. The clerk suggests deleting the extra closing brace.`,
+  },
+  {
     test: /^Syntax Error:/,
     note: (_m, e) =>
       `The clerk could not read the request${near(e)}. It may help to count the braces and parentheses, and to check that each one you opened is also closed.`,
@@ -56,7 +62,9 @@ const RULES: Rule[] = [
   {
     test: /^Cannot query field "(\w+)" on type "(\w+)"/,
     note: (m) =>
-      `The archive keeps no "${String(m[1])}" on ${String(m[2])}. The documentation panel lists the fields that ${String(m[2])} does have.`,
+      isUndocumented(String(m[2]))
+        ? `The archive keeps no "${String(m[1])}" on ${String(m[2])}. ${String(m[2])} is not in the documentation panel, but the archive can describe ${String(m[2])} itself. The glossary entry for introspection shows how to ask which fields ${String(m[2])} has.`
+        : `The archive keeps no "${String(m[1])}" on ${String(m[2])}. The documentation panel lists the fields that ${String(m[2])} does have.`,
   },
   {
     test: /^Field "(\w+)" of type "([^"]+)" must have a selection of subfields/,

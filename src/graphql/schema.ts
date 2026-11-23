@@ -22,7 +22,7 @@ function namedType(type: TypeNode): string {
   return type.kind === Kind.NAMED_TYPE ? type.name.value : namedType(type.type);
 }
 
-const INTERNAL = new Set(["clearance", "inverse"]);
+const INTERNAL = new Set(["clearance", "inverse", "undocumented"]);
 
 /**
  * The schema document for one clearance level. Types and fields above the
@@ -37,7 +37,8 @@ export function schemaDocumentFor(
   const hidden = new Set<string>();
   for (const definition of full.definitions) {
     if (
-      definition.kind === Kind.OBJECT_TYPE_DEFINITION &&
+      (definition.kind === Kind.OBJECT_TYPE_DEFINITION ||
+        definition.kind === Kind.SCALAR_TYPE_DEFINITION) &&
       clearanceOf(definition.directives) > level
     ) {
       hidden.add(definition.name.value);
@@ -47,6 +48,8 @@ export function schemaDocumentFor(
     DirectiveDefinition: (node) =>
       !keepDirectives && INTERNAL.has(node.name.value) ? null : undefined,
     ObjectTypeDefinition: (node) =>
+      hidden.has(node.name.value) ? null : undefined,
+    ScalarTypeDefinition: (node) =>
       hidden.has(node.name.value) ? null : undefined,
     FieldDefinition: (node) =>
       clearanceOf(node.directives) > level || hidden.has(namedType(node.type))
@@ -91,4 +94,36 @@ export function fieldClearance(type: string, field: string): number | null {
     }
   }
   return null;
+}
+
+let undocumented: Set<string> | undefined;
+
+/**
+ * Whether the documentation panel leaves out a type, or one of its fields
+ * when a field is given (SDD 4). Only introspection describes what the panel
+ * leaves out.
+ */
+export function isUndocumented(type: string, field?: string): boolean {
+  if (!undocumented) {
+    const found = new Set<string>();
+    const marked = (directives: readonly ConstDirectiveNode[] | undefined) =>
+      directives?.some((d) => d.name.value === "undocumented") === true;
+    for (const definition of parse(SDL).definitions) {
+      if (
+        definition.kind !== Kind.OBJECT_TYPE_DEFINITION &&
+        definition.kind !== Kind.SCALAR_TYPE_DEFINITION
+      ) {
+        continue;
+      }
+      const name = definition.name.value;
+      if (marked(definition.directives)) found.add(name);
+      if (definition.kind === Kind.OBJECT_TYPE_DEFINITION) {
+        for (const f of definition.fields ?? []) {
+          if (marked(f.directives)) found.add(`${name}.${f.name.value}`);
+        }
+      }
+    }
+    undocumented = found;
+  }
+  return undocumented.has(field === undefined ? type : `${type}.${field}`);
 }

@@ -100,7 +100,7 @@ test("a player who knows GraphQL is promoted by placement", async ({
   // Placement grants the cards for the levels skipped, and opens their cases.
   await page.goto("./#/manual");
   const cards = page.locator(".cards");
-  await expect(cards.locator(".card--sealed")).toHaveCount(3);
+  await expect(cards.locator(".card--sealed")).toHaveCount(4);
   await expect(cards.locator(".card:not(.card--sealed)")).toHaveCount(2);
   await page.goto("./#/");
   await expect(
