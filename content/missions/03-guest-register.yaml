@@ -26,14 +26,16 @@ debrief:
     In Luanda, the reference solution gives `operative` a codename as its
     [argument](glossary:argument): `operative(codename: "NIGHTJAR")`. The argument picks one
     record out of the registry, so the result holds one file and not
-    the whole registry. In Zanzibar City, the reference solution asks for two things
-    directly inside the outer braces of one query: a cover name, with
-    `coverName(name: "Dr. Lund")`, and a city, with
-    `city(name: "Zanzibar City")`. Two questions in one query are still a
-    single transmission. The argument has to match the name exactly, title
-    and full stop included. `coverName(name: "Dr. Lund")` returns the cover
-    name that MARBLE_HERON travels under. It never returns the look-alike,
-    D. Lund, which the registry files under TIN_FALCON.
+    the whole registry. In Zanzibar City, the reference solution gives `city` an argument
+    instead: `city(name: "Zanzibar City")`. The city's sightings include
+    the dinner, and inside that sighting the reference solution opens the
+    cover name the guest gave and the operative it is filed under. You
+    could also look up each cover name in its own transmission, first
+    `coverName(name: "Dr. Lund")` and then `coverName(name: "D. Lund")`.
+    The argument has to match the name exactly, title and full stop
+    included, so the two lookups return two different records. Dr. Lund
+    is filed under MARBLE_HERON and was given in Zanzibar City. D. Lund
+    is filed under TIN_FALCON and was given nowhere at all.
   geography: >
     Swahili is an official language of Tanzania and Kenya. Mozambique,
     just to the south, has Portuguese as its official language.
@@ -46,7 +48,14 @@ stages:
 
     briefing: |
       NIGHTJAR signed order LUA-012 and left Luanda the same
-      night. Three sightings have been filed under the codename.
+      night, to meet somebody the registry would like to identify.
+      Three hotels have each filed a sighting under the codename:
+      one in Mombasa, one in Zanzibar City, and one in Maputo. The
+      case board lists the three sightings, and the map shows where
+      each city is and how long the journey there would take. Only
+      one of the hotels saw NIGHTJAR, and your travel order goes to
+      that city.
+
       The registry holds a great many files, and the clerk asks
       that you request the one you need.
 
@@ -161,6 +170,17 @@ stages:
                 field: countries
                 includes: Country:$country
 
+    leads:
+      SGT-027:
+        label: The Mombasa sighting
+        city: mombasa
+      SGT-031:
+        label: The Zanzibar City sighting
+        city: zanzibar-city
+      SGT-034:
+        label: The Maputo sighting
+        city: maputo
+
     leadOutcomes:
       SGT-027:
         location: KE
@@ -200,6 +220,8 @@ stages:
       Zanzibar City past a line of wooden sailing boats, and the old
       town rises behind the quay in white stone and carved wooden
       doors. The hotel produces its register and a pot of tea.
+      Somebody in this town came to meet NIGHTJAR, and the register
+      may say who.
 
     referenceSolution: |
       query {
@@ -232,16 +254,27 @@ stages:
     objective: Identify the operative who dined with NIGHTJAR.
 
     briefing: |
-      The register shows that M. Calloway dined with a guest who
-      signed as Dr. Lund. The registry keeps two cover names that a
-      hurried clerk could read as Dr. Lund. Find which operative the
-      name in the register belongs to.
+      The register shows that M. Calloway, the cover name NIGHTJAR
+      used here, dined with a guest called Lund. Tea has been spilt
+      across the page, and the clerk cannot tell whether the guest
+      signed as Dr. Lund or as D. Lund. The registry keeps both cover
+      names and files each one under a different operative. The case
+      board lists both of them.
+
+      The hotel reported the dinner to the archive as a sighting in
+      Zanzibar City, and a sighting records the name the guest gave.
+      Find out which cover name the guest gave, and which
+      operative the registry files that name under.
 
     clues:
       - text: >
-          The guest signed the register as Dr. Lund, title included.
+          The cover name is the one the guest gave in the hotel's sighting.
+          That sighting is in Zanzibar City, and its note says that the
+          guest dined with M. Calloway.
         constraint:
-          $name.name: Dr. Lund
+          $sighting.city: City:zanzibar-city
+          $sighting.note: Dined with M. Calloway. Signed the register after the soup.
+          $sighting.nameGiven: $name
       - text: >
           The registry files each cover name under one operative.
         constraint:
@@ -252,28 +285,30 @@ stages:
       starterQuery: |
         query {
           coverName(name: "") {
-            # Write the cover name between the quotes, exactly as
-            # the register has it. Which operative uses that cover
-            # name, and did a guest in Zanzibar City give it?
+            # Write one of the two cover names between the quotes.
+            # Which operative uses that cover name, and did a guest
+            # in Zanzibar City give it?
           }
         }
 
     hints:
       nudge: >
-        First confirm that a guest in Zanzibar City gave the cover name
-        Dr. Lund. Then ask the registry which operative that cover name
-        is filed under.
+        Only one of the two cover names was given by a guest in Zanzibar
+        City. Find that one, and then find which operative the registry
+        files it under.
       concept: >
         The coverName field has an argument that says which cover name
-        you want. Write the cover name exactly as the register has it,
-        title included. A different spelling is a different argument,
-        and it returns a different record.
+        you want. Dr. Lund and D. Lund are two different arguments, and
+        each one returns a different record. You can look up one cover
+        name in each transmission. You can also give the city field the
+        argument Zanzibar City and look through the city's sightings.
       schema: >
-        Look at CoverName.operative, CoverName.sightings,
-        City.sightings, and Sighting.nameGiven.
+        Look at City.sightings, Sighting.note, Sighting.nameGiven,
+        CoverName.sightings, and CoverName.operative.
       skeleton: |
-        coverName(name: "Dr. Lund") { name operative { codename } }
-        city(name: "Zanzibar City") { sightings { id nameGiven { name } } }
+        city(name: "Zanzibar City") {
+          sightings { id note nameGiven { name operative { codename } } }
+        }
 
     solution:
       type: deduction
@@ -320,6 +355,12 @@ stages:
                 field: coverNames
                 includes: CoverName:$name
 
+    leads:
+      dr-lund:
+        label: Dr. Lund
+      d-lund:
+        label: D. Lund
+
     leadOutcomes:
       d-lund:
         refutation:
@@ -333,22 +374,20 @@ stages:
           doctorate. No sighting in the register gives that name.
 
     resolved: |
-      Deduction accepted. The registry notes the dinner in
-      MARBLE_HERON's file.
+      Deduction accepted. NIGHTJAR came to Zanzibar City to dine with
+      MARBLE_HERON, and the registry notes the dinner in both files.
 
     referenceSolution: |
       query {
-        coverName(name: "Dr. Lund") {
-          name
-          operative {
-            codename
-          }
-        }
         city(name: "Zanzibar City") {
           sightings {
             id
+            note
             nameGiven {
               name
+              operative {
+                codename
+              }
             }
           }
         }

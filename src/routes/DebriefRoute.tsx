@@ -6,6 +6,7 @@ import { availability, LAST_CLEARANCE } from "../engine/clearance.ts";
 import { readTechnique } from "../engine/debrief.ts";
 import { rankTitle } from "../engine/rank.ts";
 import { ConceptCardView } from "../features/ConceptCardView.tsx";
+import { DeductionRecap } from "../features/DeductionRecap.tsx";
 import { Prose } from "../features/Prose.tsx";
 import { href } from "./parseRoute.ts";
 
@@ -174,6 +175,8 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
                 </p>
               )}
           </section>
+
+          <DeductionRecap mission={mission} state={state} />
 
           <section aria-labelledby="compare-title">
             <h2 id="compare-title">Your transmissions and the reference</h2>

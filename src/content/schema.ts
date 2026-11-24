@@ -64,6 +64,12 @@ const stage = z.strictObject({
     ),
   labels: z.record(z.string(), text).optional(),
   claims: z.array(claim).min(1),
+  leads: z
+    .record(
+      z.string(),
+      z.strictObject({ label: text, city: z.string().optional() }),
+    )
+    .optional(),
   leadOutcomes: z
     .record(
       z.string(),

@@ -28,6 +28,56 @@ export function evidenceTransmissions(
   return state.transmissions.filter((t) => numbers.has(t.n));
 }
 
+export interface ChainFact {
+  key: string;
+  /** The transmission that first returned the fact. */
+  transmission: number | null;
+}
+
+export interface ChainStep {
+  stageId: string;
+  /** Each claim the form rested on, with the facts that established it. */
+  claims: { claim: string; facts: ChainFact[] }[];
+  /** The leads the player struck off at the stage, in the order struck. */
+  ruledOut: string[];
+}
+
+/**
+ * How the player cracked the case, stage by stage, for the debrief (SDD
+ * 3.10): the facts each accepted form rested on, and the transmission that
+ * first returned each fact.
+ */
+export function deductionChain(state: MissionState): ChainStep[] {
+  const steps: ChainStep[] = [];
+  const at = (stageId: string): ChainStep => {
+    let step = steps.find((s) => s.stageId === stageId);
+    if (!step) {
+      step = { stageId, claims: [], ruledOut: [] };
+      steps.push(step);
+    }
+    return step;
+  };
+  for (const dispatch of state.dispatches) {
+    if (dispatch.kind === "ruled-out" && dispatch.leadId) {
+      at(dispatch.stageId).ruledOut.push(dispatch.leadId);
+      continue;
+    }
+    if (!["accepted", "travel", "resolved"].includes(dispatch.kind)) continue;
+    const step = at(dispatch.stageId);
+    for (const { claim, facts } of dispatch.evidence ?? []) {
+      if (facts.length === 0) continue;
+      step.claims.push({
+        claim,
+        facts: facts.map((key) => ({
+          key,
+          transmission: state.ledger[key]?.sources[0]?.transmission ?? null,
+        })),
+      });
+    }
+  }
+  return steps.filter((s) => s.claims.length > 0 || s.ruledOut.length > 0);
+}
+
 /**
  * The concept of the mission's level: the one a teaching case teaches, or
  * for an assessment the concept card of its clearance.

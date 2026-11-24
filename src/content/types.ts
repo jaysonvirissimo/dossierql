@@ -70,6 +70,18 @@ export interface LeadOutcome {
   fieldCheck?: string;
 }
 
+/**
+ * A lead the stage keeps in contention, the true one among them, so that
+ * the map and the case board can show every lead before the player has
+ * retrieved a fact about any of them (SDD 3.5).
+ */
+export interface Lead {
+  /** What the case board and the map call the lead, as the briefing does. */
+  label: string;
+  /** The city the lead points at, which puts it on the map. */
+  city?: string;
+}
+
 export type ScaffoldLevel = "guided" | "partial" | "none";
 
 export interface Hints {
@@ -118,6 +130,11 @@ export interface Stage {
   /** What each solution binding is called on the draft form. */
   labels?: Record<string, string>;
   claims: Claim[];
+  /**
+   * Every lead in contention, keyed by the record id of the lead binding.
+   * When present it lists the solution's lead and every lead outcome.
+   */
+  leads?: Record<string, Lead>;
   leadOutcomes?: Record<string, LeadOutcome>;
   /** Dispatch read when the stage is resolved. */
   resolved?: string;

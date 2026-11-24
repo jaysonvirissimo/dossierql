@@ -961,6 +961,77 @@
   padding-left: var(--space-4);
 }
 
+.journeys__struck {
+  text-decoration: line-through;
+  color: var(--ink-soft);
+}
+
+.map__land--lead {
+  fill: var(--paper-shade);
+  stroke: var(--cobalt);
+  stroke-width: 0.8;
+}
+
+.map__pin--lead {
+  fill: var(--paper-raised);
+  stroke: var(--cobalt);
+}
+
+.map__lead-name {
+  fill: var(--ink);
+  paint-order: stroke;
+  stroke: var(--paper-raised);
+}
+
+.map__lead--struck .map__pin--lead {
+  stroke: var(--ink-soft);
+}
+
+.map__lead--struck .map__lead-name {
+  text-decoration: line-through;
+  fill: var(--ink-soft);
+}
+
+/* The case board: one card for each lead in contention (SDD 8.2). */
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-self: stretch;
+}
+
+.board__lead {
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--cobalt);
+  background: var(--paper-raised);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius);
+}
+
+.board__lead[data-status="ruled-out"] {
+  border-left-color: var(--ink-soft);
+  opacity: 0.75;
+}
+
+.board__lead[data-status="ruled-out"] .board__label {
+  text-decoration: line-through;
+}
+
+.board__head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.board__label {
+  font-weight: 600;
+}
+
+.board__place {
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+}
+
 .findings__legend,
 .draft__claims-intro {
   font-size: 0.875rem;

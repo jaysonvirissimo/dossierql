@@ -5,11 +5,14 @@ import { loadContent } from "../../scripts/load-content.ts";
 import { buildCatalog } from "../content/catalog.ts";
 import type { Mission, Stage } from "../content/types.ts";
 import { COSTS } from "./clock.ts";
+import { leadFacts } from "./board.ts";
 import { reviewDraft } from "./draft.ts";
 import {
   act,
   deskStages,
   fieldCheckCost,
+  leadCountry,
+  leadStatus,
   formatted,
   nextWatchEvent,
   startMission,
@@ -793,6 +796,76 @@ describe("ruling out in The Guest Register", () => {
     expect(struck.every((d) => (d.evidence?.[0]?.facts.length ?? 0) > 0)).toBe(
       true,
     );
+  });
+
+  const send = (state: MissionState, editor: string) =>
+    play(state, { type: "edit", editor }, { type: "transmit" });
+  const inZanzibar = () =>
+    play(
+      send(begun(), guest.mission.stages.luanda!.referenceSolution as string),
+      { type: "open-lead", leadId: "SGT-031" },
+      { type: "name", leadId: "SGT-031", binding: "country", value: "TZ" },
+      { type: "proceed", leadId: "SGT-031" },
+    );
+
+  it("puts every lead on the board, with each one's country and status", () => {
+    const luanda = guest.mission.stages.luanda!;
+    expect(Object.keys(luanda.leads ?? {})).toEqual([
+      "SGT-027",
+      "SGT-031",
+      "SGT-034",
+    ]);
+    expect(leadCountry(guest, luanda, "SGT-031")).toBe("TZ");
+    const sent = send(begun(), luanda.referenceSolution as string);
+    const struck = play(
+      sent,
+      { type: "open-lead", leadId: "SGT-027" },
+      { type: "rule-out", leadId: "SGT-027" },
+    );
+    expect(leadStatus(struck, "SGT-027")).toBe("ruled-out");
+    expect(leadStatus(struck, "SGT-034")).toBe("open");
+    // The board shows Mombasa's facts: the name given and the country.
+    const facts = leadFacts(luanda, sent.ledger, "SGT-027");
+    expect(facts).toContain("Sighting:SGT-027.nameGiven");
+    expect(facts).toContain("City:mombasa.country");
+    expect(facts).not.toContain("Sighting:SGT-034.nameGiven");
+    expect(leadFacts(luanda, begun().ledger, "SGT-027")).toEqual([]);
+  });
+
+  it("keeps both Lunds in contention until a response separates them", () => {
+    const there = inZanzibar();
+    expect(there.stageId).toBe("zanzibar");
+    const zanzibar = guest.mission.stages.zanzibar!;
+    // D. Lund's file shows a cover name that no guest gave.
+    const looked = send(
+      there,
+      'query { coverName(name: "D. Lund") { name operative { codename } sightings { id } } }',
+    );
+    expect(leadFacts(zanzibar, looked.ledger, "d-lund")).toContain(
+      "CoverName:d-lund.operative",
+    );
+    const struck = play(
+      looked,
+      { type: "open-lead", leadId: "d-lund" },
+      { type: "rule-out", leadId: "d-lund" },
+    );
+    expect(leadStatus(struck, "d-lund")).toBe("ruled-out");
+    // The reference solution starts from the city and its sightings.
+    const done = act(
+      guest,
+      play(
+        send(struck, zanzibar.referenceSolution as string),
+        { type: "open-lead", leadId: "dr-lund" },
+        {
+          type: "name",
+          leadId: "dr-lund",
+          binding: "operative",
+          value: "MARBLE_HERON",
+        },
+      ),
+      { type: "proceed", leadId: "dr-lund" },
+    );
+    expect(done.state.status).toBe("complete");
   });
 
   it("refuses to rule out a lead that no response contradicts", () => {

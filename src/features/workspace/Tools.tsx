@@ -13,6 +13,7 @@ import { Prose } from "../Prose.tsx";
 import { SchemaDocs } from "../SchemaDocs.tsx";
 import { Clues } from "./Clues.tsx";
 import { EvidenceChain } from "./Evidence.tsx";
+import { LeadBoard } from "./LeadBoard.tsx";
 import { useWorkspace } from "./context.ts";
 import {
   describeFact,
@@ -35,7 +36,7 @@ const TABS = [
 ] as const;
 type TabId = (typeof TABS)[number][0];
 
-function CasePanel() {
+function CasePanel({ onShowMap }: { onShowMap(): void }) {
   const { env, state, stage, restart, dispatch, notice } = useWorkspace();
   const [confirming, setConfirming] = useState(false);
   const [passing, setPassing] = useState(false);
@@ -55,6 +56,7 @@ function CasePanel() {
       <Prose text={stage.briefing} />
       <h3>Clues</h3>
       <Clues stage={stage} />
+      <LeadBoard onShowMap={onShowMap} />
       {state.dispatches.length > 0 && (
         <>
           <h3>Dispatches</h3>
@@ -468,7 +470,7 @@ export function Tools() {
         className="tools__panel"
         tabIndex={0}
       >
-        {tab === "case" && <CasePanel />}
+        {tab === "case" && <CasePanel onShowMap={() => setTab("map")} />}
         {/* Kept mounted so the sections a player opened stay open. */}
         <div hidden={tab !== "docs"}>
           <DocsPanel />

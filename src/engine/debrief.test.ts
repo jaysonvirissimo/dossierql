@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ConceptCard, Kata, Mission } from "../content/types.ts";
 import {
+  deductionChain,
   evidenceTransmissions,
   levelConcept,
   readTechnique,
@@ -71,6 +72,45 @@ describe("evidenceTransmissions", () => {
   it("keeps only the transmissions that supplied accepted evidence", () => {
     const s = state([ALIASED, SINGLE, SINGLE], [2, 3]);
     expect(evidenceTransmissions(s).map((t) => t.n)).toEqual([2, 3]);
+  });
+});
+
+describe("deductionChain", () => {
+  it("links each accepted fact to the transmission that first returned it", () => {
+    const s = state([SINGLE, SINGLE, SINGLE], [3, 1]);
+    const struck = {
+      ...s,
+      dispatches: [
+        {
+          n: 0,
+          stageId: "s",
+          kind: "ruled-out",
+          leadId: "L2",
+          text: "",
+          cost: 0,
+        },
+        ...s.dispatches,
+      ],
+    } as MissionState;
+    expect(deductionChain(struck)).toEqual([
+      {
+        stageId: "s",
+        ruledOut: ["L2"],
+        claims: [
+          {
+            claim: "c",
+            facts: [
+              { key: "fact3", transmission: 3 },
+              { key: "fact1", transmission: 1 },
+            ],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("leaves out a stage with nothing accepted and nothing struck", () => {
+    expect(deductionChain(state([SINGLE], []))).toEqual([]);
   });
 });
 

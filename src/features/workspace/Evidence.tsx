@@ -5,7 +5,7 @@ import { useWorkspace } from "./context.ts";
 import { describeFact, hours, labelOf, words } from "./describe.ts";
 
 /** One fact, with a button that opens the response it first came back in. */
-function FactLine({ factKey }: { factKey: string }) {
+export function FactLine({ factKey }: { factKey: string }) {
   const { state, view } = useWorkspace();
   const entry = state.ledger[factKey];
   if (!entry) return null;

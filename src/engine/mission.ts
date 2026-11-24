@@ -375,13 +375,40 @@ export function proceedCost(env: Env, state: MissionState): number {
   return travelHours(env.world, stage.location, next.location);
 }
 
+/**
+ * The country a lead points at: the one its lead outcome gives, or else the
+ * country of the city the stage lists for it.
+ */
+export function leadCountry(
+  env: Env,
+  stage: Stage,
+  leadId: string,
+): string | undefined {
+  const given = stage.leadOutcomes?.[leadId]?.location;
+  if (given) return given;
+  const city = stage.leads?.[leadId]?.city;
+  return city
+    ? env.world.cities.find((c) => c.id === city)?.country
+    : undefined;
+}
+
+export type LeadStatus = "open" | "ruled-out" | "field-checked";
+
+/** Where a lead stands at the current stage, read from the player's forms. */
+export function leadStatus(state: MissionState, leadId: string): LeadStatus {
+  const draft = current(state).drafts[leadId];
+  if (draft?.ruledOut) return "ruled-out";
+  if (draft?.fieldChecked) return "field-checked";
+  return "open";
+}
+
 export function fieldCheckCost(
   env: Env,
   state: MissionState,
   leadId: string,
 ): number {
   const stage = stageOf(env.mission, state.stageId);
-  const to = stage.leadOutcomes?.[leadId]?.location;
+  const to = leadCountry(env, stage, leadId);
   if (!to || to === stage.location) return COSTS.travel[0].hours;
   return travelHours(env.world, stage.location, to);
 }

@@ -459,6 +459,9 @@ function proseOf(mission: Mission): Passage[] {
       ...Object.values(stage.labels ?? {}).map((label, i) =>
         plain(`${at}.labels.${String(i)}`, label),
       ),
+      ...Object.entries(stage.leads ?? {}).map(([lead, l]) =>
+        plain(`${at}.leads.${lead}.label`, l.label),
+      ),
       ...Object.entries(stage.leadOutcomes ?? {}).flatMap(([lead, o]) => [
         rendered(`${at}.leadOutcomes.${lead}.ruledOut`, o.ruledOut),
         rendered(`${at}.leadOutcomes.${lead}.fieldCheck`, o.fieldCheck),
@@ -700,6 +703,50 @@ function checkReferences(
       }
     }
     const leadType = types[leadBinding(stage)];
+    if (stage.leads) {
+      const leads = stage.leads;
+      const trueLead = stage.solution[leadBinding(stage)];
+      if (trueLead !== undefined && !(trueLead in leads)) {
+        report(
+          `${at}.leads`,
+          "structure",
+          `The leads leave out the solution's lead, ${trueLead}, so ruling out the others would give it away.`,
+        );
+      }
+      for (const lead of Object.keys(stage.leadOutcomes ?? {})) {
+        if (!(lead in leads)) {
+          report(
+            `${at}.leads`,
+            "structure",
+            `The leads leave out ${lead}, which has a lead outcome.`,
+          );
+        }
+      }
+      for (const [lead, entry] of Object.entries(leads)) {
+        if (leadType && !store.get(leadType, lead)) {
+          report(
+            `${at}.leads.${lead}`,
+            "references",
+            `No ${leadType} ${lead}.`,
+          );
+        }
+        if (entry.city === undefined) continue;
+        const city = store.get("City", entry.city);
+        if (!city) {
+          report(`${at}.leads.${lead}.city`, "references", "No such city.");
+          continue;
+        }
+        const location = stage.leadOutcomes?.[lead]?.location;
+        const country = String(city.country);
+        if (location !== undefined && location !== country) {
+          report(
+            `${at}.leads.${lead}.city`,
+            "references",
+            `The city is in ${country}, but the lead outcome gives ${location}.`,
+          );
+        }
+      }
+    }
     for (const [lead, outcome] of Object.entries(stage.leadOutcomes ?? {})) {
       if (leadType && !store.get(leadType, lead)) {
         report(

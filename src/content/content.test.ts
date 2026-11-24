@@ -172,6 +172,31 @@ describe("validation fails the build when", () => {
     ).toContain("evidence");
   });
 
+  it("the leads leave out the solution's lead, or a lead with an outcome", () => {
+    const issues = (change: (m: Mission) => void) =>
+      validateContent(mutated("guest-register", change)).map((i) => i.message);
+    expect(
+      issues((m) => {
+        delete m.stages.luanda!.leads!["SGT-031"];
+      }),
+    ).toContainEqual(expect.stringContaining("solution's lead, SGT-031"));
+    expect(
+      issues((m) => {
+        delete m.stages.luanda!.leads!["SGT-027"];
+      }),
+    ).toContainEqual(expect.stringContaining("leave out SGT-027"));
+  });
+
+  it("a lead's city is not in the country its lead outcome gives", () => {
+    expect(
+      validateContent(
+        mutated("guest-register", (m) => {
+          m.stages.luanda!.leads!["SGT-027"]!.city = "maputo";
+        }),
+      ).map((i) => i.message),
+    ).toContainEqual(expect.stringContaining("the lead outcome gives KE"));
+  });
+
   it("a refutation does not refute", () => {
     expect(
       codes(
