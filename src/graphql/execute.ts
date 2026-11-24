@@ -1,6 +1,7 @@
 import {
   execute,
   getOperationAST,
+  getNamedType,
   GraphQLError,
   isObjectType,
   Kind,
@@ -11,13 +12,25 @@ import {
   type DocumentNode,
   type ExecutionResult,
   type GraphQLFieldResolver,
+  type GraphQLObjectType,
   type GraphQLSchema,
   type ValidationContext,
 } from "graphql";
 import { factKey, type Fact, type FactOccurrence } from "./facts.ts";
 import { schemaFor } from "./schema.ts";
-import { fieldShape, refOf, type RawRecord, type Store } from "./store.ts";
-import { requestWeight, WEIGHT_REPORTED_FROM } from "./weight.ts";
+import {
+  fieldShape,
+  isPageType,
+  refOf,
+  type RawRecord,
+  type Store,
+} from "./store.ts";
+import {
+  requestWeight,
+  WEIGHT_LIMIT,
+  WEIGHT_LIMITED_FROM,
+  WEIGHT_REPORTED_FROM,
+} from "./weight.ts";
 
 export interface Transmission {
   operation: string;
@@ -149,6 +162,108 @@ function matches(
   });
 }
 
+/** One page of a longer list, as a field that returns a page resolves it. */
+interface Page {
+  kind: "page";
+  /** The record whose list the page is cut from, and that list's field. */
+  owner: RawRecord;
+  field: string;
+  records: RawRecord[];
+  /** Whether the page holds the whole list, unfiltered. */
+  complete: boolean;
+  hasNextPage: boolean;
+  endCursor: string | null;
+}
+
+interface PageEnd {
+  kind: "page-info";
+  hasNextPage: boolean;
+  endCursor: string | null;
+}
+
+function isPage(value: unknown): value is Page | PageEnd {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "kind" in value &&
+    (value.kind === "page" || value.kind === "page-info")
+  );
+}
+
+/** A record's cursor: the reference written beside it, or its id. */
+function cursorOf(record: RawRecord): string {
+  return typeof record.reference === "string" ? record.reference : record.id;
+}
+
+/**
+ * A record withheld above the clearance in force takes its place in a list
+ * as an error. Where the list's entries may not be null, the error blanks
+ * the whole list (SDD 3.7).
+ */
+function withholding(
+  records: readonly RawRecord[],
+  clearance: number,
+): (RawRecord | GraphQLError)[] {
+  return records.map((record) =>
+    record.withheld !== undefined && record.withheld > clearance
+      ? new GraphQLError(
+          `${record.type} ${cursorOf(record)} is classified above your clearance.`,
+        )
+      : record,
+  );
+}
+
+/** The page that `first` and `after` cut from a record's list. */
+function cutPage(
+  record: RawRecord,
+  field: string,
+  pageType: GraphQLObjectType,
+  args: Record<string, unknown>,
+  store: Store,
+  schema: GraphQLSchema,
+): Page {
+  const { first, after, ...filters } = args;
+  const nodes = pageType.getFields().nodes;
+  const target = nodes ? fieldShape(nodes.type).target : null;
+  const raw = record[field];
+  const ids = Array.isArray(raw) ? (raw as string[]) : [];
+  const filtered = Object.values(filters).some((v) => v != null);
+  const records = ids
+    .map((id) => (target ? store.get(target, id) : undefined))
+    .filter((r): r is RawRecord => r !== undefined)
+    .filter((r) => matches(r, filters, store, schema));
+  let start = 0;
+  if (typeof after === "string") {
+    const at = records.findIndex((r) => plain(cursorOf(r)) === plain(after));
+    if (at < 0) {
+      throw new GraphQLError(
+        `${record.type}.${field} has no entry "${after}" to start after.`,
+      );
+    }
+    start = at + 1;
+  }
+  if (typeof first === "number" && first < 0) {
+    throw new GraphQLError(
+      `A page cannot hold fewer than no entries. This request asked for first: ${String(first)}.`,
+    );
+  }
+  const end =
+    typeof first === "number"
+      ? Math.min(records.length, start + first)
+      : records.length;
+  const page = records.slice(start, end);
+  const last = page[page.length - 1];
+  return {
+    kind: "page",
+    owner: record,
+    field,
+    records: page,
+    complete: !filtered && start === 0 && end === records.length,
+    hasNextPage: end < records.length,
+    endCursor: last ? cursorOf(last) : null,
+  };
+}
+
 const resolveField: GraphQLFieldResolver<unknown, Context> = (
   source,
   args: Record<string, unknown>,
@@ -174,6 +289,37 @@ const resolveField: GraphQLFieldResolver<unknown, Context> = (
       : null;
   }
 
+  if (isPage(source)) {
+    const field = info.fieldName;
+    if (source.kind === "page-info") {
+      return field === "hasNextPage" ? source.hasNextPage : source.endCursor;
+    }
+    if (field === "pageInfo") {
+      const end: PageEnd = {
+        kind: "page-info",
+        hasNextPage: source.hasNextPage,
+        endCursor: source.endCursor,
+      };
+      return end;
+    }
+    // The records on a page are a fact about the list they were cut from.
+    const owner = refOf(source.owner.type, source.owner.id);
+    context.occurrences.push({
+      fact: {
+        key: factKey(owner, source.field),
+        entity: owner,
+        field: source.field,
+        value: {
+          kind: "list",
+          refs: source.records.map((r) => refOf(r.type, r.id)),
+          complete: source.complete,
+        },
+      },
+      path: pathArray(info.path),
+    });
+    return withholding(source.records, context.clearance);
+  }
+
   const record = source as RawRecord;
   const field = info.fieldName;
   const needed = record.classified?.[field];
@@ -190,6 +336,11 @@ const resolveField: GraphQLFieldResolver<unknown, Context> = (
       path: pathArray(info.path),
     });
   };
+
+  const named = getNamedType(info.returnType);
+  if (isPageType(named)) {
+    return cutPage(record, field, named, args, store, info.schema);
+  }
 
   if (shape.target === null) {
     const value = (raw ?? null) as string | number | boolean | null;
@@ -209,7 +360,7 @@ const resolveField: GraphQLFieldResolver<unknown, Context> = (
       refs: records.map((r) => refOf(r.type, r.id)),
       complete: !filtered,
     });
-    return records;
+    return withholding(records, context.clearance);
   }
   const found = typeof raw === "string" ? store.get(target, raw) : undefined;
   note({ kind: "ref", ref: found ? refOf(found.type, found.id) : null });
@@ -297,6 +448,27 @@ export function transmit(
     resolved: 0,
   };
   const document = parse(transmission.operation);
+  const weight = requestWeight(
+    schema,
+    store,
+    document,
+    transmission.variables ?? {},
+  );
+  if (transmission.clearance >= WEIGHT_LIMITED_FROM && weight > WEIGHT_LIMIT) {
+    // Like a request that fails validation, a request over the limit is
+    // returned before transmission, and costs nothing (SDD 3.3).
+    return {
+      transmitted: false,
+      result: {
+        errors: [
+          new GraphQLError(
+            `The records clerk weighed this request at ${String(weight)}. The limit at your clearance is ${String(WEIGHT_LIMIT)}.`,
+          ),
+        ],
+      },
+      facts: [],
+    };
+  }
   const outcome = execute({
     schema,
     document,
@@ -314,7 +486,7 @@ export function transmit(
     transmission.clearance >= WEIGHT_REPORTED_FROM
       ? {
           ...outcome,
-          extensions: { weight: requestWeight(schema, store, document) },
+          extensions: { weight },
         }
       : outcome;
   if (result.data === undefined || result.data === null) {

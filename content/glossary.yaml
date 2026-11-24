@@ -195,7 +195,8 @@
     request that asks only about the archive itself, through
     introspection, weighs nothing. From
     clearance 6, every result states the weight of its request under
-    `extensions`, beside `data`. Nothing depends on the weight yet.
+    `extensions`, beside `data`. From clearance 9, the clerk refuses a
+    request that weighs more than 200, and returns it unsent at no cost.
 - id: interface
   term: interface
   clearance: 7
@@ -254,3 +255,29 @@
     value and the next, as in `kinds: [VESSEL, COMPANY]`. Where an
     argument takes a list, a single value is accepted as well, and the
     archive reads it as a list of one.
+- id: pagination
+  term: pagination
+  clearance: 9
+  matches: [page size, page sizes]
+  definition: >
+    Reading a long list one part at a time. Each part is a page. In the
+    Documentation tab, the field `entries` on `WatchBook` returns a
+    `WatchPage`, not a list. You write `entries(first: 10)` to ask for a
+    page that holds the first ten entries. Inside the page, `nodes` lists
+    the entries on it. The number after `first` is the page size. The
+    records clerk weighs the request by the page size, not by the length
+    of the whole book, so a page can come back when the whole book would
+    be refused. To ask for the next page, you need a
+    [cursor](glossary:cursor).
+- id: cursor
+  term: cursor
+  clearance: 9
+  matches: [cursors]
+  definition: >
+    A marker that says where a page ends, so that you can start the next
+    page there. Inside a page, ask for `pageInfo { hasNextPage endCursor }`.
+    `hasNextPage` is `true` when the list goes on after the page, and
+    `endCursor` is the cursor of the last entry on the page. In a watch
+    book, the cursor of an entry is its `reference`, such as `COR-0060`.
+    You write `entries(first: 10, after: "COR-0060")` to ask for the ten
+    entries that come after entry COR-0060.

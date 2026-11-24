@@ -1,0 +1,619 @@
+id: corridor-book
+title: The Corridor Book
+campaign: fourth-desk
+order: 7
+clearance: 9
+kind: teaching
+teaches: pagination
+practises: [nested-selections, arguments, variables]
+requires: [nested-selections, arguments, variables]
+summary: >
+  The First Desk issued GILT_MAGPIE's pass, and nobody signed it. The
+  agency's watchers keep a book at every post inside its building, and the
+  books are too long for the records clerk to copy out in one request.
+motif: ledger
+clock:
+  countdown: Counter-intelligence takes the watch books back into its own keeping in {remaining}
+  expired: Counter-intelligence has taken the watch books back into its own keeping
+  onExpiry: end
+startingStage: opening
+
+debrief:
+  onTime: |
+    Duarte Sequeira, private secretary at the First Desk, made out pass
+    PS-0471 while the pass clerk was called away to a telephone call that
+    nobody had made. He let the pass's holder into the corridor while the
+    duty officer was on an errand for the private office. He took the
+    visitor to the inner room of the First Desk, and he brought him out
+    again.
+
+    The entry that says who opened the door of the inner room is COR-0202,
+    and it is classified above your clearance. The inquiry has the name of
+    the officer who let GILT_MAGPIE in. It does not have the name of the
+    person he came to see.
+  stampOnTime: OFFICER IDENTIFIED
+  comparison: >
+    The corridor book holds 216 entries, and the clerk refuses a request
+    that weighs more than 200, so the reference solution never asks for
+    the whole book. It asks `entries` for one page at a time, with a page
+    size such as `first: 10`, and asks for the entries inside `nodes`.
+    Inside `pageInfo`, `endCursor` gives the reference of the last entry
+    on the page. After a page of 100 entries, for example, the next
+    request starts after the last of them, with `after: "COR-0100"`. In the pass desk's book it writes one operation
+    with the variable `$after: String`, leaves the variable out to read
+    the first page, and gives it the last page's `endCursor` for each page
+    after. When a page holds a classified entry, the list `nodes` comes
+    back as `null`, because an entry in that list may not be null, and
+    `pageInfo` still comes back. The error gives the classified entry's
+    reference, and the next page starts after it.
+  geography: >
+    Lisbon is built on seven hills, and several of them are too steep for
+    a tram. Three funiculars and a street lift carry passengers between
+    the lower town and the hills above it.
+
+stages:
+  opening:
+    location: PT
+    objective: Identify the officer who kept the First Desk's corridor as duty officer, on the day the instruction was handed in.
+
+    briefing: |
+      You read this case at a desk in Lisbon. The First Desk issued pass
+      PS-0471, the pass that GILT_MAGPIE showed at the door, and nobody
+      signed it. Counter-intelligence keeps watchers at every post inside
+      the agency's building, and each post keeps a watch book. The book
+      for the First Desk's corridor, on the day the instruction was handed
+      in at the Cipher Room, is WB-0112. Ask for it with
+      `watchBook(reference: "WB-0112")`.
+
+      Look up `WatchBook` in the Documentation tab. The field `entries`
+      does not return a list. It returns a `WatchPage`, and a page's field
+      `nodes` lists the entries on that page. The book holds 216 entries.
+      Ask for all of them at once, and the request weighs more than 200,
+      so the records clerk returns it unsent. It costs you nothing.
+
+      The field `entries` takes an argument `first`, of type `Int`. An
+      `Int` is a whole number, and you write it as digits, without
+      quotation marks. `entries(first: 10)` asks for a page that holds the
+      first ten entries of the book, and the clerk weighs the request by
+      those ten. That number is the page size, and reading a list one page
+      at a time is [pagination](glossary:pagination).
+
+      The duty officer signs the book when it is opened. Identify the
+      officer who kept the First Desk's corridor as duty officer that day.
+
+    clues:
+      - text: >
+          The duty officer signed the book when it was opened.
+        constraint:
+          $entry.note: Book opened. Henrique Lobo signed it as duty officer for the corridor.
+          $entry.officer: $officer
+
+    scaffold:
+      level: guided
+      starterQuery: |
+        query {
+          watchBook(reference: "WB-0112") {
+            # After entries, write (first: 10). The argument is
+            # called first, and 10 is the page size.
+            entries {
+              nodes {
+                reference
+                hour
+                note
+                # Ask for the name of the officer inside officer.
+              }
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        Two officers appear on the first page. Only one of them signed the
+        book as duty officer.
+      concept: >
+        The book is too long to ask for whole. Put first: 10 in the
+        parentheses after entries, and ask for the entries inside nodes.
+      schema: >
+        Look at Query.watchBook, WatchBook.entries, WatchPage.nodes, and
+        WatchEntry.officer.
+      skeleton: |
+        watchBook(reference: "WB-0112") { entries(first: 10) { nodes { reference note officer { name } } } }
+
+    solution:
+      type: deduction
+      officer: henrique-lobo
+    labels:
+      officer: Officer
+
+    claims:
+      - id: duty
+        prompt: This officer kept the corridor as duty officer.
+        evidenceSets:
+          - facts:
+              - entity: WatchEntry:$entry
+                field: note
+                equals: Book opened. Henrique Lobo signed it as duty officer for the corridor.
+              - entity: WatchEntry:$entry
+                field: officer
+                equals: Officer:$officer
+          - facts:
+              - entity: WatchEntry:COR-0009
+                field: note
+                equals: Henrique Lobo walked the corridor as duty officer and found every door locked.
+              - entity: WatchEntry:COR-0009
+                field: officer
+                equals: Officer:$officer
+
+    leadOutcomes:
+      lourenco-pais:
+        refutation:
+          claim: duty
+          facts:
+            - entity: WatchEntry:COR-0004
+              field: note
+              equals: Lourenço Pais came along the corridor on his way to the pass desk for the morning turn.
+            - entity: WatchEntry:COR-0004
+              field: officer
+              equals: Officer:$officer
+        ruledOut: |
+          Lourenço Pais only passed along the corridor. He is the First
+          Desk's pass clerk, and he was on his way to the pass desk.
+
+    resolved: |
+      Deduction accepted. Henrique Lobo kept the corridor as duty officer.
+      Anyone who came into the First Desk's corridor that day came past
+      his post.
+
+    referenceSolution:
+      - |
+        query {
+          watchBook(reference: "WB-0112") {
+            entries(first: 10) {
+              nodes { reference hour note officer { name } }
+            }
+          }
+        }
+
+    next: door
+
+  door:
+    location: PT
+    step: cursor
+    objective: Identify the officer who let the holder of pass PS-0471 into the First Desk's corridor.
+
+    briefing: |
+      GILT_MAGPIE came to the First Desk's corridor later the same day,
+      on pass PS-0471, and the corridor book records who let him in. That
+      entry is further into the book than the first page. You need to
+      know where one page ends, so that you can start the next page
+      there.
+
+      Look up `WatchPage` in the Documentation tab. Beside `nodes`, a page
+      has the field `pageInfo`. Inside `pageInfo`, `hasNextPage` is `true`
+      when the book goes on after the page, and `endCursor` is the
+      reference of the last entry on the page. That reference is the
+      entry's [cursor](glossary:cursor). Ask for both of them, as in
+      `pageInfo { hasNextPage endCursor }`, beside `nodes`.
+
+      The field `entries` also takes an argument `after`, which is text.
+      `entries(first: 10, after: "COR-0010")` asks for the ten entries
+      that come after entry COR-0010. Copy the `endCursor` of one page
+      into `after` to ask for the page that follows it.
+
+      An entry's field `pass` returns the pass that the entry records.
+      The clerk counts the pass inside each entry as one more record. A
+      page of 60 entries that each open `officer` and `pass` holds 60
+      entries, 60 officers, and 60 passes, and the book itself counts as
+      one more, so the request weighs 181. `pageInfo` is not a record and
+      counts for nothing. The fewer records you open inside each entry,
+      the more entries fit on one page under the limit.
+
+      Identify the officer who let the holder of pass PS-0471 into the
+      First Desk's corridor.
+
+    clues:
+      - text: >
+          The officer came out of the private office and let the holder
+          of pass PS-0471 into the corridor.
+        constraint:
+          $entry.note: Duarte Sequeira came out of the private office and let the holder of pass PS-0471 into the corridor.
+          $entry.officer: $officer
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          watchBook(reference: "WB-0112") {
+            # After the first page, put after: and the endCursor of
+            # the page before in these parentheses, beside first.
+            entries(first: 60) {
+              nodes {
+                reference
+                hour
+                note
+                officer { name }
+                # Ask for the number of the pass inside pass.
+              }
+              # Ask for hasNextPage and endCursor inside pageInfo.
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        The duty officer was not at his post when the holder of pass
+        PS-0471 came to the corridor door. Read the entries just before it.
+      concept: >
+        Ask for pageInfo { hasNextPage endCursor } beside nodes. Then put
+        after: and that endCursor in the parentheses after entries, beside
+        first, to ask for the next page.
+      schema: >
+        Look at WatchBook.entries, WatchPage.pageInfo, PageInfo.endCursor,
+        and WatchEntry.pass.
+      skeleton: |
+        entries(first: 60, after: "COR-0100") { nodes { reference note officer { name } pass { number } } pageInfo { hasNextPage endCursor } }
+
+    solution:
+      type: deduction
+      officer: duarte-sequeira
+    labels:
+      officer: Officer
+
+    claims:
+      - id: let-in
+        prompt: This officer let the holder of pass PS-0471 into the corridor.
+        evidenceSets:
+          - facts:
+              - entity: WatchEntry:$entry
+                field: note
+                equals: Duarte Sequeira came out of the private office and let the holder of pass PS-0471 into the corridor.
+              - entity: WatchEntry:$entry
+                field: officer
+                equals: Officer:$officer
+          - facts:
+              - entity: WatchEntry:COR-0153
+                field: pass
+                equals: Pass:PS-0471
+              - entity: WatchEntry:COR-0153
+                field: officer
+                equals: Officer:$officer
+
+    leadOutcomes:
+      henrique-lobo:
+        refutation:
+          claim: let-in
+          facts:
+            - entity: WatchEntry:COR-0148
+              field: note
+              equals: Henrique Lobo left his post in the corridor and went down the stair, on an errand for the private office.
+            - entity: WatchEntry:COR-0148
+              field: officer
+              equals: Officer:$officer
+        ruledOut: |
+          Henrique Lobo keeps the corridor, but he had gone down the stair
+          on an errand for the private office before the holder of pass
+          PS-0471 came to the door.
+
+    resolved: |
+      Deduction accepted. Duarte Sequeira, private secretary at the First
+      Desk, came out of the private office and let the holder of pass
+      PS-0471 into the corridor. The private office had sent the duty
+      officer away on an errand a few minutes before.
+
+    referenceSolution:
+      - |
+        query {
+          watchBook(reference: "WB-0112") {
+            entries(first: 100) {
+              nodes { reference hour note }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+      - |
+        query {
+          watchBook(reference: "WB-0112") {
+            entries(first: 60, after: "COR-0100") {
+              nodes { reference hour note officer { name } pass { number } }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+
+    next: pass-desk
+
+  pass-desk:
+    location: PT
+    step: optional-variable
+    objective: Identify the officer who made out pass PS-0471 at the pass desk.
+
+    briefing: |
+      Passes are made out at the pass desk, and the pass desk keeps a
+      watch book of its own, WB-0115, for the morning the instruction was
+      handed in. The book holds 204 entries. You will ask for one page
+      after another, and each request is the same except for `after`.
+
+      Write the operation once, with a variable for the cursor:
+      `query PassDesk($after: String)`, and `after: $after` in the
+      parentheses after `entries`. The type `String` has no `!`, so the
+      variable may be left out. For the first page, leave the variables
+      panel empty. The variable then has no value, and the archive treats
+      `after` as though you had not written it, so the page starts at the
+      first entry.
+
+      For each page after the first, type the cursor in the variables
+      panel, as in `{ "after": "PDK-0060" }`, and transmit the same
+      operation again. Typing `{ "after": null }` has the same effect as
+      leaving the variable out: `null` is the value that means "no
+      value".
+
+      Identify the officer who made out pass PS-0471 at the pass desk.
+
+    clues:
+      - text: >
+          The officer made out pass PS-0471 and left the box for the
+          signing officer empty.
+        constraint:
+          $entry.note: Pass PS-0471 made out in the name of The Registrar. The box for the signing officer was left empty.
+          $entry.officer: $officer
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        # Declare the variable $after, of type String, in
+        # parentheses after PassDesk.
+        query PassDesk {
+          watchBook(reference: "WB-0115") {
+            # Put after: $after in these parentheses, beside first.
+            entries(first: 60) {
+              nodes {
+                reference
+                hour
+                note
+                officer { name }
+                pass { number }
+              }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        The pass clerk on the morning turn was called away from the desk
+        before the pass was made out. Read the entries around pass
+        PS-0471.
+      concept: >
+        Declare $after: String and write after: $after inside the
+        parentheses after entries. Transmit once with the variables panel
+        empty, then again with the endCursor of each page as after.
+      schema: >
+        Look at WatchBook.entries, PageInfo.endCursor, WatchEntry.officer,
+        and WatchEntry.pass.
+      skeleton: |
+        query PassDesk($after: String) { watchBook(reference: "WB-0115") { entries(first: 60, after: $after) { nodes { reference note officer { name } } pageInfo { endCursor } } } }
+
+    solution:
+      type: deduction
+      officer: duarte-sequeira
+    labels:
+      officer: Officer
+
+    claims:
+      - id: made-out
+        prompt: This officer made out pass PS-0471 at the pass desk.
+        evidenceSets:
+          - facts:
+              - entity: WatchEntry:$entry
+                field: note
+                equals: Pass PS-0471 made out in the name of The Registrar. The box for the signing officer was left empty.
+              - entity: WatchEntry:$entry
+                field: officer
+                equals: Officer:$officer
+          - facts:
+              - entity: WatchEntry:PDK-0131
+                field: pass
+                equals: Pass:PS-0471
+              - entity: WatchEntry:PDK-0131
+                field: officer
+                equals: Officer:$officer
+
+    leadOutcomes:
+      lourenco-pais:
+        refutation:
+          claim: made-out
+          facts:
+            - entity: WatchEntry:PDK-0127
+              field: note
+              equals: Lourenço Pais was called away from the pass desk to the telephone in the First Desk's private office.
+            - entity: WatchEntry:PDK-0127
+              field: officer
+              equals: Officer:$officer
+        ruledOut: |
+          Lourenço Pais held the pass desk that morning, but he had been
+          called away to the telephone before pass PS-0471 was made out.
+          When he came back, nobody in the private office had telephoned
+          for him.
+
+    resolved: |
+      Deduction accepted. Duarte Sequeira stood in at the pass desk, made
+      out pass PS-0471, and sent it down to the door watch by hand. Nobody
+      in the private office had telephoned for the pass clerk.
+
+    referenceSolution:
+      - |
+        query PassDesk($after: String) {
+          watchBook(reference: "WB-0115") {
+            entries(first: 60, after: $after) {
+              nodes { reference hour note officer { name } pass { number } }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+      - |
+        query PassDesk($after: String) {
+          watchBook(reference: "WB-0115") {
+            entries(first: 60, after: $after) {
+              nodes { reference hour note officer { name } pass { number } }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+      - |
+        query PassDesk($after: String) {
+          watchBook(reference: "WB-0115") {
+            entries(first: 60, after: $after) {
+              nodes { reference hour note officer { name } pass { number } }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+    referenceVariables:
+      - {}
+      - { after: PDK-0060 }
+      - { after: PDK-0120 }
+
+    next: inner-room
+
+  inner-room:
+    location: PT
+    step: null-propagation
+    objective: Identify the officer who brought the holder of pass PS-0471 out of the inner room of the First Desk.
+
+    briefing: |
+      Duarte Sequeira took the holder of pass PS-0471 to the inner room of
+      the First Desk late in the afternoon. The entries for that hour come
+      after COR-0200 in the corridor book, WB-0112.
+
+      Ask for the page that starts after COR-0200, and `nodes` comes back
+      as `null`, with an error. The error says that one entry on the page
+      is classified above your clearance, and gives that entry's
+      reference. Look up `WatchPage` in the Documentation tab. The field
+      `nodes` returns `[WatchEntry!]`. The `!` inside the square brackets
+      means that an entry in the list may not be null. The archive cannot
+      hand you the classified entry, and it may not put `null` in its
+      place, so it gives `null` for the whole list instead. The `null`
+      travels up to the nearest field that is allowed to be null, which is
+      `nodes`.
+
+      `pageInfo` sits beside `nodes`, so it still comes back. Ask for the
+      next page after the classified entry, by giving its reference as
+      `after`, and the entries after it come back. Use the classified
+      entry's reference here, and not the page's `endCursor`: the
+      `endCursor` is the last entry on the blanked page, so starting after
+      it would skip every entry between the two.
+
+      The entries before the classified one on that page did not come back
+      either. To read them, ask again after COR-0200 with a page size
+      small enough to stop before the classified entry.
+
+      Identify the officer who brought the holder of pass PS-0471 out of
+      the inner room of the First Desk.
+
+    clues:
+      - text: >
+          The officer brought the holder of pass PS-0471 out of the inner
+          room.
+        constraint:
+          $entry.note: Duarte Sequeira brought the holder of pass PS-0471 out of the inner room and along the corridor to the door.
+          $entry.officer: $officer
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          watchBook(reference: "WB-0112") {
+            # When nodes comes back as null, put the reference that
+            # the error gives in after, in place of COR-0200.
+            entries(first: 10, after: "COR-0200") {
+              nodes {
+                reference
+                hour
+                note
+                officer { name }
+              }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        The duty officer came back to his post while the holder of pass
+        PS-0471 was in the inner room. Read who kept the corridor while
+        the visitor was brought out.
+      concept: >
+        The page that holds a classified entry comes back with nodes as
+        null. Start the next page after the classified entry, with its
+        reference as after.
+      schema: >
+        Look at WatchBook.entries, WatchPage.nodes, WatchPage.pageInfo, and
+        WatchEntry.officer.
+      skeleton: |
+        entries(first: 10, after: "COR-0202") { nodes { reference note officer { name } } pageInfo { endCursor } }
+
+    solution:
+      type: deduction
+      officer: duarte-sequeira
+    labels:
+      officer: Officer
+
+    claims:
+      - id: brought-out
+        prompt: This officer brought the holder of pass PS-0471 out of the inner room.
+        evidenceSets:
+          - facts:
+              - entity: WatchEntry:$entry
+                field: note
+                equals: Duarte Sequeira brought the holder of pass PS-0471 out of the inner room and along the corridor to the door.
+              - entity: WatchEntry:$entry
+                field: officer
+                equals: Officer:$officer
+          - facts:
+              - entity: WatchEntry:COR-0207
+                field: pass
+                equals: Pass:PS-0471
+              - entity: WatchEntry:COR-0207
+                field: officer
+                equals: Officer:$officer
+
+    leadOutcomes:
+      henrique-lobo:
+        refutation:
+          claim: brought-out
+          facts:
+            - entity: WatchEntry:COR-0206
+              field: note
+              equals: Henrique Lobo kept his post in the corridor while the visitor was brought out.
+            - entity: WatchEntry:COR-0206
+              field: officer
+              equals: Officer:$officer
+        ruledOut: |
+          Henrique Lobo was back at his post by then, and he kept it while
+          the visitor was brought out. He did not go into the inner room.
+
+    resolved: |
+      Deduction accepted. Duarte Sequeira brought the holder of pass
+      PS-0471 out of the inner room and signed him out of the corridor.
+      Entry COR-0202, the one that says who opened the door of the inner
+      room, stays classified.
+
+    referenceSolution:
+      - |
+        query {
+          watchBook(reference: "WB-0112") {
+            entries(first: 10, after: "COR-0200") {
+              nodes { reference hour note officer { name } }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+      - |
+        query {
+          watchBook(reference: "WB-0112") {
+            entries(first: 10, after: "COR-0202") {
+              nodes { reference hour note officer { name } pass { number } }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }

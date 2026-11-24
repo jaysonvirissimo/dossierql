@@ -1,0 +1,162 @@
+id: cipher-counter
+title: The Cipher Counter
+campaign: fourth-desk
+order: 8
+clearance: 9
+kind: assessment
+teaches: null
+practises: [nested-selections, arguments, variables, pagination]
+requires: [nested-selections, arguments, variables, pagination]
+summary: >
+  GILT_MAGPIE handed in the instruction for Valparaíso Station at the
+  counter of the Cipher Room. The counter keeps a watch book too, and
+  somebody took the instruction from him.
+motif: seal
+clock:
+  countdown: The Cipher Room rules off its counter book in {remaining}
+  expired: The Cipher Room has ruled off its counter book
+  onExpiry: end
+startingStage: counter
+
+debrief:
+  onTime: |
+    Duarte Sequeira took the counter of the Cipher Room minutes before
+    GILT_MAGPIE came up to it, and he entered the instruction for
+    Valparaíso Station as CR-0112, with no name. The counter clerk had
+    been called up to the First Desk by a telephone call that nobody
+    there had made.
+
+    The private secretary of the First Desk made out the pass, kept the
+    counter, and opened the corridor. Every paper in the chain now has
+    his name near it. The inquiry asks whom a private secretary works
+    for.
+  stampOnTime: COUNTER KEPT
+  comparison: >
+    The reference solution writes one operation with the variable
+    `$after: String`, and asks book WB-0116 for pages of 60 entries. It
+    leaves the variable out for the first page. The second page holds
+    entry CRC-0096, which is classified, so `nodes` comes back as `null`
+    and the error gives the entry's reference. The third request gives
+    `{ "after": "CRC-0096" }`, and that page holds the counter's entries
+    for the hour the instruction was handed in.
+  geography: >
+    The Lisbon earthquake of 1755, and the fire and flood that followed
+    it, destroyed most of the lower town. The streets that replaced it
+    were laid out on a grid, the first of their kind in Europe.
+
+stages:
+  counter:
+    location: PT
+    objective: Identify the officer who took the instruction for Valparaíso Station from GILT_MAGPIE at the counter of the Cipher Room.
+
+    briefing: |
+      GILT_MAGPIE handed in the instruction for Valparaíso Station at the
+      counter of the Cipher Room, and the Cipher Room's register entered
+      it as CR-0112, with no name. The counter keeps a watch book, and its
+      book for that morning is WB-0116. The book holds 208 entries.
+
+      Identify the officer who took the instruction for Valparaíso
+      Station from GILT_MAGPIE at the counter of the Cipher Room.
+
+    clues:
+      - text: >
+          The officer entered the instruction for Valparaíso Station as
+          CR-0112.
+        constraint:
+          $entry.note: A man handed in an instruction for Valparaíso Station and gave no name. Duarte Sequeira entered it as CR-0112.
+          $entry.officer: $officer
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        The counter clerk opened the counter that morning, and she was
+        called away from it before the instruction was handed in.
+      concept: >
+        Ask the book for one page at a time, with first and after. When a
+        page comes back with nodes as null, start the next page after the
+        classified entry that the error gives.
+      schema: >
+        Look at Query.watchBook, WatchBook.entries, PageInfo.endCursor, and
+        WatchEntry.officer.
+      skeleton: |
+        query Counter($after: String) { watchBook(reference: "WB-0116") { entries(first: 60, after: $after) { nodes { reference note officer { name } } pageInfo { endCursor } } } }
+
+    solution:
+      type: deduction
+      officer: duarte-sequeira
+    labels:
+      officer: Officer
+
+    claims:
+      - id: took-in
+        prompt: This officer took the instruction for Valparaíso Station at the counter.
+        evidenceSets:
+          - facts:
+              - entity: WatchEntry:$entry
+                field: note
+                equals: A man handed in an instruction for Valparaíso Station and gave no name. Duarte Sequeira entered it as CR-0112.
+              - entity: WatchEntry:$entry
+                field: officer
+                equals: Officer:$officer
+          - facts:
+              - entity: WatchEntry:CRC-0152
+                field: note
+                equals: Duarte Sequeira of the First Desk's private office took the counter.
+              - entity: WatchEntry:CRC-0152
+                field: officer
+                equals: Officer:$officer
+
+    leadOutcomes:
+      benedita-rocha:
+        refutation:
+          claim: took-in
+          facts:
+            - entity: WatchEntry:CRC-0151
+              field: note
+              equals: Benedita Rocha was called up to the First Desk by telephone.
+            - entity: WatchEntry:CRC-0151
+              field: officer
+              equals: Officer:$officer
+        ruledOut: |
+          Benedita Rocha keeps the counter, but she had been called up to
+          the First Desk by telephone before the instruction was handed in.
+
+    resolved: |
+      Deduction accepted. Duarte Sequeira of the First Desk's private
+      office kept the counter of the Cipher Room while GILT_MAGPIE handed
+      in the instruction, and he entered it with no name.
+
+    referenceSolution:
+      - |
+        query Counter($after: String) {
+          watchBook(reference: "WB-0116") {
+            entries(first: 60, after: $after) {
+              nodes { reference hour note officer { name } }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+      - |
+        query Counter($after: String) {
+          watchBook(reference: "WB-0116") {
+            entries(first: 60, after: $after) {
+              nodes { reference hour note officer { name } }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+      - |
+        query Counter($after: String) {
+          watchBook(reference: "WB-0116") {
+            entries(first: 60, after: $after) {
+              nodes { reference hour note officer { name } }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+    referenceVariables:
+      - {}
+      - { after: CRC-0060 }
+      - { after: CRC-0096 }

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { check } from "../graphql/execute.ts";
+import { loadContent } from "../../scripts/load-content.ts";
+import { buildCatalog } from "../content/catalog.ts";
+import { check, transmit } from "../graphql/execute.ts";
 import { schemaFor } from "../graphql/schema.ts";
 import { styleIssues } from "../content/style.ts";
 import { annotate } from "./annotate.ts";
@@ -176,4 +178,57 @@ describe("annotate", () => {
       expect(styleIssues(note!)).toEqual([]);
     }
   });
+});
+
+describe("annotate at clearance 9", () => {
+  const { store } = buildCatalog(loadContent().raw);
+  const sent = (operation: string, variables?: Record<string, unknown>) =>
+    transmit(store, { operation, variables, clearance: 9 }).result.errors?.map(
+      (error) =>
+        annotate(
+          {
+            message: error.message,
+            ...(error.path ? { path: [...error.path] } : {}),
+          },
+          true,
+        ),
+    ) ?? [];
+  const book = (args: string) =>
+    `{ watchBook(reference: "WB-0112") { entries${args} { nodes { note } pageInfo { endCursor } } } }`;
+
+  const cases: [string, string[], RegExp][] = [
+    ["a request over the weight limit", sent(book("")), /page size you give/],
+    [
+      "a classified entry that blanks a page",
+      sent(book(`(first: 5, after: "COR-0200")`)),
+      /whole list.*starting the next page after it, with COR-0202 as the cursor/,
+    ],
+    [
+      "a cursor the book does not hold",
+      sent(book(`(first: 5, after: "COR-9999")`)),
+      /reference of the entry/,
+    ],
+    ["a page size below zero", sent(book(`(first: -2)`)), /zero or more/],
+    [
+      "null for a required argument",
+      notes(`{ watchBook(reference: null) { title } }`, 9),
+      /may not be null/,
+    ],
+    [
+      "null for a required variable",
+      sent(`query B($r: ID!) { watchBook(reference: $r) { title } }`, {
+        r: null,
+      }),
+      /variables panel/,
+    ],
+  ];
+
+  for (const [name, found, expected] of cases) {
+    it(`explains ${name}`, () => {
+      expect(found).toHaveLength(1);
+      expect(found[0]).toMatch(expected);
+      expect(found[0]).not.toMatch(FALLBACK);
+      expect(styleIssues(found[0] ?? "")).toEqual([]);
+    });
+  }
 });

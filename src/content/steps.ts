@@ -6,6 +6,7 @@ import {
   visit,
   visitWithTypeInfo,
   type DocumentNode,
+  type ExecutionResult,
   type FieldNode,
 } from "graphql";
 import { schemaFor } from "../graphql/schema.ts";
@@ -25,6 +26,22 @@ export interface Step {
   /** A glossary term that mission text may use only from the step's clearance. */
   term?: string;
   uses: (document: DocumentNode) => boolean;
+  /**
+   * For a step that shows only in a response, such as an error that blanks
+   * a list: whether the responses to a stage's reference solution show it.
+   * Still read from what the archive returned, never from the query's text.
+   */
+  observed?: (results: readonly ExecutionResult[]) => boolean;
+}
+
+/** Whether an argument of this name is passed to a field outside introspection. */
+function hasArgument(document: DocumentNode, name: string): boolean {
+  return hasField(
+    document,
+    (field) =>
+      !field.name.value.startsWith("__") &&
+      (field.arguments ?? []).some((a) => a.name.value === name),
+  );
 }
 
 const INTROSPECTION = new Set(["__schema", "__type"]);
@@ -205,6 +222,51 @@ export const STEPS: readonly Step[] = [
     summary:
       "a named fragment for one member of the union, spread inside its selection",
     uses: spreadsUnionMember,
+  },
+  {
+    id: "cursor",
+    clearance: 9,
+    summary:
+      "cursors: pageInfo { hasNextPage endCursor }, then after: to start the next page",
+    term: "cursor",
+    uses: (document) =>
+      hasField(document, (field) => field.name.value === "endCursor") ||
+      hasArgument(document, "after"),
+  },
+  {
+    id: "optional-variable",
+    clearance: 9,
+    summary:
+      "a variable that may be left out, such as $after: String on the first page, and null as a value",
+    uses: (document) => {
+      let found = false;
+      visit(document, {
+        VariableDefinition(node) {
+          if (node.type.kind !== Kind.NON_NULL_TYPE && !node.defaultValue) {
+            found = true;
+          }
+        },
+        NullValue() {
+          found = true;
+        },
+      });
+      return found;
+    },
+  },
+  {
+    id: "null-propagation",
+    clearance: 9,
+    summary:
+      "how null travels upward: a classified entry in a list whose entries may not be null blanks the whole list",
+    uses: () => false,
+    observed: (results) =>
+      results.some((result) =>
+        (result.errors ?? []).some(
+          (error) =>
+            error.message.endsWith("is classified above your clearance.") &&
+            typeof error.path?.[error.path.length - 1] === "number",
+        ),
+      ),
   },
 ];
 

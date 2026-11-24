@@ -4,6 +4,8 @@ import { loadContent } from "../../scripts/load-content.ts";
 import type { RawContent } from "./catalog.ts";
 import type { Mission } from "./types.ts";
 import { stepById } from "./steps.ts";
+import { transmit } from "../graphql/execute.ts";
+import { buildCatalog } from "./catalog.ts";
 import { validateContent } from "./validate.ts";
 
 const { raw } = loadContent();
@@ -26,9 +28,9 @@ describe("the authored course", () => {
     expect(validateContent(raw)).toEqual([]);
   });
 
-  it("covers clearance 1 to 8 with a teaching mission and an assessment each", () => {
+  it("covers clearance 1 to 9 with a teaching mission and an assessment each", () => {
     const cases = raw.missions.filter((m) => m.kind !== "coda");
-    expect(cases).toHaveLength(16);
+    expect(cases).toHaveLength(18);
   });
 
   it("ends the first campaign with one coda", () => {
@@ -696,5 +698,98 @@ describe("the steps of clearance 8 are recognised from the parsed request", () =
         `{ operative(codename: "GILT_MAGPIE") { sightings { ...Seen } } } fragment Seen on Sighting { note }`,
       ),
     ).toBe(false);
+  });
+});
+
+describe("the steps of clearance 9 are recognised", () => {
+  const uses = (id: string, query: string) =>
+    stepById(id)?.uses(parse(query)) ?? false;
+  const book = (inner: string) =>
+    `{ watchBook(reference: "WB-0112") { ${inner} } }`;
+
+  it("a cursor, asked for or given as after", () => {
+    expect(
+      uses("cursor", book(`entries(first: 5) { pageInfo { endCursor } }`)),
+    ).toBe(true);
+    expect(
+      uses(
+        "cursor",
+        book(`entries(first: 5, after: "COR-0005") { nodes { note } }`),
+      ),
+    ).toBe(true);
+    expect(uses("cursor", book(`entries(first: 5) { nodes { note } }`))).toBe(
+      false,
+    );
+  });
+
+  it("a variable that may be left out, or null, and not a required one", () => {
+    expect(
+      uses(
+        "optional-variable",
+        `query B($after: String) { watchBook(reference: "WB-0112") { entries(first: 5, after: $after) { nodes { note } } } }`,
+      ),
+    ).toBe(true);
+    expect(
+      uses(
+        "optional-variable",
+        book(`entries(first: 5, after: null) { nodes { note } }`),
+      ),
+    ).toBe(true);
+    expect(
+      uses(
+        "optional-variable",
+        `query C($name: String!) { city(name: $name) { name } }`,
+      ),
+    ).toBe(false);
+  });
+
+  it("a null that travels up from a classified entry, read from the response", () => {
+    const { store } = buildCatalog(raw);
+    const sent = (after: string) =>
+      transmit(store, {
+        operation: book(
+          `entries(first: 3, after: "${after}") { nodes { note } }`,
+        ),
+        clearance: 9,
+      }).result;
+    const step = stepById("null-propagation");
+    expect(step?.observed?.([sent("COR-0200")])).toBe(true);
+    expect(step?.observed?.([sent("COR-0202")])).toBe(false);
+  });
+});
+
+describe("request weight is checked against the limit", () => {
+  const weight = (content: RawContent) =>
+    validateContent(content)
+      .filter((issue) => issue.code === "weight")
+      .map((issue) => issue.message);
+
+  it("refuses a reference solution over the limit", () => {
+    expect(
+      weight(
+        mutated("corridor-book", (m) => {
+          m.stages.opening!.referenceSolution = (
+            m.stages.opening!.referenceSolution as string[]
+          ).map((o) => o.replace("entries(first: 10)", "entries"));
+        }),
+      ).join(" "),
+    ).toMatch(/over the limit of 200/);
+  });
+
+  it("refuses a pagination case whose books could be read whole", () => {
+    expect(
+      weight(
+        mutated("corridor-book", (m) => {
+          m.stages.opening!.referenceSolution = (
+            m.stages.opening!.referenceSolution as string[]
+          ).map((o) =>
+            o.replace(
+              "nodes { reference hour note officer { name } }",
+              "pageInfo { hasNextPage }",
+            ),
+          );
+        }),
+      ).join(" "),
+    ).toMatch(/no reason to page/);
   });
 });

@@ -90,3 +90,56 @@ describe("request weight through a union", () => {
     ).toBe(1 + most * 2);
   });
 });
+
+describe("request weight with pages", () => {
+  const at9 = (query: string, variables: Record<string, unknown> = {}) =>
+    requestWeight(schemaFor(9), store, parse(query), variables);
+  const book = (args: string, inner = "nodes { note }") =>
+    `query B($n: Int, $after: String) { watchBook(reference: "WB-0112") { entries${args} { ${inner} pageInfo { hasNextPage endCursor } } } }`;
+  const length = (store.get("WatchBook", "WB-0112")?.entries as string[])
+    .length;
+
+  it("counts a page for its page size, and the page itself for nothing", () => {
+    expect(at9(book("(first: 10)"))).toBe(1 + 10);
+    expect(at9(book("(first: 10)", "nodes { officer { name } }"))).toBe(
+      1 + 10 * 2,
+    );
+  });
+
+  it("counts a page with no page size for the whole list", () => {
+    expect(at9(book(""))).toBe(1 + length);
+  });
+
+  it("reads a page size given as a variable", () => {
+    expect(at9(book("(first: $n)"), { n: 5 })).toBe(1 + 5);
+    expect(at9(book("(first: $n)"))).toBe(1 + length);
+  });
+
+  it("never counts more than the list can hold", () => {
+    expect(at9(book("(first: 9999)"))).toBe(1 + length);
+  });
+});
+
+describe("the weight limit", () => {
+  const whole = `{ watchBook(reference: "WB-0112") { entries { nodes { note } } } }`;
+
+  it("refuses a request over the limit from clearance 9, before transmission", () => {
+    const sent = transmit(store, { operation: whole, clearance: 9 });
+    expect(sent.transmitted).toBe(false);
+    expect(sent.facts).toEqual([]);
+    expect(sent.result.data).toBeUndefined();
+    expect(sent.result.errors?.[0]?.message).toMatch(
+      /weighed this request at \d+\. The limit at your clearance is 200\./,
+    );
+  });
+
+  it("leaves a heavy request alone below clearance 9", () => {
+    const query = `{ countries { borders { borders { name } } } }`;
+    expect(
+      transmit(store, { operation: query, clearance: 8 }).transmitted,
+    ).toBe(true);
+    expect(
+      transmit(store, { operation: query, clearance: 9 }).transmitted,
+    ).toBe(false);
+  });
+});

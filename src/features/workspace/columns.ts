@@ -24,7 +24,7 @@ export function headingOf(
   value: Record<string, unknown>,
   index: number,
 ): string {
-  for (const key of ["name", "codename", "id", "code"]) {
+  for (const key of ["name", "codename", "id", "code", "reference", "number"]) {
     if (typeof value[key] === "string") return value[key];
   }
   // An entry in a register is known by its serial number.

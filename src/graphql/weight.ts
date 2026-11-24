@@ -5,17 +5,26 @@ import {
   isUnionType,
   Kind,
   type DocumentNode,
+  type FieldNode,
   type GraphQLInterfaceType,
   type GraphQLNamedType,
   type GraphQLObjectType,
   type GraphQLSchema,
   type GraphQLUnionType,
   type SelectionSetNode,
+  type ValueNode,
+  type VariableDefinitionNode,
 } from "graphql";
-import { fieldShape, type Store } from "./store.ts";
+import { fieldShape, isPageType, type Store } from "./store.ts";
 
 /** The clearance from which every result states its weight (SDD 3.3). */
 export const WEIGHT_REPORTED_FROM = 6;
+
+/** The clearance from which the clerk refuses a request over the limit. */
+export const WEIGHT_LIMITED_FROM = 9;
+
+/** The most a request may weigh from clearance 9 (SDD 3.3). Provisional. */
+export const WEIGHT_LIMIT = 200;
 
 type RecordType = GraphQLObjectType | GraphQLInterfaceType | GraphQLUnionType;
 
@@ -61,7 +70,26 @@ export function requestWeight(
   schema: GraphQLSchema,
   store: Store,
   document: DocumentNode,
+  variables: Readonly<Record<string, unknown>> = {},
 ): number {
+  let declared: readonly VariableDefinitionNode[] = [];
+  /** The page size a field asks for, written in the query or as a variable. */
+  const pageSize = (node: FieldNode): number | null => {
+    const value: ValueNode | undefined = node.arguments?.find(
+      (a) => a.name.value === "first",
+    )?.value;
+    if (!value) return null;
+    if (value.kind === Kind.INT) return Number(value.value);
+    if (value.kind !== Kind.VARIABLE) return null;
+    const name = value.name.value;
+    const given = variables[name];
+    if (typeof given === "number") return given;
+    if (given === null) return null;
+    const fallback = declared.find(
+      (d) => d.variable.name.value === name,
+    )?.defaultValue;
+    return fallback?.kind === Kind.INT ? Number(fallback.value) : null;
+  };
   const fragments = new Map(
     document.definitions.flatMap((d) =>
       d.kind === Kind.FRAGMENT_DEFINITION ? [[d.name.value, d] as const] : [],
@@ -73,6 +101,8 @@ export function requestWeight(
     set: SelectionSetNode,
     type: RecordType,
     seen: ReadonlySet<string>,
+    /** On a page, how many records its `nodes` can hold. */
+    onPage = 0,
   ): number => {
     let total = 0;
     for (const selection of set.selections) {
@@ -87,18 +117,31 @@ export function requestWeight(
         if (!isRecordType(named)) continue;
         const root = type === query;
         const shape = fieldShape(field.type);
-        const count = shape.list
-          ? root
-            ? store.all(named.name).length
-            : listMaximum(store, type.name, name)
-          : 1;
+        const most = root
+          ? store.all(named.name).length
+          : listMaximum(store, type.name, name);
+        const asked = pageSize(selection);
+        const size = asked === null ? most : Math.max(0, Math.min(asked, most));
+        if (isPageType(named)) {
+          // A page is not a record. Its `nodes` hold the records.
+          total += weigh(selection.selectionSet, named, seen, size);
+          continue;
+        }
+        if (isPageType(type)) {
+          // `pageInfo` is not a record either.
+          if (name === "nodes") {
+            total += onPage * (1 + weigh(selection.selectionSet, named, seen));
+          }
+          continue;
+        }
+        const count = shape.list ? size : 1;
         total += count * (1 + weigh(selection.selectionSet, named, seen));
       } else if (selection.kind === Kind.INLINE_FRAGMENT) {
         const condition = selection.typeCondition
           ? schema.getType(selection.typeCondition.name.value)
           : type;
         if (isRecordType(condition)) {
-          total += weigh(selection.selectionSet, condition, seen);
+          total += weigh(selection.selectionSet, condition, seen, onPage);
         }
       } else {
         const name = selection.name.value;
@@ -110,6 +153,7 @@ export function requestWeight(
             fragment.selectionSet,
             condition,
             new Set([...seen, name]),
+            onPage,
           );
         }
       }
@@ -120,6 +164,7 @@ export function requestWeight(
   let total = 0;
   for (const definition of document.definitions) {
     if (definition.kind !== Kind.OPERATION_DEFINITION) continue;
+    declared = definition.variableDefinitions ?? [];
     const root = definition.operation === "query" ? query : null;
     if (root) total += weigh(definition.selectionSet, root, new Set());
   }

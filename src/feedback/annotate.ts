@@ -152,6 +152,11 @@ const RULES: Rule[] = [
       `"$${String(m[1])}" is declared, and nothing in the request uses it.`,
   },
   {
+    test: /^Variable "\$(\w+)" has invalid value: Expected value of non-null type "([^"]+)" not to be null/,
+    note: (m) =>
+      `The request declares "$${String(m[1])}" as ${String(m[2])}, and the ! means that "$${String(m[1])}" may not be null. You type a value for it in the variables panel. A variable declared without the ! may be left out.`,
+  },
+  {
     test: /^Variable "\$(\w+)" of required type "[^"]+" was not provided/,
     note: (m) =>
       `The request declares "$${String(m[1])}", and no value came with the request. You type the value in the variables panel, as JSON.`,
@@ -186,6 +191,11 @@ const RULES: Rule[] = [
     note: (m) =>
       `The archive has no type called "${String(m[1])}" at your clearance. The documentation panel lists the types that exist.`,
   },
+  {
+    test: /^Expected value of non-null type "([^"]+)" not to be null/,
+    note: (m) =>
+      `This argument takes ${String(m[1])}. The ! means that the argument may not be null, so the archive needs a value for it.`,
+  },
   { test: /^Expected value of type "[^"]+", found /, note: () => VALUE_KIND },
   {
     test: /^Enum "(\w+)" cannot represent non-enum value: \[/,
@@ -203,6 +213,26 @@ const RULES: Rule[] = [
       `"${String(m[1])}" is not one of the values of ${String(m[2])}. The documentation panel lists every value of ${String(m[2])}, and you write a value exactly as the panel lists it, in capital letters.`,
   },
   { test: /cannot represent/, note: () => VALUE_KIND },
+  {
+    test: /^(\w+) (\S+) is classified above your clearance\.$/,
+    note: (m) =>
+      `${String(m[1])} ${String(m[2])} is classified above your clearance. An entry in this list may not be null, so the archive cannot leave an empty place where ${String(m[2])} would be. It gives null for the whole list instead, and the rest of the response is good. To read the entries after ${String(m[2])}, the clerk suggests starting the next page after it, with ${String(m[2])} as the cursor. The entries before ${String(m[2])} on this page did not come back either. To read them, ask again with the cursor you gave for this page, and a page size small enough to stop before ${String(m[2])}.`,
+  },
+  {
+    test: /^The records clerk weighed this request at (\d+)\. The limit at your clearance is (\d+)\./,
+    note: (m) =>
+      `The request could return up to ${String(m[1])} records, and the clerk copies out no more than ${String(m[2])} in one request. Nothing was transmitted, and it costs nothing. A list counts for every record it could hold. Where a field takes the argument first, the list counts only for the page size you give, as in first: 10.`,
+  },
+  {
+    test: /^(\w+)\.(\w+) has no entry "([^"]*)" to start after\./,
+    note: (m) =>
+      `The argument after takes the cursor of an entry in the list: the reference of the entry, such as the endCursor of the page before. No entry in ${String(m[1])}.${String(m[2])} has the cursor "${String(m[3])}". The field may not be null, so the record that holds it comes back as null too.`,
+  },
+  {
+    test: /^A page cannot hold fewer than no entries/,
+    note: () =>
+      "The page size is the number of entries the page holds, so it is zero or more.",
+  },
   {
     test: /is classified above your clearance\.$/,
     note: () =>

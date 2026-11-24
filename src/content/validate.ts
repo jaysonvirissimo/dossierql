@@ -14,6 +14,7 @@ import {
   type GraphQLNamedType,
   type GraphQLObjectType,
   type DocumentNode,
+  type ExecutionResult,
   type GraphQLSchema,
 } from "graphql";
 import {
@@ -39,6 +40,11 @@ import { check, transmit } from "../graphql/execute.ts";
 import { factKey, type Fact } from "../graphql/facts.ts";
 import { fieldClearance, fullSchema, schemaFor } from "../graphql/schema.ts";
 import { MAX_CLEARANCE } from "../graphql/sdl.ts";
+import {
+  requestWeight,
+  WEIGHT_LIMIT,
+  WEIGHT_LIMITED_FROM,
+} from "../graphql/weight.ts";
 import {
   fieldShape,
   parseRef,
@@ -334,7 +340,13 @@ export function conceptsUsed(operation: string): Set<Concept> {
         depth--;
       },
     },
-    Argument: () => void used.add("arguments"),
+    Argument: (node) => {
+      used.add("arguments");
+      // A page size or a cursor cuts a page from a longer list.
+      if (node.name.value === "first" || node.name.value === "after") {
+        used.add("pagination");
+      }
+    },
     Field: (node) => {
       if (node.alias) used.add("aliases");
     },
@@ -443,6 +455,8 @@ const VOCABULARY = [
   "inline fragment",
   "union",
   "enum",
+  "pagination",
+  "cursor",
 ];
 
 // ------------------------------------------------------------ the checks
@@ -537,6 +551,12 @@ function checkRecords(catalog: Catalog, report: Report): void {
             if (!fields[field]) {
               report(at, "references", `Classifies unknown field ${field}.`);
             }
+          }
+          continue;
+        }
+        if (name === "withheld") {
+          if (typeof value !== "number") {
+            report(at, "references", "withheld must be a clearance level.");
           }
           continue;
         }
@@ -1187,11 +1207,16 @@ function checkSolvable(
         );
         return;
       }
-      if (record.errors.length > 0) {
+      // A record classified above the clearance in force is a partial
+      // result the case is written around (SDD 3.8), not a fault.
+      const faults = record.errors.filter(
+        (e) => !e.message.endsWith("is classified above your clearance."),
+      );
+      if (faults.length > 0) {
         report(
           `${at}.referenceSolution`,
           "solvability",
-          `The reference solution returns an error: ${String(record.errors[0]?.message)}`,
+          `The reference solution returns an error: ${String(faults[0]?.message)}`,
         );
       }
     }
@@ -1394,6 +1419,7 @@ function checkCurriculum(
     "introspection",
     "interfaces",
     "unions",
+    "pagination",
   ] as const) {
     if (used.has(concept) && !declared.has(concept)) {
       report(
@@ -1491,10 +1517,15 @@ function checkPacing(catalog: Catalog, report: Report): void {
   });
 }
 
-/** The steps of SDD 3.7 that a stage's reference solution uses. */
-function stepsUsed(stage: Stage): Set<string> {
+/**
+ * The steps of SDD 3.7 that a stage's reference solution uses: read from its
+ * parsed requests, or, for a step that shows only in a response, from what
+ * the archive returns to them at the mission's clearance.
+ */
+function stepsUsed(stage: Stage, store: Store, clearance: number): Set<string> {
   const used = new Set<string>();
-  for (const { operation } of referenceOperations(stage)) {
+  const results: ExecutionResult[] = [];
+  for (const { operation, variables } of referenceOperations(stage)) {
     let document;
     try {
       document = parse(operation);
@@ -1502,6 +1533,12 @@ function stepsUsed(stage: Stage): Set<string> {
       continue; // Reported by the solvability check.
     }
     for (const step of STEPS) if (step.uses(document)) used.add(step.id);
+    if (STEPS.some((step) => step.observed)) {
+      results.push(transmit(store, { operation, variables, clearance }).result);
+    }
+  }
+  for (const step of STEPS) {
+    if (step.observed?.(results)) used.add(step.id);
   }
   return used;
 }
@@ -1531,7 +1568,7 @@ function checkSteps(catalog: Catalog, report: Report): void {
     }
     chain.forEach(([id, stage], position) => {
       const at = `${mission.id}.stages.${id}`;
-      const used = stepsUsed(stage);
+      const used = stepsUsed(stage, catalog.store, mission.clearance);
       for (const step of used) {
         const from = introducedAt.get(step);
         const here = from === undefined && stage.step === step;
@@ -1589,7 +1626,9 @@ function checkSteps(catalog: Catalog, report: Report): void {
       const practised = catalog.missions
         .slice(index + 1)
         .some((later) =>
-          Object.values(later.stages).some((s) => stepsUsed(s).has(step.id)),
+          Object.values(later.stages).some((s) =>
+            stepsUsed(s, catalog.store, later.clearance).has(step.id),
+          ),
         );
       if (!practised) {
         report(`${at}.step`, "steps", `No later mission practises ${step.id}.`);
@@ -2098,6 +2137,67 @@ function checkKatas(catalog: Catalog, report: Report): void {
 }
 
 /** Runs every check of SDD 5.5. Each finding is an error. */
+/** The same request with every page size and cursor taken out. */
+function unpaged(document: DocumentNode): DocumentNode {
+  return visit(document, {
+    Argument: (node) =>
+      node.name.value === "first" || node.name.value === "after"
+        ? null
+        : undefined,
+  });
+}
+
+/**
+ * Request weight (SDD 5.5). Every reference solution fits under the weight
+ * limit at the highest clearance a player can replay it at, since the limit
+ * follows the clearance in force. In the mission that teaches pagination,
+ * each paged request would exceed the limit without its page size: the
+ * books are too long to read whole.
+ */
+function checkWeight(catalog: Catalog, report: Report): void {
+  const schema = schemaFor(MAX_CLEARANCE);
+  for (const mission of catalog.missions) {
+    for (const [id, stage] of Object.entries(mission.stages)) {
+      const at = `${mission.id}.stages.${id}.referenceSolution`;
+      for (const { operation, variables } of referenceOperations(stage)) {
+        let document;
+        try {
+          document = parse(operation);
+        } catch {
+          continue; // Reported by the solvability check.
+        }
+        const weight = requestWeight(
+          schema,
+          catalog.store,
+          document,
+          variables ?? {},
+        );
+        if (weight > WEIGHT_LIMIT) {
+          report(
+            at,
+            "weight",
+            `A request weighs ${String(weight)}, over the limit of ${String(WEIGHT_LIMIT)} that holds from clearance ${String(WEIGHT_LIMITED_FROM)}.`,
+          );
+        }
+        if (
+          mission.kind === "teaching" &&
+          mission.teaches === "pagination" &&
+          conceptsUsed(operation).has("pagination")
+        ) {
+          const whole = requestWeight(schema, catalog.store, unpaged(document));
+          if (whole <= WEIGHT_LIMIT) {
+            report(
+              at,
+              "weight",
+              `Without its page size, a request weighs ${String(whole)}, under the limit: the player has no reason to page.`,
+            );
+          }
+        }
+      }
+    }
+  }
+}
+
 export function validateContent(raw: RawContent): Issue[] {
   const issues: Issue[] = [];
   const report: Report = (path, code, message) => {
@@ -2130,6 +2230,7 @@ export function validateContent(raw: RawContent): Issue[] {
   checkCourseShape(catalog, report);
   checkPacing(catalog, report);
   checkSteps(catalog, report);
+  checkWeight(catalog, report);
   checkDrills(catalog, report);
   checkKatas(catalog, report);
   checkReferenceText(catalog, report);

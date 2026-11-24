@@ -3,6 +3,7 @@ import { Fragment, useState, type ReactNode } from "react";
 import { useGame } from "../../app/GameProvider.tsx";
 import type { ResultError, TransmissionRecord } from "../../engine/mission.ts";
 import { annotate } from "../../feedback/annotate.ts";
+import { WEIGHT_LIMIT, WEIGHT_LIMITED_FROM } from "../../graphql/weight.ts";
 import { useWorkspace } from "./context.ts";
 import { IntrospectionResult, introspectionRoots } from "./Introspection.tsx";
 import { bindingTypes, leadBinding } from "../../content/types.ts";
@@ -699,6 +700,8 @@ export function Results() {
                   {record.weight === 1 ? "record" : "records"}.
                 </>
               )}{" "}
+              {env.clearance >= WEIGHT_LIMITED_FROM &&
+                `The limit at your clearance is ${String(WEIGHT_LIMIT)}. `}
               The Raw response tab shows the weight under{" "}
               <code>extensions</code>.
             </p>

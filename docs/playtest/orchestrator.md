@@ -63,6 +63,10 @@ start.
 | `novice-walkthrough.md`          | _The Listening Post_               | `station-file`         | 8         |
 | `clean-room-solve.md`            | _The Door Watch_                   | `station-file`         | 8         |
 | `novice-walkthrough.md`          | _The Door Watch_                   | `station-file`         | 8         |
+| `clean-room-solve.md`            | _The Corridor Book_                | `door-watch`           | 9         |
+| `novice-walkthrough.md`          | _The Corridor Book_                | `door-watch`           | 9         |
+| `clean-room-solve.md`            | _The Cipher Counter_               | `door-watch`           | 9         |
+| `novice-walkthrough.md`          | _The Cipher Counter_               | `door-watch`           | 9         |
 | `simulated-sessions.md`, round 1 | the drills and the first two cases | none                   | 1         |
 | `simulated-sessions.md`, round 2 | the path given in the prompt       | in the prompt          | 2         |
 
@@ -94,6 +98,14 @@ start.
   their debriefs taught. You have read a list of documents that share some
   fields, and you have never read a list whose records share none." For
   _The Door Watch_, add: "You have also played The Listening Post."
+- **_The Corridor Book_ and _The Cipher Counter_.** They are the clearance 9
+  cases of the second campaign. Seed the completion of `door-watch`, and for
+  _The Cipher Counter_ the completion of `corridor-book` as well. For the
+  novice walkthrough of _The Corridor Book_, set [PRIOR PLAY] to: "You have
+  played every case of the first campaign and every earlier case of the
+  second, through The Door Watch, and you remember what their debriefs
+  taught. You have never read a list one page at a time." For _The Cipher
+  Counter_, add: "You have also played The Corridor Book."
 - **The simulated rounds.** Run each round once for each persona, P1 to P4,
   in a fresh context each time. Start round 2 only after round 1's summary
   is written and its fixes are made. If round 1's fixes change the opening,

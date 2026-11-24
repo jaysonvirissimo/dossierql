@@ -172,3 +172,27 @@
   payoff: >
     One query reads a log of unrelated records, and asks each kind for its
     own fields.
+- id: pagination
+  title: Pagination
+  clearance: 9
+  summary: >
+    A long list can come back one page at a time. In the example,
+    `entries` returns one page of a watch book. The argument `first: 10`
+    is the page size, so the page holds ten entries, and `nodes` lists
+    them. The argument `after` starts the page after the entry whose
+    cursor you give. Inside `pageInfo`, `hasNextPage` says whether the
+    book goes on, and `endCursor` gives the cursor to start the next page
+    after. The records clerk weighs the request by its page size, so a
+    book too long to read whole can still be read, page by page.
+  example: |
+    query {
+      watchBook(reference: "WB-0112") {
+        entries(first: 10, after: "COR-0010") {
+          nodes { reference hour note }
+          pageInfo { hasNextPage endCursor }
+        }
+      }
+    }
+  payoff: >
+    A list too heavy to release in one request is read in pages, each
+    page starting where the one before it ended.

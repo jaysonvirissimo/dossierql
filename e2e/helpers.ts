@@ -218,3 +218,10 @@ export const LUANDA = `query {
     }
   }
 }`;
+
+/** Every case through the clearance 8 assessment. */
+export const TO_CLEARANCE_9 = [
+  ...TO_CLEARANCE_8,
+  "listening-post",
+  "door-watch",
+] as const;

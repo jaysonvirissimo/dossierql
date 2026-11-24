@@ -50,6 +50,8 @@ export const SDL = /* GraphQL */ `
     caseFile(reference: ID!): CaseFile @clearance(level: 7)
     "One intercept log, by the reference on its cover."
     interceptLog(reference: ID!): InterceptLog @clearance(level: 8)
+    "One watch book, by the reference on its cover."
+    watchBook(reference: ID!): WatchBook @clearance(level: 9)
   }
 
   "A sovereign state."
@@ -530,6 +532,48 @@ export const SDL = /* GraphQL */ `
     "The officer who signed the pass for the office that issued it. Empty when nobody signed it."
     signedBy: Officer
   }
+
+  "A watch book: the entries that the agency's watchers wrote, one after another, at one post inside the agency's building in Lisbon."
+  type WatchBook @clearance(level: 9) {
+    "The reference on the book's cover."
+    reference: ID!
+    "The post and the hours that the book covers, as written on its cover."
+    title: String!
+    "One page of the book's entries, in the order the watchers wrote them. With first: 10, the page holds the first ten entries. With after, the page starts at the entry after the one whose reference you give, such as the endCursor of the page before. Without first, the page holds every entry to the end of the book. The records clerk weighs a page by its page size: one for each entry, and one more for each record you open inside an entry."
+    entries(first: Int, after: String): WatchPage!
+  }
+
+  "One page of a watch book."
+  type WatchPage @clearance(level: 9) {
+    "The entries on the page. The list is null when the page holds an entry that is classified above your clearance, because an entry in this list may not be null."
+    nodes: [WatchEntry!]
+    "Where the page ends, and whether the book goes on after it."
+    pageInfo: PageInfo!
+  }
+
+  "Where a page ends."
+  type PageInfo @clearance(level: 9) {
+    "Whether the book has more entries after this page."
+    hasNextPage: Boolean!
+    "The reference of the last entry on the page. Give it as the argument after to start the next page there. Null when the page holds no entries."
+    endCursor: String
+  }
+
+  "One entry in a watch book."
+  type WatchEntry @clearance(level: 9) {
+    "The reference written beside the entry. It is also the entry's cursor."
+    reference: ID!
+    "The hour the watcher wrote beside the entry, on the twenty-four-hour clock."
+    hour: String!
+    "What the watcher saw, in the watcher's words."
+    note: String!
+    "The operative the entry is about, when the watcher recognised one."
+    operative: Operative
+    "The officer of the agency the entry is about, when there is one."
+    officer: Officer
+    "The pass the entry records, when someone showed one."
+    pass: Pass
+  }
 `;
 
-export const MAX_CLEARANCE = 8;
+export const MAX_CLEARANCE = 9;

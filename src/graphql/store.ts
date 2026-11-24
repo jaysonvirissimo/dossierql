@@ -16,6 +16,8 @@ export interface RawRecord {
   id: string;
   /** Fields withheld below a clearance level, by field name. */
   classified?: Record<string, number>;
+  /** The clearance below which the whole record is withheld from a list. */
+  withheld?: number;
   [field: string]: unknown;
 }
 
@@ -41,8 +43,25 @@ export interface FieldShape {
   list: boolean;
 }
 
+/**
+ * A page of a longer list (SDD 5.3): a type with the fields `nodes`, the
+ * records on the page, and `pageInfo`, where the page ends. A page is not a
+ * record. It has no identity of its own, records no fact, and weighs nothing.
+ */
+export function isPageType(type: unknown): type is GraphQLObjectType {
+  if (!isObjectType(type)) return false;
+  const fields = type.getFields();
+  return "nodes" in fields && "pageInfo" in fields;
+}
+
 export function fieldShape(type: GraphQLOutputType): FieldShape {
   const named = getNamedType(type);
+  // A page is cut from the list a record holds: read as data, the field is
+  // that list of the records on its pages.
+  if (isPageType(named)) {
+    const nodes = named.getFields().nodes;
+    if (nodes) return { target: fieldShape(nodes.type).target, list: true };
+  }
   const inner = isNonNullType(type) ? type.ofType : type;
   return {
     target: isObjectType(named) || isAbstractType(named) ? named.name : null,
