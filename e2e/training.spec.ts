@@ -95,10 +95,10 @@ test("result rows offer neither Cite nor Pin, and name the links not yet opened"
   );
   const results = page.locator(".results");
   await expect(
-    results.getByText(/Not yet opened on this shipment/),
+    results.getByText(/Fields of this shipment that hold another record/),
   ).toHaveCount(1);
   await expect(
-    results.getByText(/Not yet opened on this shipment/),
+    results.getByText(/Fields of this shipment that hold another record/),
   ).toContainText("destination");
   await expect(results.getByRole("button", { name: /^Cite / })).toHaveCount(0);
   await expect(results.getByRole("button", { name: /^Pin / })).toHaveCount(0);

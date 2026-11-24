@@ -14,6 +14,7 @@ import {
 import {
   deskStages,
   fieldCheckCost,
+  formHold,
   knownRecords,
   proceedCost,
   warrantRejectionCost,
@@ -22,6 +23,7 @@ import { parseRef, refOf } from "../../graphql/store.ts";
 import { useWorkspace } from "./context.ts";
 import { describeFact, hours, labelOf, typeWords, words } from "./describe.ts";
 import { EvidenceChain, ReturnedForm } from "./Evidence.tsx";
+import { optionLabel } from "./leads.ts";
 
 const STATUS = {
   supported: { chip: "chip--ok", text: "Supported" },
@@ -50,7 +52,7 @@ export function DraftPanel() {
 
   const byLabel = (type: string) =>
     knownRecords(state, type)
-      .map((id) => ({ id, label: labelOf(refOf(type, id), state.ledger) }))
+      .map((id) => ({ id, label: optionLabel(stage, type, id, state.ledger) }))
       .sort((a, b) => a.label.localeCompare(b.label));
   // Leads are offered from what the transmissions sent from this desk
   // turned up. Stages in one country share a desk.
@@ -130,6 +132,12 @@ export function DraftPanel() {
   const onlyChoices =
     review !== null &&
     review.claims.every((c) => c.status === "supported" || waiting(c));
+  // A blank box, or another lead still in contention, holds the form back
+  // before any claim is judged. The button stays inactive and says why.
+  const hold =
+    draft && review && !draft.ruledOut && stage.paperwork !== "terminal"
+      ? formHold(stage, state, draft.leadId, review.unnamed)
+      : null;
   // A case with no clock prices nothing, so its buttons quote no price.
   const cost = (n: number) =>
     state.clock === "none" ? "" : ` (${timed && n > 0 ? hours(n) : "free"})`;
@@ -244,12 +252,13 @@ export function DraftPanel() {
           <p className="draft__lead">
             <span className="label">{leadLabel}</span>{" "}
             <strong>
-              {labelOf(refOf(leadType, draft.leadId), state.ledger)}
+              {optionLabel(stage, leadType, draft.leadId, state.ledger)}
             </strong>
             {draft.ruledOut && (
               <span className="chip chip--bad">Ruled out</span>
             )}
           </p>
+          <DestinationNote />
 
           {others.map(([name]) => {
             const type = types[name] ?? "";
@@ -482,7 +491,8 @@ export function DraftPanel() {
               <button
                 type="button"
                 className="button button--primary"
-                disabled={closed || draft.ruledOut}
+                disabled={closed || draft.ruledOut || hold !== null}
+                aria-describedby={hold ? "form-hold" : undefined}
                 onClick={() =>
                   dispatch({ type: "proceed", leadId: draft.leadId })
                 }
@@ -495,17 +505,24 @@ export function DraftPanel() {
               </button>
             )}
           </div>
-          {!review.allSupported && !draft.ruledOut && (
-            <p className="draft__status">
-              {onlyChoices && travel && stage.paperwork === "terminal"
-                ? "The facts you cited are complete. You can leave the country blank: the travel order you file from the terminal chooses it from its to argument."
-                : onlyChoices
-                  ? `The facts you cited are complete. Make the ${review.unnamed.length === 1 ? "choice" : "choices"} above to complete the ${formName.toLowerCase()}.`
-                  : `${unsupported === 1 ? "1 claim is" : `${String(unsupported)} claims are`} not yet supported, so the ${formName.toLowerCase()} cannot be accepted yet.`}
-              {review.canFieldCheck &&
-                " A field check sends a dispatch about the missing evidence. Your citations stay in the draft."}
+          {hold && !closed && (
+            <p id="form-hold" className="draft__status" data-testid="form-hold">
+              {hold}
             </p>
           )}
+          {!review.allSupported &&
+            !draft.ruledOut &&
+            !(onlyChoices && hold && review.unnamed.length > 0) && (
+              <p className="draft__status">
+                {onlyChoices && travel && stage.paperwork === "terminal"
+                  ? "The facts you cited are complete. You can leave the country blank: the travel order you file from the terminal chooses it from its to argument."
+                  : onlyChoices
+                    ? `The facts you cited are complete. Make the ${review.unnamed.length === 1 ? "choice" : "choices"} above to complete the ${formName.toLowerCase()}.`
+                    : `${unsupported === 1 ? "1 claim is" : `${String(unsupported)} claims are`} not yet supported, so the ${formName.toLowerCase()} cannot be accepted yet.`}
+                {review.canFieldCheck &&
+                  " A field check sends a dispatch about the missing evidence. Your citations stay in the draft."}
+              </p>
+            )}
         </div>
       )}
 
@@ -581,6 +598,15 @@ function DecisionForm({
     ? (stageState.drafts[active] ?? emptyDraft(active))
     : null;
   const others = solutionBindings(stage).filter(([name]) => name !== lead);
+  const hold =
+    draft && !draft.ruledOut && stage.paperwork !== "terminal"
+      ? formHold(
+          stage,
+          state,
+          draft.leadId,
+          reviewDraft(stage, draft, state.ledger).unnamed,
+        )
+      : null;
   const refutable = Object.values(stage.leadOutcomes ?? {}).some(
     (o) => o.refutation,
   );
@@ -596,7 +622,7 @@ function DecisionForm({
       : proceedCost(env, state);
   const options = (type: string) =>
     knownRecords(state, type)
-      .map((id) => ({ id, label: labelOf(refOf(type, id), state.ledger) }))
+      .map((id) => ({ id, label: optionLabel(stage, type, id, state.ledger) }))
       .sort((a, b) => a.label.localeCompare(b.label));
   const box = (name: string) => stage.labels?.[name] ?? words(name);
 
@@ -612,6 +638,7 @@ function DecisionForm({
           <li key={claim.id}>{claim.prompt}</li>
         ))}
       </ul>
+      <DestinationNote />
 
       <label className="draft__name">
         <span className="label">{box(lead)}</span>
@@ -721,7 +748,8 @@ function DecisionForm({
           <button
             type="button"
             className="button button--primary"
-            disabled={closed || !draft || draft.ruledOut}
+            disabled={closed || !draft || draft.ruledOut || hold !== null}
+            aria-describedby={hold ? "form-hold" : undefined}
             onClick={() =>
               draft && dispatch({ type: "proceed", leadId: draft.leadId })
             }
@@ -734,7 +762,34 @@ function DecisionForm({
           </button>
         )}
       </div>
+      {hold && !closed && (
+        <p id="form-hold" className="draft__status" data-testid="form-hold">
+          {hold}
+        </p>
+      )}
     </div>
+  );
+}
+
+/**
+ * Where a travel order sends the player. Whatever the briefing calls the
+ * place, the order names a country, and this says which box holds it.
+ */
+function DestinationNote() {
+  const { stage } = useWorkspace();
+  if (stage.solution.type !== "destination" || stage.paperwork === "terminal") {
+    return null;
+  }
+  const types = bindingTypes(stage);
+  const box = solutionBindings(stage).find(
+    ([name]) => types[name] === "Country",
+  )?.[0];
+  if (!box) return null;
+  return (
+    <p className="draft__status" data-testid="destination-note">
+      A travel order sends you to a country: the one you choose for “
+      {stage.labels?.[box] ?? words(box)}”.
+    </p>
   );
 }
 

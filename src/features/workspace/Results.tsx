@@ -218,7 +218,8 @@ function Findings({
     mentioned.add(line);
     return (
       <p className="finding__more">
-        Not yet opened on this {typeWords(entity)}:{" "}
+        Fields of this {typeWords(entity)} that hold another record, which your
+        query did not ask for:{" "}
         {links.map((name, index) => (
           <span key={name}>
             {index > 0 && ", "}
@@ -433,18 +434,26 @@ function Findings({
             );
           }
           if (isRecord(child)) {
+            // A field that holds another record says what kind of record it
+            // is, as a record in a list does, so that its heading does not
+            // read as the field's own value.
+            const kind = typeAt(childPath);
+            const heading = headingOf(child, 0);
             return (
               <li key={key} className="finding">
                 <div className="finding__row">
                   <span className="finding__name">{name}</span>
                   <span className="finding__value">
-                    {headingOf(child, 0).startsWith("Entry ")
-                      ? "on file"
-                      : headingOf(child, 0)}
+                    <span className="label">{kind}</span>{" "}
+                    {heading.startsWith("Entry ") ? "on file" : heading}
                   </span>
                   {actions(childPath, name)}
                 </div>
-                <div className="finding__nested">
+                <div
+                  className="finding__nested"
+                  role="group"
+                  aria-label={`${name}, ${/^[aeiou]/i.test(kind) ? "an" : "a"} ${kind.toLowerCase()}`}
+                >
                   {render(child, childPath)}
                 </div>
               </li>

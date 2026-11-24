@@ -1,5 +1,13 @@
-import type { City, Country, Stage } from "../../content/types.ts";
+import {
+  bindingTypes,
+  leadBinding,
+  type City,
+  type Country,
+  type Stage,
+} from "../../content/types.ts";
 import { travelHours } from "../../engine/clock.ts";
+import { refOf } from "../../graphql/store.ts";
+import { labelOf, type Ledger } from "./describe.ts";
 import {
   leadCountry,
   leadStatus,
@@ -55,3 +63,21 @@ export const STATUS_WORDS: Record<LeadStatus, string> = {
   "ruled-out": "Ruled out",
   "field-checked": "Field check made",
 };
+
+/**
+ * How a form's box names a record. A lead the stage lists is offered under
+ * the label the briefing and the case board give it, with the record's own
+ * label after it, so that the box and the board read alike.
+ */
+export function optionLabel(
+  stage: Stage,
+  type: string,
+  id: string,
+  ledger: Ledger,
+): string {
+  const own = labelOf(refOf(type, id), ledger);
+  const lead = stage.leads?.[id];
+  return lead && bindingTypes(stage)[leadBinding(stage)] === type
+    ? `${lead.label} (${own})`
+    : own;
+}

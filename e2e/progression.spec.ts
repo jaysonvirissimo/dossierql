@@ -120,10 +120,12 @@ test("a placement finished with the solution revealed does not promote", async (
   await expect(
     draft(page).getByLabel("Receiving company").locator("option:checked"),
   ).toHaveText("Meridian Freight");
-  // A blank box is refused before the archive looks for evidence.
-  await submit(page);
-  await expect(draft(page)).toContainText(
-    "a choice on the form is still blank",
+  // A blank box holds the form back: the button is inactive and says why.
+  await expect(
+    draft(page).getByRole("button", { name: "Submit deduction", exact: true }),
+  ).toBeDisabled();
+  await expect(draft(page).getByTestId("form-hold")).toContainText(
+    "Choose a record for “Director” before you send the deduction.",
   );
   await choose(page, "Director", "PEWTER_SWIFT");
   await submit(page);

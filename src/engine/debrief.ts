@@ -1,3 +1,4 @@
+import { Kind, parse } from "graphql";
 import type {
   ConceptCard,
   Kata,
@@ -124,4 +125,54 @@ export function readTechnique(
     return doc !== null && showsTechnique(kata.concept, doc);
   });
   return { kata, used };
+}
+
+/** A request as the debrief shows it, without lines that hold only spaces. */
+export function tidyRequest(text: string): string {
+  return text
+    .split("\n")
+    .filter((line) => line.trim() !== "")
+    .join("\n")
+    .trim();
+}
+
+/**
+ * A player's transmission as the debrief shows it: as typed when it spans
+ * several lines, laid out when it was typed on one, and in either case
+ * without the blank lines the editor's closing braces can leave.
+ */
+export function shownOperation(t: TransmissionRecord): string {
+  return tidyRequest(
+    t.operation.trim().includes("\n")
+      ? t.operation
+      : (t.formatted ?? t.operation),
+  );
+}
+
+/**
+ * The fields a request asks for directly inside its outer braces, in the
+ * operation that is transmitted. A request that does not parse has none.
+ */
+export function topFields(operation: string, operationName?: string): string[] {
+  let document;
+  try {
+    document = parse(operation);
+  } catch {
+    return [];
+  }
+  const chosen = document.definitions.find(
+    (d) =>
+      d.kind === Kind.OPERATION_DEFINITION &&
+      (operationName === undefined || d.name?.value === operationName),
+  );
+  if (!chosen || chosen.kind !== Kind.OPERATION_DEFINITION) return [];
+  return [
+    ...new Set(
+      chosen.selectionSet.selections.flatMap((s) =>
+        s.kind === Kind.FIELD && s.name.value !== "__typename"
+          ? [s.name.value]
+          : [],
+      ),
+    ),
+  ];
 }

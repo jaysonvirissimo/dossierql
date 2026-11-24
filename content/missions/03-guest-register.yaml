@@ -53,11 +53,16 @@ stages:
       one in Mombasa, one in Zanzibar City, and one in Maputo. The
       case board lists the three sightings, and the map shows where
       each city is and how long the journey there would take. Only
-      one of the hotels saw NIGHTJAR, and your travel order goes to
-      that city.
+      one of the hotels saw NIGHTJAR. Your travel order goes to the
+      country that hotel is in: on the form, you choose the sighting
+      and the country of the sighting.
 
       The registry holds a great many files, and the clerk asks
-      that you request the one you need.
+      that you request the one you need. You do that with an
+      [argument](glossary:argument): a value written in parentheses
+      after a field, which tells the field which record you want.
+      In `operative(codename: "NIGHTJAR")`, the argument picks
+      NIGHTJAR's file out of the registry.
 
       Two of the three sightings are of somebody else, and in this
       case you can strike them off. Choose a sighting on the form and
@@ -195,8 +200,8 @@ stages:
               excludes: CoverName:$name
         ruledOut: |
           Mombasa's guest signed as H. Brandt, a name that is not in
-          NIGHTJAR's file. The registry files it under COPPER_KITE, who
-          is entitled to a holiday.
+          NIGHTJAR's file. Whoever H. Brandt is, the archive does not
+          begrudge them a holiday.
       SGT-034:
         location: MZ
         refutation:
@@ -264,7 +269,8 @@ stages:
       The hotel reported the dinner to the archive as a sighting in
       Zanzibar City, and a sighting records the name the guest gave.
       Find out which cover name the guest gave, and which
-      operative the registry files that name under.
+      operative the registry files that name under. Before you submit
+      the deduction, rule out the other name on its own form.
 
     clues:
       - text: >
@@ -284,10 +290,12 @@ stages:
       level: partial
       starterQuery: |
         query {
-          coverName(name: "") {
-            # Write one of the two cover names between the quotes.
-            # Which operative uses that cover name, and did a guest
-            # in Zanzibar City give it?
+          coverName {
+            # coverName needs an argument: the cover name you want,
+            # written in parentheses straight after the word coverName.
+            # One transmission can look up only one cover name, but
+            # it can ask for other fields beside coverName. Ask which
+            # operative uses the name, and which sightings give it.
           }
         }
 
@@ -295,13 +303,16 @@ stages:
       nudge: >
         Only one of the two cover names was given by a guest in Zanzibar
         City. Find that one, and then find which operative the registry
-        files it under.
+        files it under. The other name was given in no sighting at all,
+        and that is the fact that rules it out.
       concept: >
         The coverName field has an argument that says which cover name
         you want. Dr. Lund and D. Lund are two different arguments, and
         each one returns a different record. You can look up one cover
-        name in each transmission. You can also give the city field the
-        argument Zanzibar City and look through the city's sightings.
+        name in each transmission. Ask each cover name for its
+        sightings: a name whose list of sightings is empty was not given
+        at the dinner. You can also give the city field the argument
+        Zanzibar City and look through the city's sightings.
       schema: >
         Look at City.sightings, Sighting.note, Sighting.nameGiven,
         CoverName.sightings, and CoverName.operative.
@@ -309,6 +320,7 @@ stages:
         city(name: "Zanzibar City") {
           sightings { id note nameGiven { name operative { codename } } }
         }
+        coverName(name: "D. Lund") { sightings { id } }
 
     solution:
       type: deduction
@@ -370,8 +382,9 @@ stages:
               field: sightings
               excludes: Sighting:SGT-040
         ruledOut: |
-          TIN_FALCON signs as D. Lund and has never claimed a
-          doctorate. No sighting in the register gives that name.
+          No sighting in the register gives the name D. Lund, so the
+          guest at the dinner did not sign as D. Lund. The tea is
+          forgiven.
 
     resolved: |
       Deduction accepted. NIGHTJAR came to Zanzibar City to dine with
@@ -389,6 +402,11 @@ stages:
                 codename
               }
             }
+          }
+        }
+        coverName(name: "D. Lund") {
+          sightings {
+            id
           }
         }
       }

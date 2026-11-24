@@ -42,7 +42,10 @@ stages:
       valuable crate instead. Three shipments left Trieste this
       week. The crate will be forwarded again from wherever it
       lands, and the clerk expects to be asked the same question
-      there.
+      there. So this time the city goes in a
+      [variable](glossary:variable), and the
+      [operation](glossary:operation) can be sent again from the
+      next city with a different value.
 
     clues:
       - text: >

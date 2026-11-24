@@ -15,6 +15,7 @@ import {
   type GraphQLNamedType,
   type GraphQLObjectType,
   type DocumentNode,
+  type FieldNode,
   type ExecutionResult,
   type GraphQLSchema,
 } from "graphql";
@@ -446,7 +447,7 @@ function proseOf(mission: Mission): Passage[] {
       plain(`${at}.resolved`, stage.resolved),
       // A comment is read in the editor, where nothing is rendered, and a
       // backtick there is only a backtick.
-      rendered(
+      plain(
         `${at}.scaffold.starterQuery`,
         commentsOf(stage.scaffold.starterQuery),
       ),
@@ -723,6 +724,15 @@ function checkReferences(
         }
       }
       for (const [lead, entry] of Object.entries(leads)) {
+        // The form is accepted only once every other lead is ruled out
+        // (SDD 3.5), so each of them needs a refutation.
+        if (lead !== trueLead && !stage.leadOutcomes?.[lead]?.refutation) {
+          report(
+            `${at}.leads.${lead}`,
+            "structure",
+            "This lead has no refutation, so it can never be ruled out, and the form is accepted only once every other lead is ruled out.",
+          );
+        }
         if (leadType && !store.get(leadType, lead)) {
           report(
             `${at}.leads.${lead}`,
@@ -1499,6 +1509,38 @@ function checkSolvable(
       }
       continue;
     }
+    // Where the stage lists its leads, the reference solution rules out
+    // every other one before the form is sent (SDD 3.5).
+    for (const rival of Object.keys(stage.leads ?? {})) {
+      if (rival === leadId) continue;
+      const refutation = stage.leadOutcomes?.[rival]?.refutation;
+      if (!refutation) continue;
+      if (!fromLedger(stage)) {
+        const only: Bindings = { [lead]: rival };
+        const facts = Object.values(state.ledger).map((e) => e.fact);
+        const bound = matchSet(refutation.facts, facts, only);
+        if (bound) {
+          state = act(env, state, {
+            type: "cite",
+            leadId: rival,
+            label: "refutation",
+            factKeys: instantiate(refutation.facts, bound).filter(
+              (key) => state.ledger[key],
+            ),
+          }).state;
+        }
+      }
+      const struck = act(env, state, { type: "rule-out", leadId: rival });
+      if (struck.notice?.kind !== "dispatch") {
+        report(
+          `${at}.leadOutcomes.${rival}`,
+          "solvability",
+          "The reference solution does not retrieve the facts that rule this lead out, and the form is accepted only once every other lead is ruled out.",
+        );
+        return;
+      }
+      state = struck.state;
+    }
     const moved = act(env, state, { type: "proceed", leadId });
     if (moved.notice?.kind !== "dispatch") {
       report(
@@ -1542,6 +1584,116 @@ function checkSolvable(
   }
 }
 
+/**
+ * A starter query as a document. A starter leaves gaps, such as a selection
+ * that holds only a comment, so each empty selection is filled before the
+ * query is read.
+ */
+function readStarter(query: string): DocumentNode | null {
+  const filled = query
+    .split("\n")
+    .map((line) => line.replace(/#.*$/, ""))
+    .join("\n")
+    .replace(/\{\s*\}/g, "{ __typename }");
+  try {
+    return parse(filled);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * How many times a query writes the construct of each concept: what the
+ * player types for it, such as an argument, an alias, a fragment, a type
+ * condition, a variable, a directive, a field asked of the schema itself,
+ * or a field of a mutation or subscription. A field that merely returns an
+ * interface, or the word mutation, is outer structure and not counted.
+ */
+function constructCounts(query: string): Map<Concept, number> {
+  const counts = new Map<Concept, number>();
+  const used = {
+    add(concept: Concept) {
+      counts.set(concept, (counts.get(concept) ?? 0) + 1);
+    },
+  };
+  const document = readStarter(query);
+  if (!document) return counts;
+  let depth = 0;
+  let root: string | null = null;
+  // Inside __schema or __type, every field is asked of the schema itself.
+  let schemaDepth = 0;
+  const fieldUse = (node: FieldNode) => {
+    if (node.alias) used.add("aliases");
+    if (depth === 1 && node.name.value !== "__typename") {
+      if (root === "mutation") used.add("mutations");
+      if (root === "subscription") used.add("subscriptions");
+    }
+  };
+  visit(document, {
+    OperationDefinition: (node) => {
+      root = node.operation;
+    },
+    SelectionSet: {
+      enter() {
+        depth++;
+        if (depth >= 3) used.add("nested-selections");
+      },
+      leave() {
+        depth--;
+      },
+    },
+    Field: {
+      enter(node) {
+        const opens =
+          node.name.value === "__schema" || node.name.value === "__type";
+        if (opens) schemaDepth++;
+        if (schemaDepth > 0) used.add("introspection");
+        fieldUse(node);
+      },
+      leave(node) {
+        if (node.name.value === "__schema" || node.name.value === "__type") {
+          schemaDepth--;
+        }
+      },
+    },
+    Argument: (node) => {
+      used.add("arguments");
+      if (node.name.value === "first" || node.name.value === "after") {
+        used.add("pagination");
+      }
+    },
+    // Each field of an input object is written by the player.
+    ObjectField: () => {
+      used.add("input-objects");
+    },
+    FragmentSpread: () => {
+      // A spread applies its fragment's type condition where it stands.
+      used.add("fragments");
+      used.add("interfaces");
+      used.add("unions");
+    },
+    FragmentDefinition: () => {
+      // A named fragment has a type condition, as an inline fragment has.
+      used.add("interfaces");
+      used.add("unions");
+      used.add("fragments");
+    },
+    InlineFragment: (node) => {
+      if (node.typeCondition) {
+        used.add("interfaces");
+        used.add("unions");
+      }
+    },
+    VariableDefinition: () => {
+      used.add("variables");
+    },
+    Directive: () => {
+      used.add("directives");
+    },
+  });
+  return counts;
+}
+
 function checkCurriculum(
   mission: Mission,
   catalog: Catalog,
@@ -1582,6 +1734,37 @@ function checkCurriculum(
         "curriculum",
         `The reference solution does not use ${mission.teaches}.`,
       );
+    }
+    // Support is withdrawn once a concept is new (SDD 3.9): past a guided
+    // stage, the starter query may show the taught construct, but it
+    // leaves at least one use of it for the player to write. A stage that
+    // introduces a step (SDD 3.7) leaves the step to the player instead.
+    const taught = mission.teaches;
+    for (const [id, stage] of Object.entries(mission.stages)) {
+      const starter = stage.scaffold.starterQuery;
+      if (stage.scaffold.level === "guided" || starter === undefined) continue;
+      // The player writes something new here: another use of the taught
+      // construct, or the step this stage introduces (SDD 3.7).
+      const shown = constructCounts(starter).get(taught) ?? 0;
+      if (shown === 0) continue;
+      const needed = referenceOperations(stage).reduce(
+        (sum, { operation }) =>
+          sum + (constructCounts(operation).get(taught) ?? 0),
+        0,
+      );
+      const step = stage.step ? stepById(stage.step) : undefined;
+      const document = readStarter(starter);
+      const stepLeft =
+        step !== undefined && document !== null && !step.uses(document);
+      if (needed <= shown && !stepLeft) {
+        report(
+          `${mission.id}.stages.${id}.scaffold`,
+          "scaffold",
+          step
+            ? `The starter query of a ${stage.scaffold.level} stage already writes ${step.summary}, the step this stage introduces, and every use of ${taught} that the stage needs. Leave one of them for the player to write.`
+            : `The starter query of a ${stage.scaffold.level} stage already writes every use of ${taught} that the stage needs, and ${taught} is what this mission teaches. Leave at least one for the player to write.`,
+        );
+      }
     }
   }
   const declared = new Set([
@@ -2166,6 +2349,139 @@ function checkCourseShape(catalog: Catalog, report: Report): void {
   }
 }
 
+/**
+ * The tokens in a text that look like record identifiers or codenames, such
+ * as LIS-0486 or GREY_PETREL, or any word of six or more capital letters.
+ */
+function recordTokens(text: string): string[] {
+  return [
+    ...text.matchAll(
+      /\b[A-Z]{3}-\d{3,4}\b|\b[A-Z]{2,}(?:_[A-Z]+)+\b|\b[A-Z]{6,}\b/g,
+    ),
+  ].map(([token]) => token);
+}
+
+/**
+ * A rule-out dispatch acknowledges the player's deduction (SDD 5.6). It may
+ * mention only records the player has met: the lead, what its refutation
+ * retrieves, and what the stage and the stages before it have told them.
+ * A field check is exempt, because it is meant to bring in a new record.
+ */
+function checkRuledOutText(
+  mission: Mission,
+  catalog: Catalog,
+  report: Report,
+): void {
+  const truth = allFacts(catalog.store, fullSchema());
+  const byKey = new Map(truth.map((f) => [factKey(f.entity, f.field), f]));
+  const told = new Set<string>(
+    recordTokens([mission.title, mission.summary].join(" ")),
+  );
+  for (const [id, stage] of stageChain(mission)) {
+    const at = `${mission.id}.stages.${id}`;
+    const lead = leadBinding(stage);
+    for (const text of [
+      stage.objective,
+      stage.briefing,
+      ...stage.clues.map((c) => c.text),
+      ...Object.values(stage.leads ?? {}).map((l) => l.label),
+    ]) {
+      for (const token of recordTokens(text)) told.add(token);
+    }
+    for (const [leadId, outcome] of Object.entries(stage.leadOutcomes ?? {})) {
+      const text = outcome.ruledOut;
+      const refutation = outcome.refutation;
+      if (text === undefined || !refutation) continue;
+      const only: Bindings = { [lead]: leadId };
+      const bound = matchSet(refutation.facts, truth, only) ?? only;
+      const retrieved = instantiate(refutation.facts, bound).map((key) =>
+        JSON.stringify(byKey.get(key)?.value ?? null),
+      );
+      const known = new Set([
+        ...told,
+        leadId,
+        ...recordTokens(
+          [
+            JSON.stringify(refutation.facts),
+            JSON.stringify(bound),
+            ...retrieved,
+          ].join(" "),
+        ),
+      ]);
+      const leaked = [
+        ...new Set(recordTokens(text).filter((t) => !known.has(t))),
+      ];
+      if (leaked.length > 0) {
+        report(
+          `${at}.leadOutcomes.${leadId}.ruledOut`,
+          "text",
+          `The dispatch mentions ${leaked.join(" and ")}, which the player has not retrieved when they rule this lead out. Say only what the refutation shows.`,
+        );
+      }
+    }
+    // What this stage settles is known at every later stage.
+    for (const text of [
+      stage.resolved ?? "",
+      ...Object.values(stage.solution).map(String),
+      ...Object.values(stage.leadOutcomes ?? {}).flatMap((o) => [
+        o.ruledOut ?? "",
+        o.fieldCheck ?? "",
+      ]),
+    ]) {
+      for (const token of recordTokens(text)) told.add(token);
+    }
+  }
+}
+
+/**
+ * A term that the mission's clearance introduces is linked to the glossary
+ * in a briefing, at or before the first stage that uses it (SDD 5.7). A
+ * starter comment, a clue, a label or a hint cannot link it, so a term that
+ * first appears in one of those would otherwise reach the player
+ * unexplained.
+ */
+function checkFirstUse(
+  mission: Mission,
+  catalog: Catalog,
+  report: Report,
+): void {
+  if (!mission.teaches) return;
+  const terms = catalog.glossary.filter(
+    (e) => e.clearance === mission.clearance,
+  );
+  const chain = stageChain(mission);
+  for (const entry of terms) {
+    const words = [entry.term, ...(entry.matches ?? [])];
+    let linked = false;
+    for (const [id, stage] of chain) {
+      if (glossaryLinks(stage.briefing).includes(entry.id)) linked = true;
+      const texts = [
+        stage.objective,
+        stage.briefing,
+        ...stage.clues.map((c) => c.text),
+        ...Object.values(stage.labels ?? {}),
+        ...Object.values(stage.leads ?? {}).map((l) => l.label),
+        commentsOf(stage.scaffold.starterQuery),
+        stage.hints.nudge,
+        stage.hints.concept,
+        stage.hints.schema,
+      ];
+      const used = texts.some((text) =>
+        words.some((word) => mentions(text, word)),
+      );
+      if (!used) continue;
+      if (!linked) {
+        report(
+          `${mission.id}.stages.${id}.briefing`,
+          "text",
+          `This is the first stage that uses "${entry.term}", and no briefing links it to the glossary at or before this stage. Link it where the briefing first uses it, as [${entry.term}](glossary:${entry.id}).`,
+        );
+      }
+      break;
+    }
+  }
+}
+
 function checkHintsAndText(
   mission: Mission,
   catalog: Catalog,
@@ -2238,9 +2554,7 @@ function checkHintsAndText(
   for (const { path, text } of proseOf(mission)) {
     const at = `${mission.id}.${path}`;
     // Identifiers and codenames quoted in prose must exist in the data.
-    for (const [token] of text.matchAll(
-      /\b[A-Z]{3}-\d{3,4}\b|\b[A-Z]{2,}(?:_[A-Z]+)+\b|\b[A-Z]{6,}\b/g,
-    )) {
+    for (const token of recordTokens(text)) {
       if (!ids.has(token)) {
         report(at, "text", `${token} does not exist in the data.`);
       }
@@ -2634,6 +2948,8 @@ export function validateContent(raw: RawContent): Issue[] {
     }
     checkCurriculum(mission, catalog, report);
     checkHintsAndText(mission, catalog, report);
+    checkRuledOutText(mission, catalog, report);
+    checkFirstUse(mission, catalog, report);
     if (issues.length === before) checkSolvable(mission, catalog, report);
   }
   checkCourseShape(catalog, report);

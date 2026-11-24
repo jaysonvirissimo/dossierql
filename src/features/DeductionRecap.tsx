@@ -1,5 +1,5 @@
 import { bindingTypes, leadBinding, type Mission } from "../content/types.ts";
-import { deductionChain } from "../engine/debrief.ts";
+import { deductionChain, shownOperation } from "../engine/debrief.ts";
 import type { MissionState } from "../engine/mission.ts";
 import { refOf } from "../graphql/store.ts";
 import { describeFact, labelOf } from "./workspace/describe.ts";
@@ -102,12 +102,7 @@ export function DeductionRecap({
                     if (!t) return null;
                     return (
                       <li key={n} value={n}>
-                        <pre className="code">
-                          {(t.operation.trim().includes("\n")
-                            ? t.operation
-                            : (t.formatted ?? t.operation)
-                          ).trim()}
-                        </pre>
+                        <pre className="code">{shownOperation(t)}</pre>
                       </li>
                     );
                   })}

@@ -44,7 +44,8 @@ stages:
       GREY_PETREL's known associates. The registry will show the
       same dossier for GREY_PETREL, for each associate, and for
       each associate's associates, provided you ask for the same
-      fields each time.
+      fields each time. A [fragment](glossary:fragment) lets you
+      write those fields once and use them in each place.
 
     clues:
       - text: >

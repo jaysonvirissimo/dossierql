@@ -3,7 +3,12 @@ import { useGame } from "../app/GameProvider.tsx";
 import { loadMission } from "../content/course.ts";
 import { referenceOperations } from "../content/types.ts";
 import { availability, LAST_CLEARANCE } from "../engine/clearance.ts";
-import { readTechnique } from "../engine/debrief.ts";
+import {
+  readTechnique,
+  shownOperation,
+  tidyRequest,
+  topFields,
+} from "../engine/debrief.ts";
 import { rankTitle } from "../engine/rank.ts";
 import { ConceptCardView } from "../features/ConceptCardView.tsx";
 import { DeductionRecap } from "../features/DeductionRecap.tsx";
@@ -82,6 +87,15 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
   const promoted = passed && !finished;
   // A watch's events arrive without a transmission of their own.
   const sent = state.transmissions.filter((t) => t.watch?.event === undefined);
+  // A reference request that asks for several things at once, where the
+  // player never did: the debrief says that one request can (SDD 3.10).
+  const combined = sent.some(
+    (t) => topFields(t.operation, t.operationName).length > 1,
+  )
+    ? undefined
+    : reference
+        .map((r) => topFields(r.operation, r.operationName))
+        .find((fields) => fields.length > 1);
   const techniqueNote =
     reading && !reading.used
       ? passed && completion.placement
@@ -184,6 +198,20 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
               You sent {plural(sent.length, "transmission")}. The reference
               solution sends {plural(reference.length, "transmission")}.
             </p>
+            {combined && (
+              <p data-testid="several-fields">
+                The reference solution asks for{" "}
+                {combined.map((field, i) => (
+                  <span key={field}>
+                    {i === 0 ? "" : i === combined.length - 1 ? " and " : ", "}
+                    <code>{field}</code>
+                  </span>
+                ))}{" "}
+                in one transmission. A request can ask for several fields
+                directly inside its outer braces, and each one comes back under
+                its own name in the response.
+              </p>
+            )}
             <Prose text={mission.debrief.comparison} />
             {techniqueNote && (
               <div className="note" data-testid="technique-note">
@@ -210,12 +238,7 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
                       {t.operationName !== undefined && (
                         <p>Transmitted the operation {t.operationName}:</p>
                       )}
-                      <pre className="code">
-                        {(t.operation.trim().includes("\n")
-                          ? t.operation
-                          : (t.formatted ?? t.operation)
-                        ).trim()}
-                      </pre>
+                      <pre className="code">{shownOperation(t)}</pre>
                       {t.variables.trim() && (
                         <pre className="code">{t.variables.trim()}</pre>
                       )}
@@ -232,7 +255,7 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
                         {operationName !== undefined && (
                           <p>Transmits the operation {operationName}:</p>
                         )}
-                        <pre className="code">{operation.trim()}</pre>
+                        <pre className="code">{tidyRequest(operation)}</pre>
                         {variables && (
                           <pre className="code">
                             {JSON.stringify(variables, null, 1).replace(

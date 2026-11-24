@@ -12,7 +12,9 @@ import {
   deskStages,
   fieldCheckCost,
   leadCountry,
+  formHold,
   leadStatus,
+  openRivals,
   formatted,
   nextWatchEvent,
   startMission,
@@ -803,6 +805,10 @@ describe("ruling out in The Guest Register", () => {
   const inZanzibar = () =>
     play(
       send(begun(), guest.mission.stages.luanda!.referenceSolution as string),
+      { type: "open-lead", leadId: "SGT-027" },
+      { type: "rule-out", leadId: "SGT-027" },
+      { type: "open-lead", leadId: "SGT-034" },
+      { type: "rule-out", leadId: "SGT-034" },
       { type: "open-lead", leadId: "SGT-031" },
       { type: "name", leadId: "SGT-031", binding: "country", value: "TZ" },
       { type: "proceed", leadId: "SGT-031" },
@@ -866,6 +872,58 @@ describe("ruling out in The Guest Register", () => {
       { type: "proceed", leadId: "dr-lund" },
     );
     expect(done.state.status).toBe("complete");
+  });
+
+  it("holds the travel order while another lead is still in contention", () => {
+    const sent = play(
+      send(begun(), guest.mission.stages.luanda!.referenceSolution as string),
+      { type: "open-lead", leadId: "SGT-027" },
+      { type: "rule-out", leadId: "SGT-027" },
+      { type: "open-lead", leadId: "SGT-031" },
+      { type: "name", leadId: "SGT-031", binding: "country", value: "TZ" },
+    );
+    const luanda = guest.mission.stages.luanda!;
+    expect(openRivals(luanda, sent, "SGT-031")).toEqual([
+      "The Maputo sighting",
+    ]);
+    const held = act(guest, sent, { type: "proceed", leadId: "SGT-031" });
+    expect(held.state.stageId).toBe("luanda");
+    expect(held.state.hoursLeft).toBe(sent.hoursLeft);
+    expect(held.notice).toMatchObject({
+      kind: "refused",
+      text: expect.stringContaining(
+        "The Maputo sighting is still in contention",
+      ) as string,
+    });
+    const struck = play(
+      sent,
+      { type: "open-lead", leadId: "SGT-034" },
+      { type: "rule-out", leadId: "SGT-034" },
+    );
+    expect(openRivals(luanda, struck, "SGT-031")).toEqual([]);
+    expect(
+      act(guest, struck, { type: "proceed", leadId: "SGT-031" }).state.stageId,
+    ).toBe("zanzibar");
+  });
+
+  it("holds the deduction until D. Lund is ruled out", () => {
+    const zanzibar = guest.mission.stages.zanzibar!;
+    const named = play(
+      send(inZanzibar(), zanzibar.referenceSolution as string),
+      { type: "open-lead", leadId: "dr-lund" },
+      {
+        type: "name",
+        leadId: "dr-lund",
+        binding: "operative",
+        value: "MARBLE_HERON",
+      },
+    );
+    expect(formHold(zanzibar, named, "dr-lund", [])).toContain(
+      "D. Lund is still in contention",
+    );
+    expect(
+      act(guest, named, { type: "proceed", leadId: "dr-lund" }).state.status,
+    ).not.toBe("complete");
   });
 
   it("refuses to rule out a lead that no response contradicts", () => {

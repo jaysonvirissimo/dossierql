@@ -187,6 +187,87 @@ describe("validation fails the build when", () => {
     ).toContainEqual(expect.stringContaining("leave out SGT-027"));
   });
 
+  it("a listed lead cannot be ruled out, or the reference solution does not rule it out", () => {
+    const issues = (change: (m: Mission) => void) =>
+      validateContent(mutated("guest-register", change)).map((i) => i.message);
+    expect(
+      issues((m) => {
+        delete m.stages.zanzibar!.leadOutcomes!["d-lund"];
+      }),
+    ).toContainEqual(expect.stringContaining("This lead has no refutation"));
+    expect(
+      issues((m) => {
+        const stage = m.stages.zanzibar!;
+        stage.referenceSolution = [
+          `query { city(name: "Zanzibar City") { sightings { id note nameGiven { name operative { codename } } } } }`,
+        ];
+      }),
+    ).toContainEqual(
+      expect.stringContaining(
+        "does not retrieve the facts that rule this lead out",
+      ),
+    );
+  });
+
+  it("a rule-out dispatch mentions a record the player has not retrieved", () => {
+    expect(
+      validateContent(
+        mutated("guest-register", (m) => {
+          m.stages.luanda!.leadOutcomes!["SGT-027"]!.ruledOut =
+            "The registry files H. Brandt under COPPER_KITE.";
+        }),
+      ).map((i) => i.message),
+    ).toContainEqual(expect.stringContaining("mentions COPPER_KITE"));
+  });
+
+  it("a partial starter writes every use of the construct the mission teaches", () => {
+    expect(
+      codes(
+        mutated("guest-register", (m) => {
+          m.stages.zanzibar!.scaffold.starterQuery = `query {
+  city(name: "") {
+    # Write the city between the quotes.
+  }
+  coverName(name: "") {
+    # Write one of the two cover names between the quotes.
+  }
+}
+`;
+        }),
+      ),
+    ).toContain("scaffold");
+  });
+
+  it("a new term reaches a stage before any briefing links it", () => {
+    expect(
+      validateContent(
+        mutated("guest-register", (m) => {
+          const luanda = m.stages.luanda!;
+          luanda.briefing = luanda.briefing.replace(
+            "[argument](glossary:argument)",
+            "argument",
+          );
+        }),
+      ).map((i) => i.message),
+    ).toContainEqual(
+      expect.stringContaining('the first stage that uses "argument"'),
+    );
+  });
+
+  it("a starter comment holds markup, which the editor shows as typed", () => {
+    expect(
+      validateContent(
+        mutated("guest-register", (m) => {
+          const scaffold = m.stages.zanzibar!.scaffold;
+          scaffold.starterQuery = scaffold.starterQuery!.replace(
+            "# coverName needs an argument",
+            "# `coverName` needs an argument",
+          );
+        }),
+      ).map((i) => i.path),
+    ).toContain("guest-register.stages.zanzibar.scaffold.starterQuery");
+  });
+
   it("a lead's city is not in the country its lead outcome gives", () => {
     expect(
       validateContent(

@@ -5,8 +5,11 @@ import {
   evidenceTransmissions,
   levelConcept,
   readTechnique,
+  shownOperation,
+  tidyRequest,
+  topFields,
 } from "./debrief.ts";
-import type { MissionState } from "./mission.ts";
+import type { MissionState, TransmissionRecord } from "./mission.ts";
 
 const concepts = [
   { id: "arguments", clearance: 2 },
@@ -144,5 +147,37 @@ describe("readTechnique", () => {
   it("says nothing for a level with no kata, or with nothing cited", () => {
     expect(readTechnique(levelTwo, state([SINGLE], [1]), course)).toBeNull();
     expect(readTechnique(teaching, state([ALIASED], []), course)).toBeNull();
+  });
+});
+
+describe("how the debrief shows a request", () => {
+  it("drops the lines that hold only spaces", () => {
+    expect(tidyRequest("query {\n  city {\n    name\n    \n  }\n\n}\n")).toBe(
+      "query {\n  city {\n    name\n  }\n}",
+    );
+  });
+
+  it("lays out a one-line transmission, and keeps a typed layout", () => {
+    const sent = (operation: string, formatted?: string) =>
+      ({
+        operation,
+        variables: "",
+        ...(formatted ? { formatted } : {}),
+      }) as TransmissionRecord;
+    expect(shownOperation(sent("{ a }", "{\n  a\n}"))).toBe("{\n  a\n}");
+    expect(shownOperation(sent("{\n  a\n  \n}", "{\n  a\n}"))).toBe(
+      "{\n  a\n}",
+    );
+  });
+
+  it("finds the fields asked for directly inside the outer braces", () => {
+    expect(
+      topFields(
+        'query { city(name: "X") { name } coverName(name: "Y") { name } __typename }',
+      ),
+    ).toEqual(["city", "coverName"]);
+    expect(topFields(SINGLE)).toEqual(["operative"]);
+    expect(topFields("query A { a } query B { b c }", "B")).toEqual(["b", "c"]);
+    expect(topFields("query {")).toEqual([]);
   });
 });

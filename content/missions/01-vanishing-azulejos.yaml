@@ -48,21 +48,23 @@ stages:
       cannot hold all three, and asks you to set aside one crate
       at a time. Start with any crate that does not hold tiles.
       Customs takes each shipment's papers at their word. The
-      papers list the contents as the shipment's `manifest`. If
+      papers list the contents in the shipment's `manifest`, which
+      is a [field](glossary:field) of the shipment's record. If
       the manifest says a crate holds something other than tiles,
-      that is evidence enough.
+      that is [evidence](glossary:evidence) enough.
 
       The Deduction form makes one claim about one shipment. You
       choose that shipment in the form's box and press Submit
-      deduction. The archive then looks through every response you
+      deduction. The archive then looks through every
+      [response](glossary:result) you
       have received for facts that prove the claim about the
       shipment you chose. If none of your responses proves it, the
       form comes back to you, even when your choice is right. When
       the archive accepts the deduction, it lists the facts it used,
-      each with the transmission it came back in. That list is an
+      each with the [transmission](glossary:transmission) it came back in. That list is an
       [evidence chain](glossary:evidence-chain).
 
-      Transmit a query that shows each shipment's manifest. Then
+      Transmit a [query](glossary:query) that shows each shipment's manifest. Then
       choose the shipment to set aside, and submit the deduction.
 
     clues:
@@ -157,6 +159,10 @@ stages:
       therefore going to a country that shares a land border with
       Namibia. One of the two crates is going somewhere that
       shares no such border. Set that crate aside.
+
+      A shipment's `destination` is a record of its own, a city.
+      After `destination`, write a [selection](glossary:selection):
+      the fields of the city that you want, between braces.
 
       Use the manifests to find the two ceramic shipments. The
       claim on this form is about the border. For the archive to

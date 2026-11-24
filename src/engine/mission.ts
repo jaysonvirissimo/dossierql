@@ -402,6 +402,66 @@ export function leadStatus(state: MissionState, leadId: string): LeadStatus {
   return "open";
 }
 
+/** What a stage's form is called on screen and in the clerk's notes. */
+export function orderWord(
+  stage: Stage,
+): "travel order" | "deduction" | "warrant" {
+  return stage.solution.type === "destination"
+    ? "travel order"
+    : stage.solution.type === "warrant"
+      ? "warrant"
+      : "deduction";
+}
+
+/**
+ * The other leads the stage lists that are not yet ruled out (SDD 3.5). At a
+ * stage that lists its leads, a form is accepted only once every lead but
+ * the chosen one is ruled out, so the player has to examine each of them.
+ */
+export function openRivals(
+  stage: Stage,
+  state: MissionState,
+  leadId: string,
+): string[] {
+  return Object.entries(stage.leads ?? {})
+    .filter(([id]) => id !== leadId && leadStatus(state, id) !== "ruled-out")
+    .map(([, lead]) => lead.label);
+}
+
+function listed(items: string[], last: string): string {
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(", ")} ${last} ${items.at(-1) ?? ""}`;
+}
+
+/**
+ * Why a form cannot be sent yet, before any claim is judged: a blank box,
+ * or another lead still in contention. Null when nothing holds it back. The
+ * form shows this under its button, and the archive gives the same text if
+ * the form is sent anyway.
+ */
+export function formHold(
+  stage: Stage,
+  state: MissionState,
+  leadId: string,
+  unnamed: string[],
+): string | null {
+  const order = orderWord(stage);
+  if (unnamed.length > 0) {
+    const boxes = listed(
+      unnamed.map((name) => `“${stage.labels?.[name] ?? name}”`),
+      "and",
+    );
+    return `A choice on the form is still blank. Choose a record for ${boxes} before you send the ${order}.`;
+  }
+  const rivals = openRivals(stage, state, leadId);
+  if (rivals.length > 0) {
+    const verb = rivals.length === 1 ? "is" : "are";
+    const them = rivals.length === 1 ? "it" : "each of them";
+    return `${listed(rivals, "and")} ${verb} still in contention. Rule ${them} out on its own form before you send the ${order}.`;
+  }
+  return null;
+}
+
 export function fieldCheckCost(
   env: Env,
   state: MissionState,
@@ -687,12 +747,7 @@ export function proceed(
   const stage = stageOf(env.mission, state.stageId);
   const draft = draftOf(current(state), leadId);
   const review = reviewDraft(stage, draft, state.ledger);
-  const order =
-    stage.solution.type === "destination"
-      ? "travel order"
-      : stage.solution.type === "warrant"
-        ? "warrant"
-        : "deduction";
+  const order = orderWord(stage);
   if (draft.ruledOut) return refuse(state, "This lead is ruled out.");
   // A warrant that is submitted and rejected costs hours (SDD 3.4). One
   // with a blank box is refused before it is submitted, at no cost.
@@ -721,15 +776,8 @@ export function proceed(
             return { ...outcome, state: paid, ...(notice ? { notice } : {}) };
           },
         );
-  if (review.unnamed.length > 0) {
-    const boxes = review.unnamed
-      .map((name) => `“${stage.labels?.[name] ?? name}”`)
-      .join(" and ");
-    return refuse(
-      state,
-      `The ${order} is incomplete: a choice on the form is still blank. Choose a record for ${boxes}.`,
-    );
-  }
+  const hold = formHold(stage, state, leadId, review.unnamed);
+  if (hold) return refuse(state, `The ${order} is not sent. ${hold}`);
   if (!review.allSupported && fromLedger(stage)) {
     return rejected({
       state,

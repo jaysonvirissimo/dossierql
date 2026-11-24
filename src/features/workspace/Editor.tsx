@@ -11,6 +11,7 @@ import {
   indentOnInput,
   syntaxHighlighting,
 } from "@codemirror/language";
+import { linter } from "@codemirror/lint";
 import { Compartment, EditorState, Prec } from "@codemirror/state";
 import {
   drawSelection,
@@ -207,6 +208,13 @@ export function Editor({
             ...historyKeymap,
           ]),
           schema ? graphql(schema) : [],
+          // An empty editor is not a mistake. The GraphQL linter reports one
+          // at the first character, and would leave a red mark there that
+          // the player's first keystrokes carry along.
+          linter(null, {
+            markerFilter: (diagnostics, state) =>
+              state.doc.toString().trim() === "" ? [] : [...diagnostics],
+          }),
           syntaxHighlighting(highlight),
           theme,
           EditorView.contentAttributes.of({
