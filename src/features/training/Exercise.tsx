@@ -137,7 +137,9 @@ export function Exercise({
               Transmit (free)
             </button>
             <span className="terminal__key">
-              or press Ctrl+Enter (⌘+Enter) in the editor.
+              or press Ctrl+Enter (⌘+Enter) in the editor. When you type {"{"},
+              the editor adds the closing {"}"} for you. Type {"}"} to step past
+              that brace before you write a field outside the block.
             </span>
           </footer>
         </section>

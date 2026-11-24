@@ -196,3 +196,30 @@ test("with sound off, no sound is loaded", async ({ page }) => {
   await page.waitForTimeout(300);
   expect(sounds).toEqual([]);
 });
+
+test("guides show which block a line is in, and the terminal says how to leave one", async ({
+  page,
+}) => {
+  await openCase(page, "vanishing-azulejos");
+  const editor = page.getByRole("textbox", { name: "GraphQL query" });
+  await editor.click();
+  await page.keyboard.press("ControlOrMeta+a");
+  await page.keyboard.press("Backspace");
+  // Typed in pieces without closing the inner block, as one playtest did:
+  // the editor closed it, so the next field lands inside it.
+  await page.keyboard.type(
+    'query {\ncity(name: "Lisbon") {\nname\ndepartingShipments { id\nmanifest\n',
+  );
+  const line = (text: string) =>
+    page.locator(".cm-line", { hasText: text }).first();
+  const indent = (text: string) =>
+    line(text).evaluate((element) =>
+      (element as HTMLElement).style.getPropertyValue("--indent"),
+    );
+  expect(await indent("departingShipments")).toBe("4ch");
+  expect(await indent("manifest")).toBe("6ch");
+  await expect(line("query")).not.toHaveClass(/cm-indent-guides/);
+  await expect(page.locator(".terminal__key")).toContainText(
+    "Type } to step past that brace before you write a field outside the block.",
+  );
+});

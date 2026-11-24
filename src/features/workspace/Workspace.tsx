@@ -457,7 +457,9 @@ export default function Workspace({ mission }: { mission: Mission }) {
                 </label>
               )}
               <span className="terminal__key">
-                or press Ctrl+Enter (⌘+Enter) in the editor.
+                or press Ctrl+Enter (⌘+Enter) in the editor. When you type {"{"}
+                , the editor adds the closing {"}"} for you. Type {"}"} to step
+                past that brace before you write a field outside the block.
                 {state.clock !== "none" &&
                   " A request the clerk cannot read is returned at no cost."}
               </span>

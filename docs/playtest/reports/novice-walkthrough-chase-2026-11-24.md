@@ -40,11 +40,13 @@ typing.
 2. **Not reproduced: every option reported as disabled.** In the same tree,
    only the placeholder option ("No shipment retrieved yet") is disabled; the
    tool marks every option `disableable`. Logged, no change.
-3. **Logged: closing braces pile up at the end.** Typing a query in pieces
-   left `sightings` inside `coverNames`. The clerk's note on a closing brace
-   too many already says that the editor adds closing braces (SDD 8.2), but
-   this query was valid and drew no note. Pre-existing; a candidate for the
-   next pass over the editor.
+3. **Fixed afterwards: closing braces pile up at the end.** Typing a query
+   in pieces left `sightings` inside `coverNames`: the runner never typed
+   the brace that closes `coverNames`, and the one the editor had added was
+   further down, so the query was valid and drew no note. The editor now
+   draws a faint guide for each block a line is inside, and the line under
+   the terminal says that the editor adds each closing brace and how to
+   step past it.
 4. **Logged: the look-alike to Dr. Lund never appears.** The stage 2 briefing
    warns of two cover names a hurried clerk could misread, but an exact
    argument returns only the right one, so the Rule out button has nothing to

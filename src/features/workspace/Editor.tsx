@@ -25,6 +25,7 @@ import { graphql } from "cm6-graphql";
 import type { GraphQLSchema } from "graphql";
 import { useEffect, useRef, useState } from "react";
 import { braceBalance } from "./braces.ts";
+import { indentGuides } from "./indentGuides.ts";
 import { strike } from "../../sound/sound.ts";
 
 const theme = EditorView.theme(
@@ -192,6 +193,7 @@ export function Editor({
           compact ? [] : lineNumbers(),
           history(),
           drawSelection(),
+          indentGuides,
           indentOnInput(),
           bracketMatching(),
           // Ahead of closeBrackets, which would add a second brace.
