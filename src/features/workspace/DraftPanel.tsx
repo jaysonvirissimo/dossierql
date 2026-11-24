@@ -456,6 +456,7 @@ export function DraftPanel() {
               <button
                 type="button"
                 className="button"
+                data-sound="rule-out"
                 disabled={closed}
                 onClick={() =>
                   dispatch({ type: "rule-out", leadId: draft.leadId })
@@ -468,6 +469,7 @@ export function DraftPanel() {
               <button
                 type="button"
                 className="button"
+                data-sound="field-check"
                 disabled={closed}
                 onClick={() =>
                   dispatch({ type: "field-check", leadId: draft.leadId })
@@ -491,7 +493,6 @@ export function DraftPanel() {
                 , and give <code>to</code> the country&apos;s name.
                 {timed &&
                   journey !== null &&
-                  journey !== null &&
                   journey > 0 &&
                   ` The order costs one hour to transmit, and the journey takes ${hours(journey)} more.`}
               </p>
@@ -499,6 +500,7 @@ export function DraftPanel() {
               <button
                 type="button"
                 className="button button--primary"
+                data-sound={travel ? "travel" : "primary"}
                 disabled={closed || draft.ruledOut || hold !== null}
                 aria-describedby={hold ? "form-hold" : undefined}
                 onClick={() =>
@@ -729,6 +731,7 @@ function DecisionForm({
           <button
             type="button"
             className="button"
+            data-sound="rule-out"
             disabled={closed || !draft || draft.ruledOut}
             onClick={() =>
               draft && dispatch({ type: "rule-out", leadId: draft.leadId })
@@ -764,6 +767,7 @@ function DecisionForm({
           <button
             type="button"
             className="button button--primary"
+            data-sound={travel ? "travel" : "primary"}
             disabled={closed || !draft || draft.ruledOut || hold !== null}
             aria-describedby={hold ? "form-hold" : undefined}
             onClick={() =>

@@ -9,7 +9,7 @@ import { Errors, sentWith } from "../workspace/Results.tsx";
 import { VimSwitch } from "../workspace/VimSwitch.tsx";
 import "../workspace/workspace.css";
 import "./training.css";
-
+import { Strike } from "../../sound/Strike.tsx";
 /**
  * How one transmission went. `facts` means the response lacked the expected
  * facts, and `structure` that it held them without the technique a kata asks
@@ -131,6 +131,7 @@ export function Exercise({
               type="button"
               className="button button--primary"
               data-testid="transmit"
+              data-sound="transmit"
               onClick={send}
             >
               Transmit (free)
@@ -184,6 +185,7 @@ export function Exercise({
           <div className="drill__passed paper paper--plain">
             <p className="stamp" data-testid="stamp">
               Passed
+              <Strike cue="stamp" />
             </p>
             <div>
               <Prose text={payoff} />

@@ -14,7 +14,7 @@ import { ConceptCardView } from "../features/ConceptCardView.tsx";
 import { DeductionRecap } from "../features/DeductionRecap.tsx";
 import { Prose } from "../features/Prose.tsx";
 import { href } from "./parseRoute.ts";
-
+import { Strike } from "../sound/Strike.tsx";
 const MODE_TEXT = {
   independent: "independently, with no hints",
   hinted: "with hints",
@@ -132,6 +132,7 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
                 {late
                   ? (mission.debrief.stampLate ?? mission.debrief.stampOnTime)
                   : mission.debrief.stampOnTime}
+                <Strike cue="stamp" />
               </p>
               {promoted && (
                 <p
@@ -139,6 +140,7 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
                   data-testid="rank-stamp"
                 >
                   {rankTitle(standing.clearance)}
+                  <Strike cue="promotion" after={450} />
                 </p>
               )}
             </div>

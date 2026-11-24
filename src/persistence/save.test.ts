@@ -99,6 +99,7 @@ describe("preferences", () => {
       motion: "reduced",
       orientationSeen: true,
       vim: true,
+      sound: false,
     });
     expect(resetProgress(storage).events).toEqual([]);
     expect(storage.read(SAVE_KEY)).toBeNull();
@@ -107,6 +108,7 @@ describe("preferences", () => {
       motion: "reduced",
       orientationSeen: true,
       vim: true,
+      sound: false,
     });
   });
 
@@ -122,5 +124,15 @@ describe("preferences", () => {
     const storage = saved({ format: 1, events: [], investigations: {} });
     storage.write(PREFS_KEY, JSON.stringify({ vim: "yes" }));
     expect(loadPreferences(storage).vim).toBe(false);
+  });
+
+  it("play sounds unless the player has turned them off", () => {
+    const storage = saved({ format: 1, events: [], investigations: {} });
+    expect(loadPreferences(storage).sound).toBe(true);
+    storage.write(PREFS_KEY, JSON.stringify({ sound: "no" }));
+    expect(loadPreferences(storage).sound).toBe(true);
+    writePreferences(storage, { ...DEFAULT_PREFERENCES, sound: false });
+    resetProgress(storage);
+    expect(loadPreferences(storage).sound).toBe(false);
   });
 });

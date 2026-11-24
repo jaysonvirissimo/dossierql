@@ -25,6 +25,7 @@ import { graphql } from "cm6-graphql";
 import type { GraphQLSchema } from "graphql";
 import { useEffect, useRef, useState } from "react";
 import { braceBalance } from "./braces.ts";
+import { strike } from "../../sound/sound.ts";
 
 const theme = EditorView.theme(
   {
@@ -208,6 +209,7 @@ export function Editor({
                 key: "Mod-Enter",
                 preventDefault: true,
                 run: () => {
+                  strike("transmit");
                   send.current();
                   return true;
                 },

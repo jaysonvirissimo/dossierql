@@ -34,7 +34,7 @@ import { Results } from "./Results.tsx";
 import { Tools } from "./Tools.tsx";
 import { VimSwitch } from "./VimSwitch.tsx";
 import "./workspace.css";
-
+import { Strike } from "../../sound/Strike.tsx";
 const EDIT_DELAY_MS = 400;
 
 const KIND_LABEL = {
@@ -351,6 +351,7 @@ export default function Workspace({ mission }: { mission: Mission }) {
             {mission.debrief.stampExpired && (
               <p className="stamp stamp--land" data-testid="stamp">
                 {mission.debrief.stampExpired}
+                <Strike cue="stamp" />
               </p>
             )}
             <p>
@@ -424,6 +425,7 @@ export default function Workspace({ mission }: { mission: Mission }) {
                 type="button"
                 className="button button--primary"
                 data-testid="transmit"
+                data-sound="transmit"
                 disabled={state.clock === "ended"}
                 onClick={transmit}
               >

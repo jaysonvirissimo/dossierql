@@ -26,6 +26,7 @@ import {
   type SaveData,
 } from "../persistence/save.ts";
 import { browserStorage, type StorageAdapter } from "../persistence/storage.ts";
+import { setSoundEnabled } from "../sound/sound.ts";
 
 export interface Game {
   course: Course;
@@ -165,6 +166,10 @@ export function GameProvider({
       delete document.documentElement.dataset.motion;
     }
   }, [preferences.motion]);
+
+  // Set while rendering, not in an effect, so that a stamp on the first
+  // screen, whose effect runs before this provider's, already hears it.
+  setSoundEnabled(preferences.sound);
 
   const standing = useMemo(
     () => deriveStanding(course.missions, save.events),

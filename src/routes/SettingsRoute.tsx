@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useGame } from "../app/GameProvider.tsx";
 import { VimSwitch } from "../features/workspace/VimSwitch.tsx";
+import { SoundSwitch } from "../sound/SoundSwitch.tsx";
 
 export function SettingsRoute() {
   const { preferences, setPreferences, reset, save, remembers } = useGame();
@@ -31,6 +32,18 @@ export function SettingsRoute() {
               />
               Reduce motion, whatever the system setting says
             </label>
+          </section>
+
+          <section aria-labelledby="sound-title">
+            <h2 id="sound-title">Sound</h2>
+            <p>
+              With sound on, each button clicks as you press it, like the
+              switches and latches of an old office, and a stamp thumps as it
+              lands on the page. Nothing else makes a sound, and the game never
+              waits for one to finish. The same switch is at the top of every
+              page, beside your clearance.
+            </p>
+            <SoundSwitch />
           </section>
 
           <section aria-labelledby="keyboard-title">

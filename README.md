@@ -121,6 +121,9 @@ uses relative asset URLs, so it works at any path.
   Database License 1.0. `data/world.json` is a derived database and the same
   licence applies to it.
 - Map shapes: Natural Earth (public domain).
+- Button sounds: [button-sounds](https://github.com/joshwcomeau/button-sounds)
+  by Josh W. Comeau, under the MIT licence. The recordings the game uses are
+  copied into `public/sounds/` with the licence beside them.
 
 Sources, versions and hand corrections are recorded in
 [data/source/README.md](data/source/README.md).

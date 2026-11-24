@@ -27,12 +27,15 @@ export interface Preferences {
   orientationSeen: boolean;
   /** Vim keybindings in every code editor (SDD 8.2). */
   vim: boolean;
+  /** Button sounds and stamps (SDD 8.1). On unless the player turns them off. */
+  sound: boolean;
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
   motion: "system",
   orientationSeen: false,
   vim: false,
+  sound: true,
 };
 
 export function emptySave(): SaveData {
@@ -132,6 +135,7 @@ export function loadPreferences(storage: StorageAdapter): Preferences {
       motion: parsed.motion === "reduced" ? "reduced" : "system",
       orientationSeen: parsed.orientationSeen === true,
       vim: parsed.vim === true,
+      sound: parsed.sound !== false,
     };
   } catch {
     return DEFAULT_PREFERENCES;

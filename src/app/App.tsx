@@ -8,6 +8,8 @@ import { href, type Route } from "../routes/parseRoute.ts";
 import { SettingsRoute } from "../routes/SettingsRoute.tsx";
 import { useHashRoute } from "../routes/useHashRoute.ts";
 import { useGame } from "./GameProvider.tsx";
+import { useDeskSounds } from "../sound/useDeskSounds.ts";
+import { switchSoundOn } from "../sound/sound.ts";
 
 // The editor, the GraphQL engine and the world data load when a case opens.
 const Workspace = lazy(() => import("../features/workspace/Workspace.tsx"));
@@ -135,6 +137,7 @@ export function App() {
   const game = useGame();
   const key = JSON.stringify(route);
   const first = useRef(true);
+  useDeskSounds();
 
   useEffect(() => {
     document.title = `${TITLES[route.name]} · DossierQL`;
@@ -176,6 +179,23 @@ export function App() {
           </ul>
         </nav>
         <p className="shell-bar__rank">Clearance {game.standing.clearance}</p>
+        <button
+          type="button"
+          className="shell-bar__sound"
+          aria-pressed={game.preferences.sound}
+          data-testid="sound-toggle"
+          data-sound={game.preferences.sound ? "toggle-off" : "toggle-on"}
+          onClick={() => {
+            const sound = !game.preferences.sound;
+            game.setPreferences({ ...game.preferences, sound });
+            if (sound) switchSoundOn();
+          }}
+        >
+          Sound
+          <span aria-hidden="true">
+            {game.preferences.sound ? " on" : " off"}
+          </span>
+        </button>
       </header>
       {!game.remembers && (
         <p className="shell-notice" role="status">

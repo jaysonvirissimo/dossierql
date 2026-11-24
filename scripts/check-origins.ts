@@ -20,6 +20,10 @@ const INERT = [
   /^https:\/\/(?:www\.)?graphql\.org\//,
   /^https:\/\/spec\.graphql\.org\//,
   /^https:\/\/github\.com\/graphql\//,
+  // button-sounds' default home for its recordings. The game sets the
+  // library's path to its own sounds/ folder before any sound loads
+  // (src/sound/sound.ts), so this address is never requested.
+  /^https:\/\/cdn\.jsdelivr\.net\/npm\/button-sounds@[\d.]+\/assets\/$/,
   // The footer's link to the game's own source, followed only by choice.
   /^https:\/\/github\.com\/jaysonvirissimo\/dossierql$/,
   /^https?:\/\/localhost\b/,

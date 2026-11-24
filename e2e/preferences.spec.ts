@@ -142,3 +142,57 @@ test("each response is labelled with the variables it was sent with", async ({
   await page.getByRole("switch", { name: "Vim keybindings" }).check();
   await expect(page.getByTestId("vim-mode")).toHaveCount(2);
 });
+
+function soundRequests(page: Page): string[] {
+  const urls: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().endsWith(".mp3")) urls.push(request.url());
+  });
+  return urls;
+}
+
+test("buttons sound from the game's own files, and the switch silences them (SDD 8.1)", async ({
+  page,
+  baseURL,
+}) => {
+  const sounds = soundRequests(page);
+  await openCase(page, "vanishing-azulejos");
+  // Sound is on at first. A press by mouse and a press by keyboard each load
+  // the transmit switch from the game's own sounds folder.
+  const toggle = page.getByTestId("sound-toggle");
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  await page.getByTestId("transmit").click();
+  await expect
+    .poll(() => sounds.some((url) => url.endsWith("/sounds/kvm-switch.mp3")))
+    .toBe(true);
+  for (const url of sounds) {
+    expect(url.startsWith(new URL("sounds/", baseURL).href)).toBe(true);
+  }
+
+  // The switch at the top of the page turns sound off, and it stays off.
+  await press(toggle);
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  await page.reload();
+  await expect(page.getByTestId("sound-toggle")).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+  await page.goto("./#/settings");
+  await expect(page.getByTestId("sound-switch")).not.toBeChecked();
+});
+
+test("with sound off, no sound is loaded", async ({ page }) => {
+  await page.goto("./#/settings");
+  // The switch clicks as it goes off. Only what follows is counted.
+  await page.getByTestId("sound-switch").uncheck();
+  await page.reload();
+  await expect(page.getByTestId("sound-switch")).not.toBeChecked();
+  const sounds = soundRequests(page);
+  await openCase(page, "vanishing-azulejos");
+  await page.getByTestId("transmit").click();
+  await press(page.getByTestId("transmit"));
+  // A sound would have been asked for at the press, so a short wait shows
+  // that none was.
+  await page.waitForTimeout(300);
+  expect(sounds).toEqual([]);
+});
