@@ -1,4 +1,6 @@
+import { use } from "react";
 import { useGame } from "../app/GameProvider.tsx";
+import { loadMission } from "../content/course.ts";
 import { referenceOperations } from "../content/types.ts";
 import { availability } from "../engine/clearance.ts";
 import { readTechnique } from "../engine/debrief.ts";
@@ -18,10 +20,10 @@ function plural(n: number, word: string): string {
 
 export function DebriefRoute({ missionId }: { missionId: string }) {
   const { course, save, standing, commit } = useGame();
-  const mission = course.missions.find((m) => m.id === missionId);
+  const summary = course.missions.find((m) => m.id === missionId);
   const state = save.investigations[missionId]?.state;
 
-  if (!mission || !state || state.status !== "complete" || !state.outcome) {
+  if (!summary || !state || state.status !== "complete" || !state.outcome) {
     return (
       <main className="page">
         <article className="paper sheet">
@@ -31,12 +33,12 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
             <a
               className="button"
               href={
-                mission
+                summary
                   ? href({ name: "mission", missionId })
                   : href({ name: "home" })
               }
             >
-              {mission ? "Open the case" : "Back to assignments"}
+              {summary ? "Open the case" : "Back to assignments"}
             </a>
           </div>
         </article>
@@ -44,6 +46,8 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
     );
   }
 
+  // The stages and the debrief text load with this screen (SDD 4.3).
+  const mission = use(loadMission(missionId));
   const { late, mode } = state.outcome;
   const campaign = course.campaigns.find((c) => c.id === mission.campaign);
   const completion = standing.completions[mission.id];
@@ -53,7 +57,7 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
     ? course.concepts.find((c) => c.id === mission.teaches)
     : undefined;
   // The next case that practises what this one taught, with new data.
-  const index = course.missions.indexOf(mission);
+  const index = course.missions.findIndex((m) => m.id === mission.id);
   // The word mutation is a term only from the clearance that introduces it.
   const mutationsKnown =
     mission.clearance >=

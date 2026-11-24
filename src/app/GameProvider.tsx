@@ -9,7 +9,6 @@ import {
   type ReactNode,
 } from "react";
 import { course, type Course } from "../content/course.ts";
-import { contentVersion } from "../content/order.ts";
 import {
   deriveStanding,
   type ProgressEvent,
@@ -62,11 +61,7 @@ export function GameProvider({
   storage?: StorageAdapter;
 }) {
   const [storage] = useState(() => given ?? browserStorage());
-  const versions = useMemo(
-    () =>
-      Object.fromEntries(course.missions.map((m) => [m.id, contentVersion(m)])),
-    [],
-  );
+  const versions = course.versions;
   const [loaded] = useState(() => loadSave(storage, versions));
   const [save, setSave] = useState(loaded.save);
   const [preferences, setPrefs] = useState(() => loadPreferences(storage));

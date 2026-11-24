@@ -10,10 +10,11 @@ const dist = fileURLToPath(new URL("../dist", import.meta.url));
 /** Budgets in kilobytes, gzipped. */
 const BUDGET = {
   /**
-   * Script and style the first screen needs. Every mission file is part of
-   * it, and each clearance adds about 5 kB (SDD 4.3).
+   * Script and style the first screen needs. It holds what the assignments
+   * desk shows of each mission, a few hundred bytes a clearance. Stages and
+   * debriefs load with the case (SDD 4.3).
    */
-  initial: 140,
+  initial: 100,
   /** The largest chunk loaded on demand: editor, GraphQL engine, world data. */
   lazyChunk: 260,
 } as const;

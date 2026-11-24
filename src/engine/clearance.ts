@@ -1,4 +1,4 @@
-import type { Concept, Mission } from "../content/types.ts";
+import type { Concept, MissionSummary } from "../content/types.ts";
 
 export type CompletionMode = "independent" | "hinted" | "solution-revealed";
 
@@ -43,7 +43,7 @@ export interface Standing {
  * placement, passed only by a player who has never viewed its solution.
  */
 export function deriveStanding(
-  missions: readonly Mission[],
+  missions: readonly MissionSummary[],
   events: readonly ProgressEvent[],
 ): Standing {
   const byId = new Map(missions.map((m) => [m.id, m]));
@@ -129,8 +129,8 @@ export function deriveStanding(
 
 /** Whether attempting this mission now would be a placement. */
 export function isPlacement(
-  mission: Mission,
-  missions: readonly Mission[],
+  mission: MissionSummary,
+  missions: readonly MissionSummary[],
   standing: Standing,
 ): boolean {
   if (mission.kind !== "assessment") return false;
@@ -146,8 +146,8 @@ export type Availability = "available" | "locked" | "hidden";
 /** The last case of a campaign in course order, leaving out its coda. */
 export function lastCase(
   campaign: string,
-  missions: readonly Mission[],
-): Mission | undefined {
+  missions: readonly MissionSummary[],
+): MissionSummary | undefined {
   return missions
     .filter((m) => m.campaign === campaign && m.kind !== "coda")
     .at(-1);
@@ -158,8 +158,8 @@ export function lastCase(
  * A coda is hidden until the last case of its campaign is resolved.
  */
 export function availability(
-  mission: Mission,
-  missions: readonly Mission[],
+  mission: MissionSummary,
+  missions: readonly MissionSummary[],
   standing: Standing,
 ): Availability {
   if (mission.kind === "coda") {
@@ -171,7 +171,10 @@ export function availability(
 }
 
 /** The clearance whose schema the terminal uses during a mission. */
-export function clearanceInForce(mission: Mission, standing: Standing): number {
+export function clearanceInForce(
+  mission: MissionSummary,
+  standing: Standing,
+): number {
   return Math.max(mission.clearance, standing.clearance);
 }
 
@@ -184,9 +187,9 @@ export function clearanceInForce(mission: Mission, standing: Standing): number {
  * first case.
  */
 export function nextCase(
-  missions: readonly Mission[],
+  missions: readonly MissionSummary[],
   standing: Standing,
-): Mission | undefined {
+): MissionSummary | undefined {
   const open = missions.filter(
     (m) =>
       !standing.completions[m.id] &&

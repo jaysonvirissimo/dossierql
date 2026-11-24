@@ -155,6 +155,15 @@ export interface Mission {
 }
 
 /**
+ * What the assignments desk shows of a mission. The stages and the debrief
+ * load with the case (SDD 4.3).
+ */
+export type MissionSummary = Omit<
+  Mission,
+  "stages" | "debrief" | "startingStage"
+>;
+
+/**
  * One exercise on the training range. It has no clock and no draft: it is
  * passed by a transmission whose response holds the expected facts.
  */

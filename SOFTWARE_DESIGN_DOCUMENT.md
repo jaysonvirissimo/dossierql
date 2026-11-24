@@ -1,8 +1,8 @@
 # DossierQL — Software Design Document
 
 **Status:** Draft
-**Version:** 0.12
-**Last updated:** November 23, 2026
+**Version:** 0.13
+**Last updated:** November 24, 2026
 
 ## 1. Introduction and Overview
 
@@ -501,7 +501,7 @@ These are initial preferences, not final implementation decisions.
 Three constraints follow from static hosting and should be designed in from the start:
 
 - **Linkable state.** Each mission, manual entry, and screen has its own route, so a reload returns the player to where they were and a link can point at a specific mission.
-- **Bundle size.** The editor, the GraphQL tooling, and the world data are loaded on demand. The Vim keybindings are loaded only when the player has turned them on. The size of the initial bundle is a budget checked in continuous integration, so that a size warning never becomes a standing one. The first screen loads every mission file, so each clearance adds about 5 kB to the initial bundle. The budget is 140 kB from clearance 10. Before clearance 13, the stages of a mission should load on demand with the workspace, leaving only what the assignments desk shows in the initial bundle.
+- **Bundle size.** The editor, the GraphQL tooling, and the world data are loaded on demand. The Vim keybindings are loaded only when the player has turned them on. The size of the initial bundle is a budget checked in continuous integration, so that a size warning never becomes a standing one. The first screen loads only what the assignments desk shows of each mission: its title, summary, clearance, kind, and the concepts it teaches and practises. A mission's stages and debrief are a chunk of their own, loaded when the case or its debrief opens, so a clearance adds a few hundred bytes to the initial bundle. The budget is 100 kB.
 - **Self-contained assets.** Every asset is served from the game's own origin, and nothing is requested from a third party at run time. Once a mission's data has loaded, finishing the mission needs no further requests. This keeps offline play cheap to add after the MVP.
 
 ## 5. Data Design
@@ -1373,7 +1373,7 @@ Responsible for recording completed missions, the help used, and whether complet
 Persistence should work without registration or a network connection. The following rules keep saved progress trustworthy as the game changes:
 
 - All storage access goes through one adapter. If storage is unavailable, the game remains playable and simply does not remember.
-- Saved data carries a format version. An investigation in progress also records the version of its mission's content. If the mission has since changed, the investigation restarts instead of loading state that no longer fits.
+- Saved data carries a format version. An investigation in progress also records the version of its mission's content. If the mission has since changed, the investigation restarts instead of loading state that no longer fits. The version is a fingerprint of the whole mission file, computed when the game is built, so the first screen can check every save without loading any mission's stages.
 - The system stores what happened, in order, such as which missions were completed and how, and which solutions were viewed. Clearance, concepts learned, and the earned concept cards are derived by replaying that record under the rules of Section 3.8. No rank is stored, so a change to the curriculum needs no migration.
 - Preferences are global and stored apart from progress. Resetting progress keeps preferences and asks for confirmation first. The Vim keybindings switch (Section 8.2) is one of them. Its saved value is read before the editor opens, so the editor starts in the mode the player last chose.
 
@@ -1671,13 +1671,22 @@ Pressing Cite on a row the player has already found teaches nothing about GraphQ
 
 **Success criterion:** In the opening, a correct guess that no response proves is returned, a supported conclusion advances with no citation, and a reader who does not know the answer can say what a returned form wants without being told which query to write.
 
+### Milestone 13 — Missions on Demand
+
+The first screen loaded every mission file, and the initial bundle stood at 137.8 kB of its 140 kB budget, with each clearance adding about 5 kB. This milestone loads a mission's stages and debrief with the case (Section 4.3).
+
+- Build a summary of each mission file, with the fields the assignments desk shows and the fingerprint that saves are kept against (Section 7.4). The fingerprint is the one computed from the whole file before, so no save in progress restarts.
+- Load the rest of a mission when its workspace or its debrief opens, as a chunk of its own.
+- Lower the budget of the initial bundle to 100 kB. It stands at 92.9 kB.
+
+**Success criterion:** No stage or debrief text is in the initial bundle, and a save made before the change keeps its investigation.
+
 ### After 1.0
 
-Where this document says that a feature arrives after the MVP, and Milestones 5 to 11 do not list it, the feature arrives after 1.0.
+Where this document says that a feature arrives after the MVP, and Milestones 5 to 13 do not list it, the feature arrives after 1.0.
 
 - Clearance levels 12 and 13, input objects and subscriptions, with the steps of Section 3.7. The adversary is identified in these levels and not before. Clearance 11 identifies the chair of the Standing Committee, and leaves open whether the chair is M.
 - A kata for introspection, whose pass does not rest on facts (Section 3.11).
-- Load the stages of a mission on demand with the workspace, before clearance 13 (Section 4.3).
 - Warrants and missions that end in an arrest.
 - Conflicting reports and source reliability.
 - Deductions and warrants as mutations. Travel orders are filed as mutations from clearance 11.

@@ -1,6 +1,6 @@
-import type { Mission } from "./types.ts";
+import type { Mission, MissionSummary } from "./types.ts";
 
-const KIND_RANK: Record<Mission["kind"], number> = {
+const KIND_RANK: Record<MissionSummary["kind"], number> = {
   teaching: 0,
   assessment: 1,
   coda: 2,
@@ -10,7 +10,9 @@ const KIND_RANK: Record<Mission["kind"], number> = {
  * Course order: by clearance, the teaching mission before the assessment,
  * and a campaign's coda after the assessment of its level.
  */
-export function sortMissions(missions: readonly Mission[]): Mission[] {
+export function sortMissions<M extends MissionSummary>(
+  missions: readonly M[],
+): M[] {
   return [...missions].sort(
     (a, b) =>
       a.clearance - b.clearance ||

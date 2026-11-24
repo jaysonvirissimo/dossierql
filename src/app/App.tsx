@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useRef } from "react";
+import { lazy, Suspense, use, useEffect, useRef } from "react";
+import { loadMission } from "../content/course.ts";
 import { availability } from "../engine/clearance.ts";
 import { HomeRoute } from "../routes/HomeRoute.tsx";
 import { ManualRoute } from "../routes/ManualRoute.tsx";
@@ -50,6 +51,12 @@ function TrainingRoute({ kataId }: { kataId?: string }) {
   );
 }
 
+/** Waits for the case file: the stages load with the workspace (SDD 4.3). */
+function MissionLoader({ missionId }: { missionId: string }) {
+  const mission = use(loadMission(missionId));
+  return <Workspace mission={mission} />;
+}
+
 function MissionRoute({ missionId }: { missionId: string }) {
   const { course, standing } = useGame();
   const mission = course.missions.find((m) => m.id === missionId);
@@ -67,7 +74,7 @@ function MissionRoute({ missionId }: { missionId: string }) {
         </main>
       }
     >
-      <Workspace key={mission.id} mission={mission} />
+      <MissionLoader key={mission.id} missionId={mission.id} />
     </Suspense>
   );
 }

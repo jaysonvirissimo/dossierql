@@ -187,6 +187,11 @@ test("the Azulejos case, by keyboard at 1024 pixels, with no clock", async ({
   await expect(page.getByText("Fields and nested selections")).toBeVisible();
   await expect(page.getByText(/to spare/)).toHaveCount(0);
 
+  // A debrief opened cold loads the case file it reads (SDD 4.3).
+  await page.reload();
+  await expect(page.getByTestId("stamp")).toHaveText("HOLD ISSUED");
+  await expect(page.getByText("NIGHTJAR's name circled")).toBeVisible();
+
   // The completion is on the record, with the help used.
   await page.goto("./#/");
   const file = page.locator(".case", {

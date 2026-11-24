@@ -1,5 +1,5 @@
 import { useGame } from "../app/GameProvider.tsx";
-import type { Mission } from "../content/types.ts";
+import type { MissionSummary } from "../content/types.ts";
 import { availability, isPlacement, nextCase } from "../engine/clearance.ts";
 import { href } from "./parseRoute.ts";
 
@@ -16,7 +16,7 @@ const KIND_LABEL = {
 } as const;
 
 function conceptTitle(
-  mission: Mission,
+  mission: MissionSummary,
   titles: ReadonlyMap<string, string>,
 ): string | null {
   if (mission.kind === "coda") return null;
@@ -41,7 +41,7 @@ function CaseCard({
   next,
   titles,
 }: {
-  mission: Mission;
+  mission: MissionSummary;
   /** Whether this is the next case in the story, which the desk emphasizes. */
   next: boolean;
   titles: ReadonlyMap<string, string>;

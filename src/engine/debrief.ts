@@ -1,4 +1,9 @@
-import type { ConceptCard, Kata, Mission } from "../content/types.ts";
+import type {
+  ConceptCard,
+  Kata,
+  Mission,
+  MissionSummary,
+} from "../content/types.ts";
 import type { MissionState, TransmissionRecord } from "./mission.ts";
 import { parseRequest, showsTechnique } from "./technique.ts";
 
@@ -28,7 +33,7 @@ export function evidenceTransmissions(
  * for an assessment the concept card of its clearance.
  */
 export function levelConcept(
-  mission: Mission,
+  mission: MissionSummary,
   concepts: readonly ConceptCard[],
 ): ConceptCard["id"] | null {
   if (mission.teaches) return mission.teaches;
@@ -38,7 +43,7 @@ export function levelConcept(
 
 /** The kata of the mission's level, if the level has one. */
 export function levelKata(
-  mission: Mission,
+  mission: MissionSummary,
   course: { concepts: readonly ConceptCard[]; katas: readonly Kata[] },
 ): Kata | null {
   const concept = levelConcept(mission, course.concepts);
