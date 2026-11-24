@@ -756,20 +756,30 @@ function WarrantFromTerminal({
   leadId?: string;
   rejection: number;
 }) {
+  const { env, stage } = useWorkspace();
+  // From clearance 13 a warrant may be for an officer, given by name
+  // (SDD 3.4); an operative is given by codename.
+  const officer = bindingTypes(stage)[leadBinding(stage)] === "Officer";
+  const lead = leadId
+    ? officer
+      ? String(env.store.get("Officer", leadId)?.name ?? leadId)
+      : leadId
+    : undefined;
+  const kind = officer ? "officer" : "operative";
   return (
     <p className="draft__status" data-testid="terminal-warrant">
       At your clearance, you file this warrant from the terminal. Transmit a
       mutation with <code>requestWarrant</code>, and fill the box{" "}
-      <code>operative</code> of its <code>subject</code> with the
-      operative&apos;s codename
-      {leadId ? (
+      <code>{kind}</code> of its <code>subject</code> with the {kind}&apos;s{" "}
+      {officer ? "name" : "codename"}
+      {lead ? (
         <>
-          , <code>{leadId}</code>
+          , <code>{lead}</code>
         </>
       ) : null}
       . The archive checks the claims above when it receives the warrant.
-      Choosing an operative in the box above files nothing: the box shows which
-      operative the claims are about, and lets you rule one out where the case
+      Choosing an {kind} in the box above files nothing: the box shows which{" "}
+      {kind} the claims are about, and lets you rule one out where the case
       allows it.
       {rejection > 0 &&
         ` A warrant that the magistrate rejects costs ${hours(rejection)}.`}

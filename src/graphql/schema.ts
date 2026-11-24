@@ -75,6 +75,10 @@ export function schemaDocumentFor(
       hidden.has(node.name.value) ? null : undefined,
     InputObjectTypeDefinition: (node) =>
       hidden.has(node.name.value) ? null : undefined,
+    InputValueDefinition: (node) =>
+      clearanceOf(node.directives) > level || hidden.has(namedType(node.type))
+        ? null
+        : undefined,
     FieldDefinition: (node) =>
       clearanceOf(node.directives) > level || hidden.has(namedType(node.type))
         ? null

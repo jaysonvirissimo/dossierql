@@ -1,0 +1,591 @@
+id: river-quay
+title: The River Quay
+campaign: fourth-desk
+order: 15
+clearance: 13
+kind: teaching
+teaches: subscriptions
+practises: [nested-selections, arguments, introspection, mutations]
+requires: [nested-selections, arguments, introspection, mutations]
+summary: >
+  With its handler and its courier in cells, the Parallax Circle needs
+  another way to reach whoever writes the M. The harbour office will keep a
+  standing watch on Lisbon's river quay for you, and report each event as
+  its hour comes.
+motif: seal
+clock:
+  countdown: The Standing Committee meets, with its chair in the chair, in {remaining}
+  expired: The Standing Committee has met, and its chair has taken his papers home
+  onExpiry: end
+startingStage: quay
+
+debrief:
+  onTime: |
+    M is Afonso Mascarenhas, chair of the Standing Committee. The letters
+    signed M are in his own hand, which slopes hard to the left. It is the
+    hand in which he signed the harbour office's book for the Committee's
+    launch, and the hand of the letter he signed in full for the
+    harbourmaster.
+
+    The upright A.M. on the chair's vouchers was never his. By the
+    Committee's practice the secretary initials the chair's accounts, and
+    Teresa Valente wrote those initials on every one of them. The first
+    inquiry read the vouchers as the chair's signature, and the chair let
+    it.
+  stampOnTime: M IDENTIFIED
+  comparison: >
+    The reference solution keeps a standing watch with one
+    [subscription](glossary:subscription),
+    `subscription { harbourWatch(port: "Lisbon") { … } }`, and lets the
+    hours pass with Keep watch. Each event came back as a response of its
+    own at no cost, and the one transmission that opened the watch was all
+    it paid. To watch Tangier and Casablanca, it wrote two subscriptions in
+    one request, `subscription Tangier` and `subscription Casablanca`, and
+    chose each one in turn from the list beside the Transmit button. The
+    old log is the field `harbourLog`, which the archive marks
+    [deprecated](glossary:deprecated). The documentation panel does not
+    list it, and `__type(name: "Query") { fields(includeDeprecated: true) { … } }`
+    does. Reading the log once more for each new hour would have cost an
+    hour each time. In the last stage a single mutation read the voucher
+    again, as at clearance 11.
+  geography: >
+    Lisbon stands on the estuary of the Tagus, the longest river of the
+    Iberian Peninsula. Just above the city the river widens into an inland
+    sea about twenty kilometres across, and then narrows again to pass the
+    city on its way to the Atlantic.
+
+stages:
+  quay:
+    location: PT
+    introduces: standing-watch
+    objective: Identify the vessel that took aboard the letter on the chair's paper.
+
+    briefing: |
+      You read this case at a desk in Lisbon. The harbour office has
+      posted a standing watch on the river quay for you. Until now, every
+      request you transmitted came back once. A
+      [subscription](glossary:subscription) stays open instead, and the
+      archive sends a response each time an event happens on the quay.
+
+      You write a subscription the way you write a query, but it starts
+      with the word `subscription` instead of `query`, as in
+      `subscription { harbourWatch(port: "Lisbon") { hour note } }`. The
+      braces after `harbourWatch` ask for the fields of each event. A
+      subscription asks for exactly one field at its top level, because
+      it keeps one watch.
+
+      Transmitting the subscription costs one hour, and opens a
+      [standing watch](glossary:standing-watch) on the quay. Nothing
+      happens on the quay until game hours pass. The Keep watch button,
+      under the editor, lets the hours pass until the next event, and it
+      says how many hours that takes. Each event then arrives in the
+      results as a response of its own. An event costs no transmission: you
+      pay only the hours that Keep watch lets pass. The watch
+      reports only the events that come after you open it.
+
+      An event on the quay may concern a `vessel` and a `letter`. Both are
+      records, so you open each with braces. A letter's `paper` says what
+      it is written on, and its `carriedBy` is the vessel that took it.
+
+      Identify the vessel that took aboard the letter on the chair's
+      paper.
+
+    clues:
+      - text: >
+          The letter is written on the paper of the chair of the Standing
+          Committee, and the vessel carried it.
+        constraint:
+          $letter.paper: The paper of the chair of the Standing Committee
+          $letter.carriedBy: $vessel
+
+    scaffold:
+      level: guided
+      starterQuery: |
+        subscription {
+          harbourWatch(port: "Lisbon") {
+            hour
+            note
+            # Ask for letter here, and open it with braces. Inside them,
+            # ask for paper, and for carriedBy, which is a vessel.
+          }
+        }
+
+    hints:
+      nudge: >
+        Two letters go aboard two vessels while you watch. Only one of the
+        letters is on the chair's paper.
+      concept: >
+        Transmit the subscription once, then press Keep watch until both
+        events have arrived. Inside harbourWatch, open letter with braces,
+        and inside letter, open carriedBy.
+      schema: >
+        Look at Subscription.harbourWatch, HarbourEvent.letter,
+        Letter.paper, and Letter.carriedBy.
+      skeleton: |
+        subscription { harbourWatch(port: "Lisbon") { hour note letter { paper signature carriedBy { name } } } }
+
+    solution:
+      type: deduction
+      vessel: sao-bras
+    labels:
+      vessel: Vessel
+
+    claims:
+      - id: aboard
+        prompt: The letter on the chair's paper went aboard this vessel.
+        evidenceSets:
+          - facts:
+              - entity: HarbourEvent:$event
+                field: letter
+                equals: Letter:$letter
+              - entity: Letter:$letter
+                field: paper
+                equals: The paper of the chair of the Standing Committee
+              - entity: HarbourEvent:$event
+                field: vessel
+                equals: Vessel:$vessel
+          - facts:
+              - entity: Letter:$letter
+                field: paper
+                equals: The paper of the chair of the Standing Committee
+              - entity: Letter:$letter
+                field: carriedBy
+                equals: Vessel:$vessel
+
+    resolved: |
+      Deduction accepted. The São Brás is bound for Tangier and then
+      Casablanca, and the purser has the letter in his safe. Whoever
+      answers it will answer from one of those ports.
+
+    referenceSolution:
+      - |
+        subscription {
+          harbourWatch(port: "Lisbon") {
+            hour
+            note
+            vessel { name }
+            letter { paper signature hand { description } carriedBy { name } }
+          }
+        }
+      - keepWatch: 1
+      - keepWatch: 2
+
+    next: strait
+
+  strait:
+    location: PT
+    step: operation-choice
+    objective: Identify the vessel that carries a letter addressed to M back toward Lisbon.
+
+    briefing: |
+      The São Brás calls at Tangier and then at Casablanca. The harbour
+      offices of both ports will post a standing watch for you, and the
+      watch on the river quay stays open.
+
+      One subscription keeps one watch, so two ports need two
+      subscriptions. You can write both in the editor at once, one after
+      the other. Give each a name of its own after the word
+      `subscription`, as in `subscription Tangier { … }` and
+      `subscription Casablanca { … }`. When the editor holds more than one
+      operation, a list appears beside the Transmit button. You choose
+      the operation there, and the clerk transmits only that one. Choose
+      the other operation and transmit again to open the second watch.
+
+      Every hour you spend, by transmitting or by Keep watch, lets every
+      open watch deliver the events whose hour has come.
+
+      Identify the vessel that carries a letter addressed to M back toward
+      Lisbon.
+
+    clues:
+      - text: >
+          The letter is addressed to M, and the vessel carried it.
+        constraint:
+          $letter.addressedTo: M
+          $letter.carriedBy: $vessel
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        subscription Tangier {
+          harbourWatch(port: "Tangier") {
+            hour
+            note
+          }
+        }
+
+        # Write a second subscription here, with a name of its own, for
+        # the port of Casablanca.
+
+    hints:
+      nudge: >
+        Two letters go aboard vessels for Lisbon, one in each port. Read
+        the name on the outside of each.
+      concept: >
+        Write two subscriptions in the editor, each with its own name.
+        Choose one in the list beside the Transmit button and transmit it,
+        then choose the other and transmit again. Keep watch until the
+        events arrive.
+      schema: >
+        Look at Subscription.harbourWatch, Letter.addressedTo, and
+        Letter.carriedBy.
+      skeleton: |
+        subscription Casablanca { harbourWatch(port: "Casablanca") { note letter { addressedTo carriedBy { name } } } }
+
+    solution:
+      type: deduction
+      vessel: cabo-espartel
+    labels:
+      vessel: Vessel
+
+    claims:
+      - id: reply
+        prompt: This vessel carries a letter addressed to M.
+        evidenceSets:
+          - facts:
+              - entity: HarbourEvent:$event
+                field: letter
+                equals: Letter:$letter
+              - entity: Letter:$letter
+                field: addressedTo
+                equals: M
+              - entity: HarbourEvent:$event
+                field: vessel
+                equals: Vessel:$vessel
+          - facts:
+              - entity: Letter:$letter
+                field: addressedTo
+                equals: M
+              - entity: Letter:$letter
+                field: carriedBy
+                equals: Vessel:$vessel
+    leadOutcomes:
+      anfa:
+        refutation:
+          claim: reply
+          facts:
+            - entity: Letter:LTR-1322
+              field: addressedTo
+              equals: M. Abreu
+            - entity: Letter:LTR-1322
+              field: carriedBy
+              equals: Vessel:$vessel
+        ruledOut: |
+          The Anfa carries the Hotel Anfa's mail, and one letter for
+          M. Abreu. M. Abreu is one of the names that the Parallax Circle's
+          operatives travel under, and the letter is signed C. Ruiz, which
+          is another. The Circle's people write to each other under their
+          cover names. Whoever wrote the letter signed M is not one of them.
+
+    resolved: |
+      Deduction accepted. The Cabo Espartel left Tangier for Lisbon with
+      a letter addressed to M alone, on plain paper folded small. Whoever
+      collects it at the river quay is M, or knows M. The handwriting of
+      the letters signed M is the surer route.
+
+    referenceSolution:
+      - operationName: Tangier
+        operation: |
+          subscription Tangier {
+            harbourWatch(port: "Tangier") {
+              hour
+              note
+              vessel { name }
+              letter { addressedTo signature carriedBy { name } }
+            }
+          }
+
+          subscription Casablanca {
+            harbourWatch(port: "Casablanca") {
+              hour
+              note
+              vessel { name }
+              letter { addressedTo signature carriedBy { name } }
+            }
+          }
+      - operationName: Casablanca
+        operation: |
+          subscription Tangier {
+            harbourWatch(port: "Tangier") {
+              hour
+              note
+              vessel { name }
+              letter { addressedTo signature carriedBy { name } }
+            }
+          }
+
+          subscription Casablanca {
+            harbourWatch(port: "Casablanca") {
+              hour
+              note
+              vessel { name }
+              letter { addressedTo signature carriedBy { name } }
+            }
+          }
+      - keepWatch: 1
+
+    next: log
+
+  log:
+    location: PT
+    step: deprecation
+    objective: Identify the officer who wrote the letters signed M.
+
+    briefing: |
+      The letters signed M are in one hand. The registry keeps a specimen
+      of handwriting for each officer, under `hand`. The chair of the
+      Standing Committee, Afonso Mascarenhas, is on no office's list of
+      officers, so the registry holds no specimen of his hand, and you
+      cannot compare his hand with the registry's. You need a place where
+      he signed something himself. A standing
+      watch reports only the events that come after you open it, so the
+      watch cannot show you the hours before.
+
+      Before the watch was posted, the harbour office kept a log, and
+      anyone who signed for something at the quay signed the log. The
+      archive still answers for the log, but it has retired the field
+      that reads it, in favour of the watch. A field that the archive
+      still answers but marks as replaced is
+      [deprecated](glossary:deprecated). The documentation panel does not
+      list deprecated fields.
+
+      Introspection lists them if you ask. Inside
+      `__type(name: "Query")`, write `fields(includeDeprecated: true)`,
+      and ask for each field's `name`, `isDeprecated`, and
+      `deprecationReason`. The field that reads the old log is a field of
+      `Query`, and it takes the port as an argument, as `harbourWatch`
+      does. It returns a list of `HarbourEvent` records, the kind of
+      record that the watch delivers, and you ask for their fields in
+      braces.
+
+      A specimen of handwriting is a record, `Hand`. Two things are in the
+      same hand when your responses show the same `Hand` record on both.
+      The old log holds a letter signed M as well as the signatures in
+      the book, so ask for the `hand` of each letter in the log and the
+      `hand` of each signature.
+
+      Identify the officer who wrote the letters signed M.
+
+    clues:
+      - text: >
+          The officer signed the harbour office's book at Lisbon in a hand
+          that slopes hard to the left, which is the hand of the letters
+          signed M.
+        constraint:
+          $entry.port: City:lisbon
+          $entry.hand.description: Slopes hard to the left, and every downstroke ends in a long hook.
+          $entry.officer: $officer
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        {
+          __type(name: "Query") {
+            # Ask for fields here, with the argument includeDeprecated
+            # set to true. Inside its braces, ask for name, isDeprecated,
+            # and deprecationReason.
+          }
+        }
+
+    hints:
+      nudge: >
+        Several officers signed the old log, each in a hand of their own.
+        One of the old entries is a letter signed M.
+      concept: >
+        Ask introspection for the fields of Query, with includeDeprecated
+        set to true, and read which one is deprecated. Then ask for that
+        field with the port of Lisbon, and compare each hand.
+      schema: >
+        Look at Query.harbourLog, HarbourEvent.officer, HarbourEvent.hand,
+        Letter.signature, and Letter.hand.
+      skeleton: |
+        { harbourLog(port: "Lisbon") { note officer { name } hand { description } letter { signature hand { description } } } }
+
+    solution:
+      type: deduction
+      officer: afonso-mascarenhas
+    labels:
+      officer: Officer
+
+    claims:
+      - id: wrote
+        prompt: This officer wrote the letters signed M.
+        evidenceSets:
+          - facts:
+              - entity: Letter:$letter
+                field: signature
+                equals: M
+              - entity: Letter:$letter
+                field: hand
+                equals: Hand:$hand
+              - entity: HarbourEvent:$entry
+                field: hand
+                equals: Hand:$hand
+              - entity: HarbourEvent:$entry
+                field: officer
+                equals: Officer:$officer
+          - facts:
+              - entity: Letter:$letter
+                field: signature
+                equals: M
+              - entity: Letter:$letter
+                field: hand
+                equals: Hand:$hand
+              - entity: HarbourEvent:$entry
+                field: letter
+                equals: Letter:$own
+              - entity: Letter:$own
+                field: hand
+                equals: Hand:$hand
+              - entity: Letter:$own
+                field: sender
+                equals: Officer:$officer
+    leadOutcomes:
+      teresa-valente:
+        refutation:
+          claim: wrote
+          facts:
+            - entity: Letter:LTR-1300
+              field: hand
+              equals: Hand:HND-1301
+            - entity: HarbourEvent:HEV-1302
+              field: officer
+              equals: Officer:$officer
+            - entity: HarbourEvent:HEV-1302
+              field: hand
+              equals: Hand:HND-1302
+        ruledOut: |
+          Teresa Valente authorised the fares and carried the Committee's
+          instructions by hand, so the letters could have been hers. But
+          she signed the log for the Madeira parcel in an upright, round
+          hand, and the letters signed M slope hard to the left.
+
+    resolved: |
+      Deduction accepted. The letters signed M are in the hand of Afonso
+      Mascarenhas, chair of the Standing Committee. The hand slopes the
+      other way from the A.M. on the chair's vouchers, and the vouchers
+      have still to be explained.
+
+    referenceSolution:
+      - |
+        {
+          __type(name: "Query") {
+            fields(includeDeprecated: true) { name isDeprecated deprecationReason }
+          }
+        }
+      - |
+        {
+          harbourLog(port: "Lisbon") {
+            hour
+            note
+            officer { name }
+            hand { description }
+            letter { signature hand { description } sender { name } }
+          }
+        }
+
+    next: vouchers
+
+  vouchers:
+    location: PT
+    objective: Identify the officer who wrote the initials A.M. on the chair's vouchers.
+
+    briefing: |
+      Afonso Mascarenhas writes in a hand that slopes hard to the left.
+      The vouchers paid from the chair's account, ACC-0208, are initialled
+      A.M. in an upright hand. At clearance 13 the accounts office's
+      vouchers say who wrote the initials on them, under `initialledBy`,
+      and in what `hand`. You read a voucher again as you did at clearance
+      11: you file an expense claim for a fare that a voucher already
+      paid, and the receipt gives the voucher. The car from the Hotel
+      Inglés, journey JRN-0511, had a fare of 22.5.
+
+      Identify the officer who wrote the initials A.M. on the chair's
+      vouchers.
+
+    clues:
+      - text: >
+          The officer initialled the voucher for the car from the Hotel
+          Inglés, which was paid from the chair's account.
+        constraint:
+          $voucher.journey: Journey:JRN-0511
+          $voucher.initialledBy: $officer
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        The receipt for an expense claim gives the voucher that already
+        paid the fare.
+      concept: >
+        File the claim with a mutation, and open the voucher in the
+        receipt. Inside the voucher, open initialledBy and hand.
+      schema: >
+        Look at Mutation.fileExpenseClaim, ClaimReceipt.voucher,
+        Voucher.initialledBy, Voucher.hand, and Officer.hand.
+      skeleton: |
+        mutation { fileExpenseClaim(journey: "JRN-0511", amount: 22.5) { status voucher { paidFrom { reference } initialledBy { name hand { description } } hand { description } } } }
+
+    solution:
+      type: deduction
+      officer: teresa-valente
+    labels:
+      officer: Officer
+
+    claims:
+      - id: initialled
+        prompt: This officer wrote the initials on a voucher paid from the chair's account.
+        evidenceSets:
+          - facts:
+              - entity: Voucher:$voucher
+                field: paidFrom
+                equals: Account:ACC-0208
+              - entity: Voucher:$voucher
+                field: initialledBy
+                equals: Officer:$officer
+          - facts:
+              - entity: Voucher:$voucher
+                field: paidFrom
+                equals: Account:ACC-0208
+              - entity: Voucher:$voucher
+                field: hand
+                equals: Hand:$hand
+              - entity: Officer:$officer
+                field: hand
+                equals: Hand:$hand
+    leadOutcomes:
+      afonso-mascarenhas:
+        refutation:
+          claim: initialled
+          facts:
+            - entity: Voucher:VCH-0511
+              field: initialledBy
+              equals: Officer:teresa-valente
+            - entity: Voucher:VCH-0511
+              field: authorisedBy
+              equals: Officer:$officer
+        ruledOut: |
+          The chair authorised the fare for the car from the Hotel Inglés,
+          and the initials on its voucher read A.M. But the accounts office
+          records that Teresa Valente wrote them.
+
+    resolved: |
+      Deduction accepted. Teresa Valente initialled the chair's vouchers
+      A.M., in her own upright hand, as the Committee's practice requires
+      of its secretary.
+
+    referenceSolution:
+      - |
+        mutation {
+          fileExpenseClaim(journey: "JRN-0511", amount: 22.5) {
+            status
+            voucher {
+              reference
+              paidFrom { reference }
+              authorisedBy { name }
+              initialledBy { name hand { description } }
+              hand { description }
+            }
+          }
+        }

@@ -5,6 +5,7 @@ import {
   clearanceInForce,
   deriveStanding,
   isPlacement,
+  LAST_CLEARANCE,
   nextCase,
   type ProgressEvent,
 } from "./clearance.ts";
@@ -192,5 +193,19 @@ describe("a coda", () => {
   it("is the next case once it is open", () => {
     const s = deriveStanding(course, [done("a2")]);
     expect(nextCase(course, s)?.id).toBe("coda");
+  });
+});
+
+describe("the last clearance", () => {
+  it("is not passed by the last assessment", () => {
+    const last = [
+      mission("t13", LAST_CLEARANCE, "teaching", "subscriptions"),
+      mission("a13", LAST_CLEARANCE, "assessment"),
+    ];
+    // A placement on the last level promotes to it, and no further.
+    const s = deriveStanding(last, [done("a13")]);
+    expect(s.clearance).toBe(LAST_CLEARANCE);
+    const after = deriveStanding(last, [done("t13"), done("a13")]);
+    expect(after.clearance).toBe(LAST_CLEARANCE);
   });
 });

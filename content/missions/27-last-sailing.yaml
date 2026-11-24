@@ -1,0 +1,319 @@
+id: last-sailing
+title: The Last Sailing
+campaign: fourth-desk
+order: 16
+clearance: 13
+kind: assessment
+teaches: null
+practises:
+  [nested-selections, arguments, mutations, input-objects, subscriptions]
+requires:
+  [nested-selections, arguments, mutations, input-objects, subscriptions]
+summary: >
+  The chair of the Standing Committee has learned that the inquiry reads
+  his hand. He left Lisbon on the night train for Porto, and a vessel is
+  waiting for him there.
+motif: seal
+quarry: Officer:afonso-mascarenhas
+clock:
+  countdown: Afonso Mascarenhas is out of reach of every warrant in {remaining}
+  expired: Afonso Mascarenhas is out of reach of every warrant
+  onExpiry: end
+startingStage: porto
+
+debrief:
+  onTime: |
+    The police in Praia took Afonso Mascarenhas at the foot of the
+    Atlântida's gangway, with the ship's whistle already blowing.
+
+    In his coat was the letter that the Cabo Espartel brought up the river
+    from Tangier. The outside says M and nothing more. The inside begins
+    "To the Standing Committee", and it thanks the Committee, not its
+    chair, for the papers. The Committee keeps no register of its members.
+    Every clearance you have held was issued under its authority. The
+    inquiry knows who wrote the notes signed M. It does not know who else
+    sits on the Committee that let him write them.
+  stampOnTime: DETAINED
+  stampExpired: AT LARGE
+  comparison: >
+    The reference solution holds two operations in one request in Porto: a
+    query that reads the old log with the deprecated field `harbourLog`,
+    and a subscription that keeps a standing watch on the quay. It
+    transmits each one by choosing it beside the Transmit button, then
+    keeps watch until the chair goes aboard. In Praia it opens a second
+    watch, keeps it until the chair signs the harbour office's book, and
+    files the warrant with the third box of `WarrantSubject`:
+    `subject: { officer: "Afonso Mascarenhas" }`.
+  geography: >
+    Cabo Verde is an archipelago of ten islands in the Atlantic, about 600
+    kilometres off the coast of Senegal. Praia, its capital, is on the
+    island of Santiago. Portuguese is its official language, and it has no
+    land border at all.
+
+stages:
+  porto:
+    location: PT
+    objective: File the travel order that follows Afonso Mascarenhas to the country his vessel is bound for.
+
+    briefing: |
+      You are in Porto. Afonso Mascarenhas came up from Lisbon on the
+      night train, and the harbour office in Porto says that a passage was
+      booked for him this morning. Its old log holds the booking, and the
+      harbour office will post a standing watch on the quay for you. The
+      documentation does not list the field that reads the old log, because
+      the archive has retired it. The glossary entry for a
+      [deprecated](glossary:deprecated) field says how to find it.
+
+      File the travel order that follows Afonso Mascarenhas to the country
+      his vessel is bound for.
+
+    clues:
+      - text: >
+          Afonso Mascarenhas is on the vessel's passenger list, and the
+          vessel is bound for a port in the destination country.
+        constraint:
+          $vessel.passengers: Officer:afonso-mascarenhas
+          $vessel.boundFor.country: $country
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        Two vessels leave Porto with officers of the Standing Committee
+        aboard. Only one of them carries the chair.
+      concept: >
+        Write a query for the old log and a subscription for the quay in
+        one request, each with a name, and transmit each. Keep watch until
+        the chair goes aboard, then read where the vessel is bound.
+      schema: >
+        Look at Query.harbourLog, Subscription.harbourWatch,
+        HarbourEvent.vessel, Vessel.passengers, Vessel.boundFor, and
+        City.country.
+      skeleton: |
+        subscription Quay { harbourWatch(port: "Porto") { note officer { name } vessel { name passengers { name } boundFor { name country { name } } } } }
+
+    solution:
+      type: destination
+      vessel: atlantida
+      country: CV
+    labels:
+      vessel: Vessel
+      country: Destination country
+
+    claims:
+      - id: aboard
+        prompt: Afonso Mascarenhas sails aboard this vessel.
+        evidenceSets:
+          - facts:
+              - entity: HarbourEvent:$event
+                field: officer
+                equals: Officer:afonso-mascarenhas
+              - entity: HarbourEvent:$event
+                field: vessel
+                equals: Vessel:$vessel
+          - facts:
+              - entity: Vessel:$vessel
+                field: passengers
+                includes: Officer:afonso-mascarenhas
+      - id: bound
+        prompt: The vessel is bound for a port in the destination country.
+        evidenceSets:
+          - facts:
+              - entity: Vessel:$vessel
+                field: boundFor
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+          - facts:
+              - entity: Vessel:$vessel
+                field: boundFor
+                equals: City:$city
+              - entity: Country:$country
+                field: cities
+                includes: City:$city
+    leadOutcomes:
+      rio-cunene:
+        refutation:
+          claim: aboard
+          facts:
+            - entity: Vessel:rio-cunene
+              field: passengers
+              excludes: Officer:afonso-mascarenhas
+        ruledOut: |
+          The Rio Cunene carries a messenger of the Committee and its
+          papers to Luanda. The chair is not on her passenger list.
+
+    resolved: |
+      Travel order approved. The agency's seaplane puts you down at Praia,
+      which stands on a flat-topped hill above its harbour, and the quay
+      below smells of salt fish and diesel. You wait there four days for
+      the Atlântida, which will stop only to take on water before she sails
+      for Rio de Janeiro. The harbour office will post a standing watch on
+      the quay for you.
+
+    referenceSolution:
+      - operationName: Log
+        operation: |
+          query Log {
+            harbourLog(port: "Porto") {
+              hour
+              note
+              officer { name }
+              vessel { name passengers { name } boundFor { name country { name } } }
+            }
+          }
+
+          subscription Quay {
+            harbourWatch(port: "Porto") {
+              hour
+              note
+              officer { name }
+              vessel { name passengers { name } boundFor { name country { name } } }
+            }
+          }
+      - operationName: Quay
+        operation: |
+          query Log {
+            harbourLog(port: "Porto") {
+              hour
+              note
+              officer { name }
+              vessel { name passengers { name } boundFor { name country { name } } }
+            }
+          }
+
+          subscription Quay {
+            harbourWatch(port: "Porto") {
+              hour
+              note
+              officer { name }
+              vessel { name passengers { name } boundFor { name country { name } } }
+            }
+          }
+      - keepWatch: 1
+      - keepWatch: 1
+
+    next: praia
+
+  praia:
+    location: CV
+    paperwork: terminal
+    objective: Apply for a warrant to arrest the officer who wrote the letters signed M, before the Atlântida sails.
+
+    briefing: |
+      You are in Praia. Afonso Mascarenhas and a messenger of the Standing
+      Committee are aboard the Atlântida, and both may come ashore while
+      she takes on water. The police in Praia will arrest an officer of
+      the agency on a warrant. `WarrantSubject` has a third box at your
+      clearance, `officer`, which takes the officer's name, and it still
+      takes exactly one box. The responses must show that the officer is
+      in Praia, and that the officer writes in the hand of the letters
+      signed M. An event's `port` field says where the event happened. The
+      port you write in `harbourWatch(port: …)` chooses the watch, and it
+      is not part of any response, so ask for `port` among the fields of
+      each event.
+
+      Apply for a warrant to arrest the officer who wrote the letters
+      signed M, before the Atlântida sails.
+
+    clues:
+      - text: >
+          The officer handed in a letter signed M at the harbour office in
+          Praia.
+        constraint:
+          $letter.signature: M
+          $letter.sender: $officer
+          $event.letter: $letter
+          $event.port: City:praia
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        Two officers of the Committee come ashore. Only one of them writes
+        in the hand that slopes hard to the left.
+      concept: >
+        Keep a standing watch on Praia until both officers have signed
+        the harbour office's book. Then file the warrant with a mutation,
+        with the officer's name in the box officer of subject.
+      schema: >
+        Look at Subscription.harbourWatch, HarbourEvent.port,
+        HarbourEvent.hand, Letter.sender, Mutation.requestWarrant, and WarrantSubject.
+      skeleton: |
+        mutation { requestWarrant(input: { subject: { officer: "…" } }) { approved reasons } }
+
+    solution:
+      type: warrant
+      officer: afonso-mascarenhas
+    labels:
+      officer: Officer
+
+    claims:
+      - id: here
+        prompt: The officer is in Praia.
+        evidenceSets:
+          - facts:
+              - entity: HarbourEvent:$event
+                field: port
+                equals: City:praia
+              - entity: HarbourEvent:$event
+                field: officer
+                equals: Officer:$officer
+          - facts:
+              - entity: HarbourEvent:$event
+                field: port
+                equals: City:praia
+              - entity: HarbourEvent:$event
+                field: letter
+                equals: Letter:$letter
+              - entity: Letter:$letter
+                field: sender
+                equals: Officer:$officer
+      - id: hand
+        prompt: The officer writes in the hand of the letters signed M.
+        evidenceSets:
+          - facts:
+              - entity: Letter:$m
+                field: signature
+                equals: M
+              - entity: Letter:$m
+                field: hand
+                equals: Hand:$hand
+              - entity: HarbourEvent:$event
+                field: hand
+                equals: Hand:$hand
+              - entity: HarbourEvent:$event
+                field: officer
+                equals: Officer:$officer
+          - facts:
+              - entity: Letter:$m
+                field: signature
+                equals: M
+              - entity: Letter:$m
+                field: sender
+                equals: Officer:$officer
+
+    referenceSolution:
+      - |
+        subscription Praia {
+          harbourWatch(port: "Praia") {
+            port { name }
+            hour
+            note
+            officer { name }
+            hand { description }
+            letter { signature sender { name } hand { description } }
+          }
+        }
+      - keepWatch: 1
+      - keepWatch: 1
+      - |
+        mutation {
+          requestWarrant(input: { subject: { officer: "Afonso Mascarenhas" } }) {
+            approved
+            reasons
+          }
+        }

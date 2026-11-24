@@ -65,13 +65,15 @@ function listMaximum(store: Store, parent: string, field: string): number {
  * Request weight (SDD 3.3): the number of records a request could return,
  * computed from the request before it is transmitted. A list counts for its
  * declared maximum. Introspection and `__typename` return descriptions of the
- * archive rather than its records, so they weigh nothing.
+ * archive rather than its records, so they weigh nothing. Where a document
+ * holds several operations, only the one transmitted is weighed.
  */
 export function requestWeight(
   schema: GraphQLSchema,
   store: Store,
   document: DocumentNode,
   variables: Readonly<Record<string, unknown>> = {},
+  operationName?: string,
 ): number {
   let declared: readonly VariableDefinitionNode[] = [];
   /** The page size a field asks for, written in the query or as a variable. */
@@ -195,6 +197,12 @@ export function requestWeight(
   let total = 0;
   for (const definition of document.definitions) {
     if (definition.kind !== Kind.OPERATION_DEFINITION) continue;
+    if (
+      operationName !== undefined &&
+      definition.name?.value !== operationName
+    ) {
+      continue;
+    }
     declared = definition.variableDefinitions ?? [];
     // A mutation's receipts are records, weighed as a query's are.
     const root =
@@ -202,7 +210,7 @@ export function requestWeight(
         ? query
         : definition.operation === "mutation"
           ? schema.getMutationType()
-          : null;
+          : schema.getSubscriptionType();
     if (root) total += weigh(definition.selectionSet, root, new Set());
   }
   return total;

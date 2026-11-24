@@ -13,6 +13,7 @@ export const CONCEPTS = [
   "directives",
   "mutations",
   "input-objects",
+  "subscriptions",
 ] as const;
 export type Concept = (typeof CONCEPTS)[number];
 
@@ -26,6 +27,7 @@ export const MECHANICS = [
   "field-check",
   "citing",
   "warrant",
+  "standing-watch",
 ] as const;
 export type Mechanic = (typeof MECHANICS)[number];
 
@@ -120,7 +122,7 @@ export interface Stage {
   /** Dispatch read when the stage is resolved. */
   resolved?: string;
   /** An empty list: the evidence is already in the ledger. */
-  referenceSolution: string | string[];
+  referenceSolution: ReferenceEntry | ReferenceEntry[];
   referenceVariables?: Record<string, unknown> | Record<string, unknown>[];
   next?: string;
 }
@@ -269,18 +271,84 @@ export interface World {
   cities: City[];
 }
 
-export function referenceOperations(stage: Stage): {
+/**
+ * One entry of a reference solution (SDD 5.4): an operation's text; an
+ * operation with the name to transmit, where its document holds several,
+ * and its variables; or a wait for the next event of an open watch.
+ */
+export type ReferenceEntry =
+  | string
+  | {
+      operation: string;
+      operationName?: string;
+      variables?: Record<string, unknown>;
+    }
+  | { keepWatch: number };
+
+export interface ReferenceOperation {
   operation: string;
   variables: Record<string, unknown> | undefined;
-}[] {
-  const operations = Array.isArray(stage.referenceSolution)
+  operationName?: string;
+}
+
+export type ReferenceStep =
+  | ({ kind: "operation" } & ReferenceOperation)
+  | { kind: "keep-watch"; hours: number };
+
+/**
+ * A stage's reference solution, step by step. `referenceVariables`, when it
+ * is a list, gives the variables of each operation in turn; a wait is not
+ * counted among them.
+ */
+export function referenceSteps(stage: Stage): ReferenceStep[] {
+  const entries = Array.isArray(stage.referenceSolution)
     ? stage.referenceSolution
     : [stage.referenceSolution];
   const variables = stage.referenceVariables;
-  return operations.map((operation, index) => ({
-    operation,
-    variables: Array.isArray(variables) ? variables[index] : variables,
-  }));
+  let index = 0;
+  return entries.map((entry): ReferenceStep => {
+    if (typeof entry === "object" && "keepWatch" in entry) {
+      return { kind: "keep-watch", hours: entry.keepWatch };
+    }
+    const at = index++;
+    const shared = Array.isArray(variables) ? variables[at] : variables;
+    if (typeof entry === "string") {
+      return { kind: "operation", operation: entry, variables: shared };
+    }
+    return {
+      kind: "operation",
+      operation: entry.operation,
+      variables: entry.variables ?? shared,
+      ...(entry.operationName !== undefined
+        ? { operationName: entry.operationName }
+        : {}),
+    };
+  });
+}
+
+/** The operations of a stage's reference solution, without its waits. */
+export function referenceOperations(stage: Stage): ReferenceOperation[] {
+  return referenceSteps(stage).flatMap((step) =>
+    step.kind === "operation"
+      ? [
+          {
+            operation: step.operation,
+            variables: step.variables,
+            ...(step.operationName !== undefined
+              ? { operationName: step.operationName }
+              : {}),
+          },
+        ]
+      : [],
+  );
+}
+
+/** The hours a stage's reference solution spends keeping watch. */
+export function referenceWatching(stage: Stage): number {
+  return referenceSteps(stage).reduce(
+    (sum, step) => sum + (step.kind === "keep-watch" ? step.hours : 0),
+    0,
+  );
 }
 
 /** The solution's bindings, in authored order, without its `type`. */
@@ -324,4 +392,15 @@ export interface Campaign {
   id: string;
   title: string;
   summary: string;
+}
+
+/**
+ * A mission's quarry as a record, `Type:identifier`. A quarry written as a
+ * codename alone is an operative; from clearance 13 it may be written as
+ * `Officer:identifier` (SDD 3.4).
+ */
+export function quarryRef(mission: Mission): string | undefined {
+  const quarry = mission.quarry;
+  if (quarry === undefined) return undefined;
+  return quarry.includes(":") ? quarry : `Operative:${quarry}`;
 }

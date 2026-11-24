@@ -361,3 +361,43 @@
     variable is `URGENT`. An argument or a box of an input object can have
     a default value too, and the documentation panel shows it after the
     type.
+- id: subscription
+  term: subscription
+  clearance: 13
+  matches: [subscriptions]
+  definition: >
+    A request that stays open and delivers a response each time something
+    happens. It is written like a query, and starts with the word
+    `subscription` instead of `query`. A subscription asks for exactly one
+    field at its top level, and you ask for the fields of each event in
+    braces after it, as you ask for the fields of a record. In
+    `subscription { harbourWatch(port: "Lisbon") { note } }`, the archive
+    sends the `note` of each event on the port as the hour of the event
+    comes. In this game a subscription is a
+    [standing watch](glossary:standing-watch). A request may hold several
+    operations, each with a name of its own, and the list beside the
+    Transmit button chooses which one the clerk sends.
+- id: standing-watch
+  term: standing watch
+  clearance: 13
+  matches: [standing watches, keep watch, keeping watch]
+  definition: >
+    A subscription that you keep open during a case. Opening it is one
+    transmission. The clock moves only when you spend hours, so you press
+    Keep watch to let the hours pass until the next event, and the button
+    says how many hours that takes. Each event arrives as a response of
+    its own, costs no transmission, and adds its facts to your responses. A watch
+    reports only the events that come after you open it. When you close
+    a watch, the events that come while it is closed are not delivered
+    later.
+- id: deprecated
+  term: deprecated
+  clearance: 13
+  matches: [deprecation, includeDeprecated]
+  definition: >
+    A field that the archive still answers, but marks as replaced, with a
+    reason that says which field to use instead. The documentation panel
+    does not list a deprecated field. Introspection lists one only when
+    you ask for it, with `fields(includeDeprecated: true)` inside
+    `__type`, and then `isDeprecated` and `deprecationReason` say which
+    fields are retired and why.

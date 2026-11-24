@@ -2,7 +2,7 @@ import { use } from "react";
 import { useGame } from "../app/GameProvider.tsx";
 import { loadMission } from "../content/course.ts";
 import { referenceOperations } from "../content/types.ts";
-import { availability } from "../engine/clearance.ts";
+import { availability, LAST_CLEARANCE } from "../engine/clearance.ts";
 import { readTechnique } from "../engine/debrief.ts";
 import { rankTitle } from "../engine/rank.ts";
 import { ConceptCardView } from "../features/ConceptCardView.tsx";
@@ -74,10 +74,16 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
   // What the transmissions behind the accepted evidence show of the level's
   // technique (SDD 3.10). This never changes the outcome or the promotion.
   const reading = readTechnique(mission, state, course);
-  const promoted = mission.kind === "assessment" && completion?.passed === true;
+  const passed = mission.kind === "assessment" && completion?.passed === true;
+  // The last level's assessment completes the course and promotes no further
+  // (SDD 3.8).
+  const finished = passed && mission.clearance >= LAST_CLEARANCE;
+  const promoted = passed && !finished;
+  // A watch's events arrive without a transmission of their own.
+  const sent = state.transmissions.filter((t) => t.watch?.event === undefined);
   const techniqueNote =
     reading && !reading.used
-      ? promoted && completion.placement
+      ? passed && completion.placement
         ? reading.kata.debrief.placement
         : reading.kata.debrief.unused
       : null;
@@ -151,6 +157,13 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
                   " No cases are filed above this level yet. Any case you have not played is still open on the assignments desk."}
               </p>
             )}
+            {finished && (
+              <p className="note" data-testid="course-complete">
+                Assessment passed. The course ends here, at clearance{" "}
+                {String(LAST_CLEARANCE)} and the title of{" "}
+                {rankTitle(LAST_CLEARANCE)}. No clearance is filed above it.
+              </p>
+            )}
             {mission.kind === "assessment" &&
               completion &&
               !completion.passed && (
@@ -165,9 +178,8 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
           <section aria-labelledby="compare-title">
             <h2 id="compare-title">Your transmissions and the reference</h2>
             <p>
-              You sent {plural(state.transmissions.length, "transmission")}. The
-              reference solution sends{" "}
-              {plural(reference.length, "transmission")}.
+              You sent {plural(sent.length, "transmission")}. The reference
+              solution sends {plural(reference.length, "transmission")}.
             </p>
             <Prose text={mission.debrief.comparison} />
             {techniqueNote && (
@@ -190,8 +202,11 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
               <div>
                 <h3>Yours</h3>
                 <ol className="compare__list">
-                  {state.transmissions.map((t) => (
+                  {sent.map((t) => (
                     <li key={t.n}>
+                      {t.operationName !== undefined && (
+                        <p>Transmitted the operation {t.operationName}:</p>
+                      )}
                       <pre className="code">
                         {(t.operation.trim().includes("\n")
                           ? t.operation
@@ -208,19 +223,24 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
               <div>
                 <h3>Reference</h3>
                 <ol className="compare__list">
-                  {reference.map(({ operation, variables }, i) => (
-                    <li key={i}>
-                      <pre className="code">{operation.trim()}</pre>
-                      {variables && (
-                        <pre className="code">
-                          {JSON.stringify(variables, null, 1).replace(
-                            /\s+/g,
-                            " ",
-                          )}
-                        </pre>
-                      )}
-                    </li>
-                  ))}
+                  {reference.map(
+                    ({ operation, variables, operationName }, i) => (
+                      <li key={i}>
+                        {operationName !== undefined && (
+                          <p>Transmits the operation {operationName}:</p>
+                        )}
+                        <pre className="code">{operation.trim()}</pre>
+                        {variables && (
+                          <pre className="code">
+                            {JSON.stringify(variables, null, 1).replace(
+                              /\s+/g,
+                              " ",
+                            )}
+                          </pre>
+                        )}
+                      </li>
+                    ),
+                  )}
                 </ol>
               </div>
             </div>

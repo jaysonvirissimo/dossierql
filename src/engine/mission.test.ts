@@ -11,6 +11,7 @@ import {
   deskStages,
   fieldCheckCost,
   formatted,
+  nextWatchEvent,
   startMission,
   type Action,
   type Env,
@@ -1139,5 +1140,83 @@ describe("search warrants and warrants in The Handler's Road", () => {
     );
     expect(state.rejected?.errors[0]?.message).toMatch(/exactly one field/);
     expect(state.hoursLeft).toBe(start.hoursLeft);
+  });
+});
+
+describe("standing watches in The River Quay", () => {
+  const quay = envFor("river-quay");
+  const play = (state: MissionState, ...actions: Action[]) =>
+    actions.reduce((s, action) => act(quay, s, action).state, state);
+  const WATCH = `subscription { harbourWatch(port: "Lisbon") { note letter { paper carriedBy { name } } } }`;
+  const begun = () => play(startMission(quay), { type: "begin" });
+  const open = () =>
+    play(begun(), { type: "edit", editor: WATCH }, { type: "transmit" });
+
+  it("opens a watch for one hour and delivers nothing until hours pass", () => {
+    const state = open();
+    const start = begun();
+    expect(start.hoursLeft - state.hoursLeft).toBe(COSTS.transmission);
+    expect(state.watches).toHaveLength(1);
+    expect(state.transmissions).toHaveLength(1);
+    expect(state.transmissions[0]?.watch).toEqual({ n: 1 });
+    expect(nextWatchEvent(state)).toEqual({ hours: 1, watch: 1 });
+  });
+
+  it("keeps watch at the hours to the next event, and delivers it for nothing", () => {
+    const opened = open();
+    const kept = play(opened, { type: "keep-watch" });
+    expect(opened.hoursLeft - kept.hoursLeft).toBe(1);
+    expect(kept.transmissions).toHaveLength(2);
+    const event = kept.transmissions[1]!;
+    expect(event.cost).toBe(0);
+    expect(event.watch).toEqual({ n: 1, event: "HEV-1311" });
+    expect(kept.ledger["Letter:LTR-1311.carriedBy"]?.sources).toEqual([
+      expect.objectContaining({ transmission: 2 }),
+    ]);
+    const again = play(kept, { type: "keep-watch" });
+    expect(kept.hoursLeft - again.hoursLeft).toBe(2);
+    expect(again.transmissions.at(-1)?.watch?.event).toBe("HEV-1312");
+  });
+
+  it("delivers an event whose hour another action passes", () => {
+    const state = play(open(), { type: "hint" });
+    expect(state.transmissions.at(-1)?.watch?.event).toBe("HEV-1311");
+  });
+
+  it("refuses to keep watch with nothing coming, at no cost", () => {
+    const done = play(open(), { type: "keep-watch" }, { type: "keep-watch" });
+    const outcome = act(quay, done, { type: "keep-watch" });
+    expect(outcome.notice?.kind).toBe("refused");
+    expect(outcome.state.hoursLeft).toBe(done.hoursLeft);
+  });
+
+  it("loses the events that come while a watch is closed", () => {
+    const closed = play(open(), { type: "close-watch", watch: 1 });
+    expect(nextWatchEvent(closed)).toBeNull();
+    const later = play(closed, { type: "hint" }, { type: "hint" });
+    expect(later.transmissions).toHaveLength(1);
+    // Opened again, the watch counts from the first posting, so the events
+    // whose hours have passed do not come.
+    const reopened = play(later, { type: "transmit" });
+    expect(reopened.watches).toHaveLength(2);
+    expect(nextWatchEvent(reopened)).toBeNull();
+    expect(reopened.transmissions).toHaveLength(2);
+  });
+
+  it("transmits the operation chosen, where the editor holds several", () => {
+    const two = `query A { cities { name } } query B { countries { name } }`;
+    const none = act(quay, play(begun(), { type: "edit", editor: two }), {
+      type: "transmit",
+    });
+    expect(none.notice?.kind).toBe("rejected");
+    const chosen = play(
+      begun(),
+      { type: "edit", editor: two, operationName: "B" },
+      { type: "transmit" },
+    );
+    expect(chosen.transmissions[0]?.operationName).toBe("B");
+    expect(Object.keys(chosen.transmissions[0]?.data ?? {})).toEqual([
+      "countries",
+    ]);
   });
 });

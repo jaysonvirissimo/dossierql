@@ -18,7 +18,7 @@ if (issues.length > 0) {
     }
     const b = computeBudget(mission, raw.world);
     console.log(
-      `${mission.id}: budget ${String(b.total)}h (travel ${String(b.travel)}, transmissions ${String(b.transmissions)} x ${String(b.factor)}, hints ${String(b.hintLadder)})`,
+      `${mission.id}: budget ${String(b.total)}h (travel ${String(b.travel)}, ${b.watching > 0 ? `watching ${String(b.watching)}, ` : ""}transmissions ${String(b.transmissions)} x ${String(b.factor)}, hints ${String(b.hintLadder)})`,
     );
   }
   console.log(`${String(raw.missions.length)} mission(s) valid.`);

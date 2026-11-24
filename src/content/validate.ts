@@ -68,7 +68,9 @@ import { STEPS, stepById, usesIntrospection } from "./steps.ts";
 import {
   bindingTypes,
   leadBinding,
+  quarryRef,
   referenceOperations,
+  referenceSteps,
   solutionBindings,
   type Concept,
   type FactPattern,
@@ -385,6 +387,7 @@ export function conceptsUsed(operation: string): Set<Concept> {
     ObjectValue: () => void used.add("input-objects"),
     OperationDefinition: (node) => {
       if (node.operation === "mutation") used.add("mutations");
+      if (node.operation === "subscription") used.add("subscriptions");
     },
   });
   if (usesIntrospection(document)) used.add("introspection");
@@ -587,6 +590,23 @@ function checkRecords(catalog: Catalog, report: Report): void {
             if (!fields[field]) {
               report(at, "references", `Classifies unknown field ${field}.`);
             }
+          }
+          continue;
+        }
+        if (name === "due") {
+          // The hours after a watch is posted at which an event comes, only
+          // on a type that a standing watch delivers (SDD 5.3).
+          const watched = Object.values(
+            schema.getSubscriptionType()?.getFields() ?? {},
+          ).some((f) => getNamedType(f.type).name === typeName);
+          if (!watched) {
+            report(
+              at,
+              "references",
+              "Only an event that a watch delivers is due.",
+            );
+          } else if (typeof value !== "number" || !Number.isInteger(value)) {
+            report(at, "references", "due must be a whole number of hours.");
           }
           continue;
         }
@@ -1235,7 +1255,24 @@ function checkSolvable(
     // solution files it last, once the evidence for it is cited.
     const held: { operation: string; variables?: Record<string, unknown> }[] =
       [];
-    for (const { operation, variables } of referenceOperations(stage)) {
+    for (const step of referenceSteps(stage)) {
+      if (step.kind === "keep-watch") {
+        // A wait spends exactly the hours it declares (SDD 5.5).
+        const before = state.hour ?? 0;
+        const kept = act(env, state, { type: "keep-watch" });
+        state = kept.state;
+        if ((state.hour ?? 0) - before !== step.hours) {
+          report(
+            `${at}.referenceSolution`,
+            "watch",
+            kept.notice?.kind === "refused"
+              ? `The reference solution keeps watch, and it cannot: ${kept.notice.text}`
+              : `The reference solution keeps watch for ${String(step.hours)} hours, and the next event came after ${String((state.hour ?? 0) - before)}.`,
+          );
+        }
+        continue;
+      }
+      const { operation, variables, operationName } = step;
       if (stage.paperwork === "terminal" && filesTravelOrder(operation)) {
         held.push({ operation, ...(variables ? { variables } : {}) });
         continue;
@@ -1244,6 +1281,7 @@ function checkSolvable(
         type: "edit",
         editor: operation,
         variables: variables ? JSON.stringify(variables) : "",
+        ...(operationName !== undefined ? { operationName } : {}),
       }).state;
       const before = state.transmissions.length;
       const sent = act(env, state, { type: "transmit" });
@@ -1440,7 +1478,7 @@ function checkSolvable(
     }
   } else if (
     state.budget !== budget.total ||
-    spent !== budget.travel + budget.transmissions
+    spent !== budget.travel + budget.watching + budget.transmissions
   ) {
     report(
       mission.id,
@@ -1515,6 +1553,7 @@ function checkCurriculum(
     "directives",
     "mutations",
     "input-objects",
+    "subscriptions",
   ] as const) {
     if (used.has(concept) && !declared.has(concept)) {
       report(
@@ -1560,7 +1599,122 @@ export function mechanicsUsed(mission: Mission, stage: Stage): Mechanic[] {
   if (outcomes.some((o) => o.fieldCheck !== undefined)) {
     used.push("field-check");
   }
+  // A stage that opens a subscription or keeps watch keeps a standing watch.
+  const watches = referenceSteps(stage).some(
+    (step) =>
+      step.kind === "keep-watch" ||
+      parse(step.operation).definitions.some(
+        (d) =>
+          d.kind === Kind.OPERATION_DEFINITION &&
+          d.operation === "subscription",
+      ),
+  );
+  if (watches) used.push("standing-watch");
   return used;
+}
+
+/** Whether an operation's text holds a subscription. */
+function opensWatch(operation: string): boolean {
+  return parse(operation).definitions.some(
+    (d) =>
+      d.kind === Kind.OPERATION_DEFINITION && d.operation === "subscription",
+  );
+}
+
+/**
+ * Standing watches (SDD 5.5). A stage that introduces the watch opens one
+ * and keeps watch. Every deprecated field points to the subscription that
+ * replaces it. In the mission that teaches subscriptions, the stage that
+ * introduces deprecation rests a claim on an event from before the watch,
+ * which only the deprecated field returns, and the stage that introduces
+ * several operations transmits a document that holds several, by name.
+ */
+function checkWatches(catalog: Catalog, truth: Fact[], report: Report): void {
+  const schema = fullSchema();
+  const subscription = schema.getSubscriptionType();
+  const watched = new Set(
+    Object.values(subscription?.getFields() ?? {}).map(
+      (f) => getNamedType(f.type).name,
+    ),
+  );
+  for (const type of Object.values(schema.getTypeMap())) {
+    if (!isObjectType(type) || type.name.startsWith("__")) continue;
+    for (const field of Object.values(type.getFields())) {
+      const reason = field.deprecationReason;
+      if (!reason) continue;
+      const replaced = Object.keys(subscription?.getFields() ?? {}).some(
+        (name) => reason.includes(`Subscription.${name}`),
+      );
+      if (!replaced) {
+        report(
+          `schema.${type.name}.${field.name}`,
+          "watch",
+          "A deprecated field's reason names the field of Subscription that replaces it.",
+        );
+      }
+    }
+  }
+  for (const mission of catalog.missions) {
+    for (const [id, stage] of Object.entries(mission.stages)) {
+      const at = `${mission.id}.stages.${id}`;
+      const steps = referenceSteps(stage);
+      if (stage.introduces === "standing-watch") {
+        const opens = steps.some(
+          (step) => step.kind === "operation" && opensWatch(step.operation),
+        );
+        const waits = steps.some((step) => step.kind === "keep-watch");
+        if (!opens || !waits) {
+          report(
+            `${at}.referenceSolution`,
+            "watch",
+            "A stage that introduces the standing watch opens a subscription and keeps watch in its reference solution.",
+          );
+        }
+      }
+      if (stage.step === "operation-choice") {
+        const chooses = steps.some(
+          (step) =>
+            step.kind === "operation" &&
+            step.operationName !== undefined &&
+            parse(step.operation).definitions.filter(
+              (d) => d.kind === Kind.OPERATION_DEFINITION,
+            ).length >= 2,
+        );
+        if (!chooses) {
+          report(
+            `${at}.referenceSolution`,
+            "watch",
+            "The stage that introduces several operations transmits a document that holds several, with an operation name.",
+          );
+        }
+      }
+      if (stage.step === "deprecation" && mission.teaches === "subscriptions") {
+        const solution = Object.fromEntries(solutionBindings(stage));
+        const fromLog = (key: string): boolean => {
+          const entity = key.slice(0, key.lastIndexOf("."));
+          const [type = "", recordId = ""] = entity.split(":");
+          if (!watched.has(type)) return false;
+          const record = catalog.store.get(type, recordId);
+          return typeof record?.due === "number" && record.due <= 0;
+        };
+        const rests = stage.claims.some((claim) =>
+          claim.evidenceSets.every((set) => {
+            const bound = matchSet(set.facts, truth, solution);
+            return (
+              bound !== null && instantiate(set.facts, bound).some(fromLog)
+            );
+          }),
+        );
+        if (!rests) {
+          report(
+            `${at}.claims`,
+            "watch",
+            "The stage that introduces deprecation rests a claim on an event from before the watch, which only the deprecated field returns.",
+          );
+        }
+      }
+    }
+  }
 }
 
 /** Pacing (SDD 3.15): a mechanic is introduced once, before it is used. */
@@ -1794,15 +1948,19 @@ function checkWarrants(
   catalog: Catalog,
   report: Report,
 ): void {
-  if (
-    mission.quarry !== undefined &&
-    !catalog.store.get("Operative", mission.quarry)
-  ) {
-    report(
-      mission.id,
-      "references",
-      `No operative ${mission.quarry} for the quarry.`,
-    );
+  const quarry = quarryRef(mission);
+  if (quarry !== undefined) {
+    const [type = "", id = ""] = quarry.split(":");
+    if (
+      (type !== "Operative" && type !== "Officer") ||
+      !catalog.store.get(type, id)
+    ) {
+      report(
+        mission.id,
+        "references",
+        `No operative or officer ${String(mission.quarry)} for the quarry.`,
+      );
+    }
   }
   let ends = false;
   for (const [id, stage] of Object.entries(mission.stages)) {
@@ -1812,8 +1970,12 @@ function checkWarrants(
       report(at, "warrant", "A warrant ends its case: its stage has no next.");
     }
     const type = bindingTypes(stage)[leadBinding(stage)];
-    if (type !== "Operative" && type !== "Company") {
-      report(at, "warrant", "A warrant is for an operative or a company.");
+    if (type !== "Operative" && type !== "Company" && type !== "Officer") {
+      report(
+        at,
+        "warrant",
+        "A warrant is for an operative, a company, or an officer.",
+      );
     }
     if (solutionBindings(stage).length !== 1) {
       report(at, "warrant", "A warrant identifies one record.");
@@ -2337,7 +2499,9 @@ function checkWeight(catalog: Catalog, report: Report): void {
       mission.kind === "teaching" && mission.teaches === "directives";
     for (const [id, stage] of Object.entries(mission.stages)) {
       const at = `${mission.id}.stages.${id}.referenceSolution`;
-      for (const { operation, variables } of referenceOperations(stage)) {
+      for (const { operation, variables, operationName } of referenceOperations(
+        stage,
+      )) {
         let document;
         try {
           document = parse(operation);
@@ -2349,6 +2513,7 @@ function checkWeight(catalog: Catalog, report: Report): void {
           catalog.store,
           document,
           variables ?? {},
+          operationName,
         );
         if (weight > WEIGHT_LIMIT) {
           report(
@@ -2427,6 +2592,7 @@ export function validateContent(raw: RawContent): Issue[] {
   checkCourseShape(catalog, report);
   checkPacing(catalog, report);
   checkSteps(catalog, report);
+  checkWatches(catalog, truth, report);
   checkWeight(catalog, report);
   checkDrills(catalog, report);
   checkKatas(catalog, report);

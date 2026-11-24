@@ -9,7 +9,11 @@ export interface SearchApplication {
 
 /** The application form for a warrant, as the archive reads it. */
 export interface WarrantApplication {
-  subject: { operative?: string | null; company?: string | null };
+  subject: {
+    operative?: string | null;
+    company?: string | null;
+    officer?: string | null;
+  };
   statement?: string | null;
 }
 

@@ -94,6 +94,7 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
   const types = useMemo(() => {
     const query = schema.getQueryType();
     const mutation = schema.getMutationType();
+    const subscription = schema.getSubscriptionType();
     const all = Object.values(schema.getTypeMap()).filter(
       (t): t is Entry =>
         (isObjectType(t) ||
@@ -104,11 +105,15 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
         !t.name.startsWith("__") &&
         t !== query &&
         t !== mutation &&
+        t !== subscription &&
         !isUndocumented(t.name),
     );
     all.sort((a, b) => a.name.localeCompare(b.name));
-    // The roots come first: Query, then Mutation from clearance 11.
-    return [query, mutation, ...all].filter((t): t is Entry => !!t);
+    // The roots come first: Query, then Mutation from clearance 11, then
+    // Subscription from clearance 13.
+    return [query, mutation, subscription, ...all].filter(
+      (t): t is Entry => !!t,
+    );
   }, [schema]);
   const seized = types.some(
     (type) =>
@@ -116,6 +121,13 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
       Object.keys(type.getFields()).some((field) =>
         isUndocumented(type.name, field),
       ),
+  );
+  // A deprecated field is still answered, and the panel leaves it out
+  // (SDD 5.3).
+  const retired = types.some(
+    (type) =>
+      (isObjectType(type) || isInterfaceType(type)) &&
+      Object.values(type.getFields()).some((field) => field.deprecationReason),
   );
   return (
     <div className="tool">
@@ -186,6 +198,28 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
             {"{"} status {"}"} {"}"}
           </code>{" "}
           files one expense claim and asks for its status.
+        </p>
+      )}
+      {schema.getSubscriptionType() && (
+        <p className="tool__lede" data-testid="subscriptions">
+          A request that keeps a standing watch starts at the third entry,{" "}
+          <code>Subscription</code>. Write <code>subscription</code> instead of{" "}
+          <code>query</code>, and put exactly one of its fields inside the
+          braces. The archive then sends a response for each event, as the hour
+          of the event comes, and you ask for the fields of each event in
+          braces. For example,{" "}
+          <code>
+            subscription {"{"} harbourWatch(port: "Lisbon") {"{"} note {"}"}{" "}
+            {"}"}
+          </code>{" "}
+          keeps a watch on the port of Lisbon.
+        </p>
+      )}
+      {retired && (
+        <p className="tool__lede" data-testid="deprecated">
+          The archive still answers some fields that it has retired in favour of
+          others, and this documentation does not list them. The glossary entry
+          for a deprecated field explains how to ask the archive for them.
         </p>
       )}
       {seized && (
@@ -301,7 +335,11 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
           {(isObjectType(type) || isInterfaceType(type)) && (
             <dl className="doc__fields">
               {Object.values(type.getFields())
-                .filter((field) => !isUndocumented(type.name, field.name))
+                .filter(
+                  (field) =>
+                    !isUndocumented(type.name, field.name) &&
+                    !field.deprecationReason,
+                )
                 .map((field) => (
                   <div key={field.name} className="doc__field">
                     <dt>

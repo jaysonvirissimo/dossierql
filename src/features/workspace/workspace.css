@@ -131,6 +131,12 @@
   align-items: stretch;
 }
 
+/* From clearance 13 the terminal also lists the standing watches, so its
+   row grows to hold them rather than clip them. */
+.workspace__grid--watching {
+  grid-template-rows: minmax(24rem, auto) auto;
+}
+
 @media (max-width: 899px) {
   .workspace__grid {
     grid-template-columns: minmax(0, 1fr);
@@ -271,6 +277,7 @@
 
 .terminal__foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-3);
@@ -290,8 +297,66 @@
 }
 
 .terminal__key {
+  flex: 1 1 14rem;
   font-size: 0.8125rem;
   color: var(--terminal-dim);
+}
+
+/* The operation to transmit, where a request holds several (SDD 8.2). */
+.terminal__operation {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--terminal-dim);
+}
+
+.terminal__operation select {
+  font: inherit;
+  color: var(--navy-950);
+  background: var(--terminal-string);
+  border: 1px solid var(--navy-line);
+  border-radius: 2px;
+  padding: 2px var(--space-1);
+}
+
+/* The standing watches: one line to a watch, and Keep watch beneath. */
+.watches {
+  padding: var(--space-2) var(--space-3);
+  background: var(--navy-800);
+  border-top: 1px solid var(--navy-line);
+  color: var(--terminal-dim);
+  font-size: 0.8125rem;
+}
+
+.watches h3 {
+  margin: 0 0 var(--space-1);
+  font-size: 0.8125rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.watches__list {
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.watches__list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 2px 0;
+}
+
+.watches__none,
+.watches__note {
+  margin: 0 0 var(--space-1);
+}
+
+.watches__note {
+  margin-top: var(--space-2);
 }
 
 /* ----------------------------------------------------------- results */
@@ -1011,4 +1076,12 @@
 .dossier--quarry {
   border-left: 3px solid var(--rust);
   padding-left: 0.75rem;
+}
+
+/* A quiet button on the navy terminal keeps the terminal's ink. */
+.watches .button--quiet {
+  color: var(--terminal-ink);
+  border-color: var(--navy-line);
+  background: transparent;
+  flex: none;
 }

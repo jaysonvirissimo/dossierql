@@ -37,7 +37,7 @@ test("the coda stays hidden until the campaign's last case is resolved", async (
   page,
 }) => {
   await seedCompleted(page, [...TO_CLEARANCE_5, "forwarding-address"]);
-  await expect(page.getByText("9 of 24 cases resolved.")).toBeVisible();
+  await expect(page.getByText("9 of 26 cases resolved.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "The Receipt" })).toHaveCount(
     0,
   );
@@ -50,7 +50,7 @@ test("the coda stays hidden until the campaign's last case is resolved", async (
 
 test("the coda ends the campaign without a promotion", async ({ page }) => {
   await seedCompleted(page, TO_CAMPAIGN_END);
-  await expect(page.getByText("10 of 24 cases resolved.")).toBeVisible();
+  await expect(page.getByText("10 of 26 cases resolved.")).toBeVisible();
   const card = page.locator(".case--next");
   await expect(card).toContainText("The Receipt");
   await expect(card).toContainText("Coda");
@@ -87,5 +87,5 @@ test("the coda ends the campaign without a promotion", async ({ page }) => {
   await expect(page.locator(".shell-bar__rank")).toHaveText("Clearance 6");
 
   await press(page.getByRole("link", { name: "Back to assignments" }));
-  await expect(page.getByText("10 of 24 cases resolved.")).toBeVisible();
+  await expect(page.getByText("10 of 26 cases resolved.")).toBeVisible();
 });

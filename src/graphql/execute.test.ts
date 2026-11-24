@@ -1,7 +1,7 @@
 import { getIntrospectionQuery } from "graphql";
 import { describe, expect, it } from "vitest";
 import type { Actions } from "./actions.ts";
-import { transmit } from "./execute.ts";
+import { deliver, transmit } from "./execute.ts";
 import { fullSchema, schemaFor } from "./schema.ts";
 import { Store, type RawRecord } from "./store.ts";
 
@@ -402,5 +402,151 @@ describe("mutations", () => {
       claim: { status: "REFUSED", journey: { reference: "JRN-1" } },
     });
     expect(journeys.get("ClaimReceipt", "CLM-0001")).toBeUndefined();
+  });
+});
+
+describe("standing watches", () => {
+  const harbour = new Store(
+    [
+      ...records,
+      { type: "Hand", id: "H-1", reference: "H-1", description: "Upright" },
+      {
+        type: "HarbourEvent",
+        id: "E-0",
+        reference: "E-0",
+        port: "lisbon",
+        due: 0,
+        hour: "Noon",
+        note: "Before the watch.",
+        hand: "H-1",
+      },
+      {
+        type: "HarbourEvent",
+        id: "E-2",
+        reference: "E-2",
+        port: "lisbon",
+        due: 2,
+        hour: "Two",
+        note: "Second.",
+      },
+      {
+        type: "HarbourEvent",
+        id: "E-1",
+        reference: "E-1",
+        port: "lisbon",
+        due: 1,
+        hour: "One",
+        note: "First.",
+        hand: "H-1",
+      },
+      {
+        type: "HarbourEvent",
+        id: "E-9",
+        reference: "E-9",
+        port: "porto",
+        due: 1,
+        hour: "One",
+        note: "Elsewhere.",
+      },
+    ],
+    fullSchema(),
+  );
+  const watch =
+    'subscription Quay { harbourWatch(port: "Lisbon") { reference note hand { description } } }';
+
+  it("open a stream of the events due after the posting, in order", () => {
+    const sent = transmit(harbour, {
+      operation: watch,
+      clearance: 13,
+      watching: true,
+    });
+    expect(sent.transmitted).toBe(true);
+    expect(sent.facts).toEqual([]);
+    expect(sent.watch?.label).toBe('harbourWatch(port: "Lisbon")');
+    expect(sent.watch?.events).toEqual([
+      { id: "E-1", type: "HarbourEvent", due: 1 },
+      { id: "E-2", type: "HarbourEvent", due: 2 },
+    ]);
+  });
+
+  it("deliver one event at a time, with its facts", () => {
+    const event = harbour.get("HarbourEvent", "E-1") as RawRecord;
+    const sent = deliver(harbour, { operation: watch, clearance: 13 }, event);
+    expect(sent.result.errors).toBeUndefined();
+    expect(sent.result.data).toEqual({
+      harbourWatch: {
+        reference: "E-1",
+        note: "First.",
+        hand: { description: "Upright" },
+      },
+    });
+    expect(sent.facts.map((f) => f.fact.key)).toContain(
+      "HarbourEvent:E-1.hand",
+    );
+  });
+
+  it("are opened only during a case, and only from clearance 13", () => {
+    const outside = transmit(harbour, { operation: watch, clearance: 13 });
+    expect(outside.transmitted).toBe(false);
+    expect(outside.result.errors?.[0]?.message).toBe(
+      "The archive keeps standing watches only during a case.",
+    );
+    const early = transmit(harbour, {
+      operation: watch,
+      clearance: 12,
+      watching: true,
+    });
+    expect(early.transmitted).toBe(false);
+  });
+
+  it("ask for one top-level field", () => {
+    const sent = transmit(harbour, {
+      operation:
+        'subscription { a: harbourWatch(port: "Lisbon") { note } b: harbourWatch(port: "Porto") { note } }',
+      clearance: 13,
+      watching: true,
+    });
+    expect(sent.result.errors?.[0]?.message).toMatch(
+      /must select only one top level field/,
+    );
+  });
+
+  it("leave the old log to the deprecated field, without the events to come", () => {
+    const sent = transmit(harbour, {
+      operation: '{ harbourLog(port: "Lisbon") { reference } }',
+      clearance: 13,
+    });
+    expect(sent.result.data).toEqual({ harbourLog: [{ reference: "E-0" }] });
+  });
+});
+
+describe("several operations in one request", () => {
+  const two = "query A { cities { name } } query B { countries { name } }";
+
+  it("are returned below clearance 13", () => {
+    const sent = run(two, 12);
+    expect(sent.result.errors?.[0]?.message).toBe(
+      "A transmission carries one operation. This request contains several.",
+    );
+  });
+
+  it("need a choice from clearance 13, and run only the one chosen", () => {
+    expect(run(two, 13).result.errors?.[0]?.message).toBe(
+      "Must provide operation name if query contains multiple operations.",
+    );
+    const sent = transmit(store, {
+      operation: two,
+      clearance: 13,
+      operationName: "B",
+    });
+    expect(Object.keys(sent.result.data ?? {})).toEqual(["countries"]);
+    const unknown = transmit(store, {
+      operation: two,
+      clearance: 13,
+      operationName: "C",
+    });
+    expect(unknown.result.errors?.[0]?.message).toBe(
+      'Unknown operation named "C".',
+    );
   });
 });

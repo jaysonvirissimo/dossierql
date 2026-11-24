@@ -408,6 +408,49 @@ export const STEPS: readonly Step[] = [
       return found;
     },
   },
+  {
+    id: "operation-choice",
+    clearance: 13,
+    summary:
+      "several operations in one document, and choosing which one to transmit",
+    uses: (document) =>
+      document.definitions.filter((d) => d.kind === Kind.OPERATION_DEFINITION)
+        .length >= 2,
+  },
+  {
+    id: "deprecation",
+    clearance: 13,
+    summary:
+      "a polling field marked @deprecated in favour of the subscription, and includeDeprecated: true in introspection",
+    term: "deprecated",
+    uses: (document) => {
+      // Introspection asked to list what the schema retires.
+      const listed = hasField(
+        document,
+        (field) =>
+          (field.arguments ?? []).some(
+            (a) =>
+              a.name.value === "includeDeprecated" &&
+              a.value.kind === Kind.BOOLEAN &&
+              a.value.value,
+          ),
+        true,
+      );
+      if (listed) return true;
+      // Or a field the schema marks deprecated, asked for anyway.
+      const info = new TypeInfo(schemaFor(MAX_CLEARANCE));
+      let found = false;
+      visit(
+        document,
+        visitWithTypeInfo(info, {
+          Field() {
+            if (info.getFieldDef()?.deprecationReason) found = true;
+          },
+        }),
+      );
+      return found;
+    },
+  },
 ];
 
 export function stepById(id: string): Step | undefined {

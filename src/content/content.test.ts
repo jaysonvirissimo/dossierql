@@ -28,9 +28,9 @@ describe("the authored course", () => {
     expect(validateContent(raw)).toEqual([]);
   });
 
-  it("covers clearance 1 to 12 with a teaching mission and an assessment each", () => {
+  it("covers clearance 1 to 13 with a teaching mission and an assessment each", () => {
     const cases = raw.missions.filter((m) => m.kind !== "coda");
-    expect(cases).toHaveLength(24);
+    expect(cases).toHaveLength(26);
   });
 
   it("ends the first campaign with one coda", () => {

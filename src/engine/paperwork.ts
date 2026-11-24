@@ -264,6 +264,7 @@ export function paperwork<S>(desk: Desk<S>): {
           serial: id,
           operative: null,
           company: null,
+          officer: null,
           hours: 0,
           ...fields,
         };
@@ -271,7 +272,7 @@ export function paperwork<S>(desk: Desk<S>): {
         return record;
       };
       const stage = desk.stage(state);
-      const { operative, company } = input.subject;
+      const { operative, company, officer } = input.subject;
       if (company != null) {
         const found = desk.store
           .all("Company")
@@ -287,6 +288,44 @@ export function paperwork<S>(desk: Desk<S>): {
               ? "A warrant for a company searches its offices, and this case does not call for a search of a company. A warrant of arrest is for an operative."
               : `The registry holds no company called "${company}". Give a company by its registered name.`,
           ],
+        });
+      }
+      if (officer != null) {
+        // From clearance 13 the subject may be an officer of the agency,
+        // given by name (SDD 3.4).
+        const person = desk.store
+          .all("Officer")
+          .find(
+            (r) =>
+              plain(r.id) === plain(officer) ||
+              (typeof r.name === "string" && plain(r.name) === plain(officer)),
+          );
+        if (!person) {
+          return receipt({
+            approved: false,
+            reasons: [
+              `The registry holds no officer called "${officer}". Give an officer by name.`,
+            ],
+          });
+        }
+        if (stage.solution.type !== "warrant") {
+          return receipt({
+            approved: false,
+            officer: person.id,
+            reasons: [
+              "Nothing at this stage of the case calls for a warrant. The case asks for a form on the draft.",
+            ],
+          });
+        }
+        state = desk.choose(state, person.id, leadBinding(stage), person.id);
+        const outcome = desk.proceed(state, person.id);
+        state = outcome.state;
+        events.push(...outcome.events);
+        return receipt({
+          approved: outcome.approved,
+          officer: person.id,
+          reasons: outcome.reasons,
+          hours: outcome.hours,
         });
       }
       const wanted = operative ?? "";

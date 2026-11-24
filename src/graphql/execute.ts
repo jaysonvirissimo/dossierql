@@ -1,5 +1,6 @@
 import {
   execute,
+  executeSubscriptionEvent,
   getOperationAST,
   getNamedType,
   GraphQLError,
@@ -8,9 +9,11 @@ import {
   parse,
   specifiedRules,
   validate,
+  validateSubscriptionArgs,
   type ASTVisitor,
   type DocumentNode,
   type ExecutionResult,
+  type OperationDefinitionNode,
   type GraphQLFieldResolver,
   type GraphQLObjectType,
   type GraphQLSchema,
@@ -40,6 +43,28 @@ export interface Transmission {
   clearance: number;
   /** What a mutation files its paperwork with (SDD 4.2). */
   actions?: Actions | undefined;
+  /**
+   * The operation to run, where the document holds several (SDD 6.1). Only
+   * a schema with a subscription root accepts several.
+   */
+  operationName?: string | undefined;
+  /** Whether a standing watch may be opened: only during a case (SDD 4.2). */
+  watching?: boolean | undefined;
+}
+
+/**
+ * The stream a subscription selects when it is opened: the events that the
+ * archive holds for it, each with the hours after the posting at which it
+ * comes due (SDD 5.3). The game engine decides when each is delivered.
+ */
+export interface WatchSpec {
+  /** The subscription's one top-level field. */
+  field: string;
+  /** The field and its arguments as written, such as `harbourWatch(port: "Lisbon")`. */
+  label: string;
+  /** Identifies the stream: the field and the events it selects. */
+  stream: string;
+  events: { id: string; type: string; due: number }[];
 }
 
 export interface TransmissionResult {
@@ -50,6 +75,8 @@ export interface TransmissionResult {
   transmitted: boolean;
   result: ExecutionResult;
   facts: FactOccurrence[];
+  /** The stream a subscription opened. */
+  watch?: WatchSpec;
 }
 
 const MAX_DEPTH = 12;
@@ -101,6 +128,23 @@ interface Context {
   occurrences: FactOccurrence[];
   resolved: number;
   actions: Actions | undefined;
+  /** Where a subscription's opening notes its field and arguments. */
+  opening?: {
+    field: string;
+    args: Record<string, unknown>;
+    target: string | null;
+  };
+}
+
+/** The root value that opens a watch, rather than delivering an event to it. */
+const OPENING = Symbol("opening");
+
+/**
+ * An event comes due a number of hours after its watch is posted. One that
+ * is due later than the posting is reachable only through a watch (SDD 5.3).
+ */
+export function dueAfterPosting(record: RawRecord): boolean {
+  return typeof record.due === "number" && record.due > 0;
 }
 
 function pathArray(path: {
@@ -310,9 +354,21 @@ const resolveField: GraphQLFieldResolver<unknown, Context> = (
     }
   }
 
+  if (info.parentType === info.schema.getSubscriptionType()) {
+    // Opening a watch notes what it selects; delivering an event hands the
+    // event to the selection (SDD 4.2).
+    if (source === OPENING) {
+      context.opening = { field: info.fieldName, args, target: shape.target };
+      return null;
+    }
+    return source;
+  }
+
   if (info.parentType === info.schema.getQueryType()) {
     if (shape.target === null) return null;
-    const candidates = store.all(shape.target);
+    const candidates = store
+      .all(shape.target)
+      .filter((r) => !dueAfterPosting(r));
     if (shape.list)
       return candidates.filter((r) => matches(r, args, store, info.schema));
     const supplied = Object.values(args).some((v) => v != null);
@@ -426,6 +482,7 @@ export function parseOperation(
 export function check(
   source: string,
   schema: GraphQLSchema,
+  operationName?: string,
 ): readonly GraphQLError[] {
   const parsed = parseOperation(source);
   if ("errors" in parsed) return parsed.errors;
@@ -441,18 +498,30 @@ export function check(
   if (operations.length === 0) {
     return [new GraphQLError("The request contains no operation.")];
   }
-  if (operations.length > 1) {
+  if (operations.length > 1 && !schema.getSubscriptionType()) {
     return [
       new GraphQLError(
         "A transmission carries one operation. This request contains several.",
       ),
     ];
   }
-  const operation = getOperationAST(parsed.document);
+  if (operations.length > 1 && operationName === undefined) {
+    return [
+      new GraphQLError(
+        "Must provide operation name if query contains multiple operations.",
+      ),
+    ];
+  }
+  const operation = getOperationAST(parsed.document, operationName);
+  if (!operation) {
+    return [
+      new GraphQLError(`Unknown operation named "${operationName ?? ""}".`),
+    ];
+  }
   if (
-    operation &&
     operation.operation !== "query" &&
-    !(operation.operation === "mutation" && schema.getMutationType())
+    !(operation.operation === "mutation" && schema.getMutationType()) &&
+    !(operation.operation === "subscription" && schema.getSubscriptionType())
   ) {
     return [
       new GraphQLError(
@@ -473,7 +542,11 @@ export function transmit(
   transmission: Transmission,
 ): TransmissionResult {
   const schema = schemaFor(transmission.clearance);
-  const errors = check(transmission.operation, schema);
+  const errors = check(
+    transmission.operation,
+    schema,
+    transmission.operationName,
+  );
   if (errors.length > 0) {
     return { transmitted: false, result: { errors }, facts: [] };
   }
@@ -490,6 +563,7 @@ export function transmit(
     store,
     document,
     transmission.variables ?? {},
+    transmission.operationName,
   );
   if (transmission.clearance >= WEIGHT_LIMITED_FROM && weight > WEIGHT_LIMIT) {
     // Like a request that fails validation, a request over the limit is
@@ -506,9 +580,17 @@ export function transmit(
       facts: [],
     };
   }
+  const operation = getOperationAST(
+    document,
+    transmission.operationName,
+  ) as OperationDefinitionNode;
+  if (operation.operation === "subscription") {
+    return openWatch(store, transmission, schema, document, context, weight);
+  }
   const outcome = execute({
     schema,
     document,
+    operationName: transmission.operationName,
     variableValues: transmission.variables ?? {},
     contextValue: context,
     fieldResolver: resolveField,
@@ -519,6 +601,16 @@ export function transmit(
   if (outcome instanceof Promise) {
     throw new Error("The archive resolves synchronously.");
   }
+  return finish(transmission, context, outcome, weight);
+}
+
+/** A result with its weight, and the facts that survived into it. */
+function finish(
+  transmission: Transmission,
+  context: Context,
+  outcome: ExecutionResult,
+  weight: number,
+): TransmissionResult {
   const result: ExecutionResult =
     transmission.clearance >= WEIGHT_REPORTED_FROM
       ? {
@@ -538,4 +630,135 @@ export function transmit(
     return occurrence.fact.value.kind === "list" ? value !== null : true;
   });
   return { transmitted: true, result, facts };
+}
+
+/** What a subscription's events are run with, once it has been checked. */
+function subscriptionArgs(
+  schema: GraphQLSchema,
+  document: DocumentNode,
+  transmission: Transmission,
+  context: Context,
+  rootValue: unknown,
+) {
+  return validateSubscriptionArgs({
+    schema,
+    document,
+    operationName: transmission.operationName,
+    variableValues: transmission.variables ?? {},
+    contextValue: context,
+    rootValue,
+    fieldResolver: resolveField,
+    typeResolver: (value) => (value as RawRecord).type,
+  });
+}
+
+/**
+ * Opens a standing watch (SDD 6.1). The archive notes the field and its
+ * arguments, and reports the events of the stream they select, each with
+ * the hours after the posting at which it comes due. Opening one delivers
+ * nothing, and the game engine delivers each event as its hour comes.
+ */
+function openWatch(
+  store: Store,
+  transmission: Transmission,
+  schema: GraphQLSchema,
+  document: DocumentNode,
+  context: Context,
+  weight: number,
+): TransmissionResult {
+  if (!transmission.watching) {
+    return {
+      transmitted: false,
+      result: {
+        errors: [
+          new GraphQLError(
+            "The archive keeps standing watches only during a case.",
+          ),
+        ],
+      },
+      facts: [],
+    };
+  }
+  const validated = subscriptionArgs(
+    schema,
+    document,
+    transmission,
+    context,
+    OPENING,
+  );
+  if (!("schema" in validated)) {
+    // The variables were refused before anything was opened.
+    return { transmitted: false, result: { errors: validated }, facts: [] };
+  }
+  const probe = executeSubscriptionEvent(validated);
+  if (probe instanceof Promise) {
+    throw new Error("The archive resolves synchronously.");
+  }
+  const opening = context.opening;
+  if (!opening) {
+    return { transmitted: false, result: probe, facts: [] };
+  }
+  const events = (opening.target ? store.all(opening.target) : [])
+    .filter((r) => dueAfterPosting(r))
+    .filter((r) => matches(r, opening.args, store, schema))
+    .map((r) => ({ id: r.id, type: r.type, due: r.due as number }))
+    .sort((a, b) => a.due - b.due || a.id.localeCompare(b.id));
+  const written = Object.entries(opening.args)
+    .filter(([, v]) => v !== null && v !== undefined)
+    .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+    .join(", ");
+  const label = written ? `${opening.field}(${written})` : opening.field;
+  const watch: WatchSpec = {
+    field: opening.field,
+    label,
+    stream: `${opening.field}:${events.map((e) => e.id).join(",")}`,
+    events,
+  };
+  const result: ExecutionResult =
+    transmission.clearance >= WEIGHT_REPORTED_FROM
+      ? { data: null, extensions: { weight } }
+      : { data: null };
+  return { transmitted: true, result, facts: [], watch };
+}
+
+/**
+ * Delivers one event to an open watch: the subscription's selection runs
+ * with the event as its root, and its facts are recorded as a query's are.
+ */
+export function deliver(
+  store: Store,
+  transmission: Transmission,
+  event: RawRecord,
+): TransmissionResult {
+  const schema = schemaFor(transmission.clearance);
+  const document = parse(transmission.operation);
+  const context: Context = {
+    store,
+    clearance: transmission.clearance,
+    occurrences: [],
+    resolved: 0,
+    actions: undefined,
+  };
+  const validated = subscriptionArgs(
+    schema,
+    document,
+    transmission,
+    context,
+    event,
+  );
+  if (!("schema" in validated)) {
+    return { transmitted: false, result: { errors: validated }, facts: [] };
+  }
+  const outcome = executeSubscriptionEvent(validated);
+  if (outcome instanceof Promise) {
+    throw new Error("The archive resolves synchronously.");
+  }
+  const weight = requestWeight(
+    schema,
+    store,
+    document,
+    transmission.variables ?? {},
+    transmission.operationName,
+  );
+  return finish(transmission, context, outcome, weight);
 }

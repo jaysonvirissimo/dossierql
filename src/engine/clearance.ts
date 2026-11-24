@@ -1,5 +1,13 @@
 import type { Concept, MissionSummary } from "../content/types.ts";
 
+/**
+ * The highest clearance (SDD 3.8). Passing its assessment completes the
+ * course and promotes no further. It matches MAX_CLEARANCE in the schema,
+ * which this module does not import, to keep the schema out of the first
+ * screen.
+ */
+export const LAST_CLEARANCE = 13;
+
 export type CompletionMode = "independent" | "hinted" | "solution-revealed";
 
 /** What happened, in order. Rank is never stored, only derived (SDD 7.4). */
@@ -115,7 +123,10 @@ export function deriveStanding(
         }
       }
     }
-    clearance = Math.max(clearance, mission.clearance + 1);
+    clearance = Math.max(
+      clearance,
+      Math.min(mission.clearance + 1, LAST_CLEARANCE),
+    );
   }
   return {
     clearance,

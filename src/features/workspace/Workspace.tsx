@@ -11,6 +11,9 @@ import { COSTS } from "../../engine/clock.ts";
 import {
   act,
   deskStages,
+  nextWatchEvent,
+  openWatches,
+  operationNames,
   stageOf,
   startMission,
   type Action,
@@ -72,6 +75,12 @@ export default function Workspace({ mission }: { mission: Mission }) {
       : 0,
   );
   const [attempt, setAttempt] = useState(0);
+  // The editor's text as typed, before the save catches up, for the list of
+  // operations beside the Transmit button.
+  const [typed, setTyped] = useState(stageState.editor);
+  useEffect(() => {
+    setTyped(stageState.editor);
+  }, [state.stageId, attempt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The state the next action applies to. Kept in a ref so that two actions
   // in one tick, such as a flushed edit and a transmission, do not race.
@@ -83,6 +92,7 @@ export default function Workspace({ mission }: { mission: Mission }) {
   const dispatch = useCallback(
     (action: Action): Outcome => {
       const before = latest.current.stageId;
+      const sentBefore = latest.current.transmissions.length;
       const outcome = act(env, latest.current, action);
       if (
         outcome.state.stageId !== before &&
@@ -94,8 +104,19 @@ export default function Workspace({ mission }: { mission: Mission }) {
       commit(mission.id, outcome.state, outcome.events);
       if (action.type !== "edit") {
         setNotice(outcome.notice ?? null);
-        if (action.type === "transmit") {
-          setViewing(outcome.state.transmissions.length);
+        // A transmission, or an event a watch delivered, opens on screen.
+        if (
+          action.type === "transmit" ||
+          outcome.state.transmissions.length > sentBefore
+        ) {
+          // The player's own response opens first, and an event a watch
+          // delivered with it is a Later away. Where only events arrived,
+          // the first of them opens.
+          const added = outcome.state.transmissions.slice(sentBefore);
+          const own = added.find((t) => t.watch?.event === undefined);
+          setViewing(
+            own?.n ?? added[0]?.n ?? outcome.state.transmissions.length,
+          );
         }
       }
       return outcome;
@@ -267,6 +288,20 @@ export default function Workspace({ mission }: { mission: Mission }) {
     archiveWorld.countries.find((c) => c.code === stage.location)?.name ??
     stage.location;
   const showVariables = clearance >= 5 || stageState.variables.trim() !== "";
+  // From clearance 13 a request may hold several operations, and the player
+  // chooses which one to transmit (SDD 6.1).
+  const operations = clearance >= 13 ? operationNames(typed) : [];
+  const named = operations.filter((n): n is string => n !== null);
+  const choosing = operations.length > 1;
+  const chosen =
+    choosing &&
+    stageState.operationName &&
+    named.includes(stageState.operationName)
+      ? stageState.operationName
+      : "";
+  const watches = openWatches(state);
+  const next = nextWatchEvent(state);
+  const showWatches = clearance >= 13 || (state.watches?.length ?? 0) > 0;
 
   return (
     <WorkspaceContext.Provider value={value}>
@@ -333,7 +368,13 @@ export default function Workspace({ mission }: { mission: Mission }) {
           </div>
         )}
 
-        <div className="workspace__grid">
+        <div
+          className={
+            showWatches
+              ? "workspace__grid workspace__grid--watching"
+              : "workspace__grid"
+          }
+        >
           <section className="terminal" aria-labelledby="terminal-title">
             <header className="terminal__head">
               <h2 id="terminal-title">Intelligence terminal</h2>
@@ -356,7 +397,10 @@ export default function Workspace({ mission }: { mission: Mission }) {
                 schema={schemaFor(clearance)}
                 label="GraphQL query"
                 vim={game.preferences.vim}
-                onChange={(editor) => edit({ editor })}
+                onChange={(editor) => {
+                  setTyped(editor);
+                  edit({ editor });
+                }}
                 onTransmit={transmit}
               />
             </div>
@@ -383,16 +427,107 @@ export default function Workspace({ mission }: { mission: Mission }) {
                 disabled={state.clock === "ended"}
                 onClick={transmit}
               >
-                {state.clock === "none"
-                  ? "Transmit"
-                  : `Transmit (${timed ? hours(COSTS.transmission) : "free"})`}
+                {chosen ? `Transmit ${chosen}` : "Transmit"}
+                {state.clock !== "none" &&
+                  ` (${timed ? hours(COSTS.transmission) : "free"})`}
               </button>
+              {choosing && (
+                <label className="terminal__operation">
+                  Operation to transmit{" "}
+                  <select
+                    data-testid="operation"
+                    value={chosen}
+                    onChange={(event) => {
+                      flush();
+                      dispatch({
+                        type: "edit",
+                        operationName: event.target.value,
+                      });
+                    }}
+                  >
+                    <option value="">Choose one</option>
+                    {named.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <span className="terminal__key">
                 or press Ctrl+Enter (⌘+Enter) in the editor.
                 {state.clock !== "none" &&
                   " A request the clerk cannot read is returned at no cost."}
               </span>
             </footer>
+            {showWatches && (
+              <section
+                className="watches"
+                aria-labelledby="watches-title"
+                data-testid="watches"
+              >
+                <h3 id="watches-title">Standing watches</h3>
+                {watches.length === 0 ? (
+                  <p className="watches__none">
+                    No standing watch is open. Transmitting a subscription opens
+                    one.
+                  </p>
+                ) : (
+                  <ul className="watches__list">
+                    {watches.map((watch) => (
+                      <li key={watch.n}>
+                        <span>
+                          Watch {watch.n}: <code>{watch.label}</code>, with{" "}
+                          {watch.delivered.length === 1
+                            ? "1 event"
+                            : `${String(watch.delivered.length)} events`}{" "}
+                          delivered.
+                        </span>{" "}
+                        <button
+                          type="button"
+                          className="button button--small button--quiet"
+                          disabled={state.clock === "ended"}
+                          onClick={() =>
+                            dispatch({ type: "close-watch", watch: watch.n })
+                          }
+                        >
+                          Close watch {watch.n}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {next ? (
+                  <button
+                    type="button"
+                    className="button"
+                    data-testid="keep-watch"
+                    disabled={state.clock === "ended"}
+                    onClick={() => {
+                      flush();
+                      dispatch({ type: "keep-watch" });
+                    }}
+                  >
+                    Keep watch until the next event (
+                    {next.hours === 0 ? "now" : hours(next.hours)})
+                  </button>
+                ) : (
+                  watches.length > 0 && (
+                    <p className="watches__none">
+                      No standing watch that you keep open has another event
+                      coming.
+                    </p>
+                  )
+                )}
+                <p className="watches__note">
+                  The clock moves only when you spend hours. Keep watch lets the
+                  hours pass until the next event that an open watch reports. An
+                  open watch costs nothing to keep, and it delivers its events
+                  whenever hours pass, until you close it. A closed watch does
+                  not deliver the events that come while it is closed.
+                </p>
+              </section>
+            )}
           </section>
 
           <Results />

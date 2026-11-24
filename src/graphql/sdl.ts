@@ -9,7 +9,7 @@
 export const SDL = /* GraphQL */ `
   directive @clearance(
     level: Int!
-  ) on OBJECT | INTERFACE | UNION | ENUM | SCALAR | INPUT_OBJECT | FIELD_DEFINITION
+  ) on OBJECT | INTERFACE | UNION | ENUM | SCALAR | INPUT_OBJECT | FIELD_DEFINITION | INPUT_FIELD_DEFINITION
   directive @inverse(of: String!) on FIELD_DEFINITION
   directive @undocumented on OBJECT | UNION | ENUM | SCALAR | INPUT_OBJECT | FIELD_DEFINITION
 
@@ -62,6 +62,12 @@ export const SDL = /* GraphQL */ `
     premises(reference: ID!): Premises @clearance(level: 12)
     "One search warrant that you applied for, by the serial on its receipt."
     search(serial: ID!): SearchReceipt @clearance(level: 12)
+    "Every entry in the harbour office's log for one port, by the name of its city. The log holds the events that the harbour office wrote down before a standing watch was posted on the port. Each look at the log is a transmission of its own."
+    harbourLog(port: String!): [HarbourEvent!]!
+      @clearance(level: 13)
+      @deprecated(
+        reason: "The harbour office no longer writes up its log. Keep a standing watch with Subscription.harbourWatch, which delivers each new event as it comes."
+      )
   }
 
   "The paperwork you can file with the archive. Each field files one form and returns the receipt for it. When a request files several forms, the archive files them one at a time, in the order the request lists them."
@@ -76,6 +82,12 @@ export const SDL = /* GraphQL */ `
     "Applies to the magistrate for a warrant. The archive checks a warrant of arrest against every response you have received, as it checks a form. A warrant that is submitted and not approved costs hours, and its receipt says why it was not approved."
     requestWarrant(input: WarrantApplication!): WarrantReceipt
       @clearance(level: 12)
+  }
+
+  "The standing watches that you can keep. A subscription asks for exactly one of these fields. The archive delivers a response for each event that the watch reports, as the hour of the event comes, for as long as you keep the watch open."
+  type Subscription @clearance(level: 13) {
+    "Keeps a standing watch on one port, by the name of its city. The harbour office reports each event on the port as its hour comes. A watch reports only the events that come after you open it."
+    harbourWatch(port: String!): HarbourEvent
   }
 
   "A sovereign state."
@@ -501,6 +513,8 @@ export const SDL = /* GraphQL */ `
     initials: String!
     "The office where the officer works."
     office: Office
+    "The specimen of the officer's handwriting that the registry holds. Empty when the registry holds none."
+    hand: Hand @clearance(level: 13)
   }
 
   "An intercept log: what one of the agency's listening posts heard and saw, entry by entry."
@@ -537,6 +551,10 @@ export const SDL = /* GraphQL */ `
 
   "A vessel, as the listening post heard it on the harbour radio."
   type Vessel @clearance(level: 8) {
+    "The city of the port the vessel is bound for."
+    boundFor: City @clearance(level: 13)
+    "The officers of the agency on the vessel's passenger list, as the harbour office copied it."
+    passengers: [Officer!]! @clearance(level: 13)
     "The vessel's name, as painted on its bow."
     name: String!
     "The country whose flag the vessel flies."
@@ -705,6 +723,10 @@ export const SDL = /* GraphQL */ `
     countersignedBy: Officer
     "The accounts office's remark on the voucher."
     remark: String!
+    "The officer who wrote the initials on the voucher."
+    initialledBy: Officer @clearance(level: 13)
+    "The handwriting of the initials on the voucher."
+    hand: Hand @clearance(level: 13)
   }
 
   "What the accounts office did with an expense claim."
@@ -763,12 +785,14 @@ export const SDL = /* GraphQL */ `
     urgency: Urgency = ROUTINE
   }
 
-  "Who a warrant is for. Fill exactly one of the two boxes: a warrant is for an operative or for a company, never for both."
+  "Who a warrant is for. Fill exactly one of its boxes: a warrant is for one operative, one company, or, from clearance 13, one officer of the agency, and never for two of them."
   input WarrantSubject @oneOf @clearance(level: 12) {
     "The codename of the operative to be arrested."
     operative: ID
     "The registered name of the company whose offices are to be searched."
     company: ID
+    "The name of the officer of the agency to be arrested."
+    officer: ID @clearance(level: 13)
   }
 
   "The application form for a warrant."
@@ -839,13 +863,60 @@ export const SDL = /* GraphQL */ `
     approved: Boolean!
     "The operative the warrant was for. Empty when it was for a company."
     operative: Operative
-    "The company the warrant was for. Empty when it was for an operative."
+    "The company the warrant was for. Empty when it was for an operative or an officer."
     company: Company
+    "The officer the warrant was for. Empty when it was for an operative or a company."
+    officer: Officer @clearance(level: 13)
     "Why the warrant was not approved. Empty when it was."
     reasons: [String!]!
     "The hours that the application took from the mission clock."
     hours: Int!
   }
+  "One event that the harbour office recorded on a port."
+  type HarbourEvent @clearance(level: 13) {
+    "The reference of the event."
+    reference: ID!
+    "The city of the port."
+    port: City!
+    "The hour that the harbour office wrote beside the event, as it wrote it."
+    hour: String!
+    "What the harbour office saw."
+    note: String!
+    "The vessel the event concerns. Empty when it concerns none."
+    vessel: Vessel
+    "The letter handed in, handed aboard, or brought ashore. Empty when there was none."
+    letter: Letter
+    "The officer of the agency the event concerns, where the harbour office knew the officer. Empty otherwise."
+    officer: Officer
+    "The handwriting in which the officer signed the harbour office's book. Empty when nobody signed."
+    hand: Hand
+  }
+
+  "A letter that passed through a port."
+  type Letter @clearance(level: 13) {
+    "The reference the harbour office gave the letter."
+    reference: ID!
+    "The paper the letter is written on."
+    paper: String!
+    "The signature at the foot of the letter, as written."
+    signature: String!
+    "The name on the outside of the letter."
+    addressedTo: String!
+    "The handwriting of the letter."
+    hand: Hand
+    "The officer of the agency who handed the letter in, where the harbour office knew the officer. Empty otherwise."
+    sender: Officer
+    "The vessel that carried the letter."
+    carriedBy: Vessel
+  }
+
+  "A specimen of handwriting, as the harbour office's clerk described it."
+  type Hand @clearance(level: 13) {
+    "The reference of the specimen."
+    reference: ID!
+    "How the handwriting looks."
+    description: String!
+  }
 `;
 
-export const MAX_CLEARANCE = 12;
+export const MAX_CLEARANCE = 13;

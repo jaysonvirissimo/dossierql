@@ -79,6 +79,10 @@ start.
 | `novice-walkthrough.md`          | _The Handler's Road_               | `chairs-account`       | 12        |
 | `clean-room-solve.md`            | _The Courier's Guidebook_          | `chairs-account`       | 12        |
 | `novice-walkthrough.md`          | _The Courier's Guidebook_          | `chairs-account`       | 12        |
+| `clean-room-solve.md`            | _The River Quay_                   | `couriers-guidebook`   | 13        |
+| `novice-walkthrough.md`          | _The River Quay_                   | `couriers-guidebook`   | 13        |
+| `clean-room-solve.md`            | _The Last Sailing_                 | `couriers-guidebook`   | 13        |
+| `novice-walkthrough.md`          | _The Last Sailing_                 | `couriers-guidebook`   | 13        |
 | `simulated-sessions.md`, round 1 | the drills and the first two cases | none                   | 1         |
 | `simulated-sessions.md`, round 2 | the path given in the prompt       | in the prompt          | 2         |
 
@@ -145,6 +149,15 @@ start.
   taught. You have filed mutations with simple arguments, and you have never
   filled a form in braces or applied for a warrant." For _The Courier's
   Guidebook_, add: "You have also played The Handler's Road."
+- **_The River Quay_ and _The Last Sailing_.** They are the clearance 13
+  cases of the second campaign, and its last. Seed the completion of
+  `couriers-guidebook`, and for _The Last Sailing_ the completion of
+  `river-quay` as well. For the novice walkthrough of _The River Quay_, set
+  [PRIOR PLAY] to: "You have played every case of the first campaign and
+  every earlier case of the second, through The Courier's Guidebook, and
+  you remember what their debriefs taught. Every request you have sent came
+  back once, and you have never kept a subscription open." For _The Last
+  Sailing_, add: "You have also played The River Quay."
 - **The simulated rounds.** Run each round once for each persona, P1 to P4,
   in a fresh context each time. Start round 2 only after round 1's summary
   is written and its fixes are made. If round 1's fixes change the opening,

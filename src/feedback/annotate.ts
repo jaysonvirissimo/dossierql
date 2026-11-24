@@ -354,6 +354,46 @@ const RULES: Rule[] = [
       "The request would empty several filing cabinets. The clerk will answer if you ask about one record, or open fewer links from each record.",
   },
   {
+    test: /^(?:Anonymous Subscription|Subscription "\w+") must select only one top level field/,
+    note: () =>
+      "A subscription keeps one standing watch, so it asks for exactly one field at its top level. To watch two ports, the clerk suggests writing two subscriptions, each with a name of its own, and transmitting each of them.",
+  },
+  {
+    test: /^(?:Anonymous Subscription|Subscription "\w+") must not use `@skip` or `@include`/,
+    note: () =>
+      "The field at the top of a subscription is the watch itself, so it cannot be left out by a directive. A directive can still go on the fields inside the watch's braces.",
+  },
+  {
+    test: /^(?:Anonymous Subscription|Subscription "\w+") must not select an introspection top level field/,
+    note: () =>
+      "A subscription keeps a watch and does not describe the archive. Introspection goes in a query of its own.",
+  },
+  {
+    test: /^There can be only one operation named "(\w+)"/,
+    note: (m) =>
+      `Two operations in this request are called ${String(m[1])}. The clerk chooses an operation only by its name, so each operation in a request needs a name that no other operation in it has.`,
+  },
+  {
+    test: /^This anonymous operation must be the only defined operation/,
+    note: () =>
+      "This request holds several operations, and one of them has no name. The clerk chooses an operation by its name, so each operation in a request that holds several needs a name of its own, written after the word query, mutation, or subscription.",
+  },
+  {
+    test: /^Must provide operation name if query contains multiple operations/,
+    note: () =>
+      "This request holds several operations, and the clerk sends one at a time. The list beside the Transmit button chooses which operation to transmit.",
+  },
+  {
+    test: /^Unknown operation named "(\w*)"/,
+    note: (m) =>
+      `The operation chosen beside the Transmit button, ${String(m[1])}, is no longer in the editor. The clerk suggests choosing again from the list.`,
+  },
+  {
+    test: /^The archive keeps standing watches only during a case/,
+    note: () =>
+      "The training range answers queries and keeps no watches. A standing watch is kept during a case, where game hours pass.",
+  },
+  {
     test: /^A transmission carries one operation/,
     note: () =>
       "The clerk sends one request at a time. Everything you want can go inside the braces of a single request.",

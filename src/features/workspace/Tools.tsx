@@ -3,7 +3,8 @@ import { useGame } from "../../app/GameProvider.tsx";
 import {
   bindingTypes,
   leadBinding,
-  referenceOperations,
+  quarryRef,
+  referenceSteps,
 } from "../../content/types.ts";
 import { COSTS, HINT_LADDER_COST } from "../../engine/clock.ts";
 import { hintCost, revealCost } from "../../engine/mission.ts";
@@ -218,22 +219,31 @@ function HintsPanel() {
       {stageState.solutionRevealed ? (
         <>
           <p>
-            {referenceOperations(stage).length === 0
+            {referenceSteps(stage).length === 0
               ? "This stage needs no new query. The facts it asks for are in the responses you already have."
               : "The stage's reference solution:"}
           </p>
-          {referenceOperations(stage).map(({ operation, variables }, index) => (
-            <div key={index}>
-              <pre className="hint__code" data-testid="reference-solution">
-                {operation.trim()}
-              </pre>
-              {variables && (
-                <pre className="hint__code">
-                  {JSON.stringify(variables, null, 2)}
+          {referenceSteps(stage).map((step, index) =>
+            step.kind === "keep-watch" ? (
+              <p key={index} data-testid="reference-solution">
+                Keep watch until the next event ({hours(step.hours)}).
+              </p>
+            ) : (
+              <div key={index}>
+                {step.operationName !== undefined && (
+                  <p>Transmit the operation {step.operationName}:</p>
+                )}
+                <pre className="hint__code" data-testid="reference-solution">
+                  {step.operation.trim()}
                 </pre>
-              )}
-            </div>
-          ))}
+                {step.variables && (
+                  <pre className="hint__code">
+                    {JSON.stringify(step.variables, null, 2)}
+                  </pre>
+                )}
+              </div>
+            ),
+          )}
         </>
       ) : (
         <button
@@ -336,13 +346,23 @@ function EvidencePanel() {
 
 function DossierPanel() {
   const { env, state } = useWorkspace();
-  const quarry = env.mission.quarry
-    ? `Operative:${env.mission.quarry}`
-    : undefined;
+  const quarry = quarryRef(env.mission);
+  // The briefing gives the quarry's codename, or an officer's name, so the
+  // heading may.
+  const [quarryType, quarryId = ""] = quarry?.split(":") ?? [];
+  const quarryName =
+    quarryType === "Officer"
+      ? String(env.store.get("Officer", quarryId)?.name ?? quarryId)
+      : env.mission.quarry;
   const operatives = new Map<string, typeof entries>();
   const entries = Object.values(state.ledger);
   for (const entry of entries) {
-    if (!entry.fact.entity.startsWith("Operative:")) continue;
+    if (
+      !entry.fact.entity.startsWith("Operative:") &&
+      entry.fact.entity !== quarry
+    ) {
+      continue;
+    }
     const list = operatives.get(entry.fact.entity) ?? [];
     list.push(entry);
     operatives.set(entry.fact.entity, list);
@@ -355,7 +375,7 @@ function DossierPanel() {
       {quarry && !operatives.has(quarry) && (
         <article className="dossier dossier--quarry" data-testid="quarry">
           <p className="label">The quarry</p>
-          <h3>{env.mission.quarry}</h3>
+          <h3>{quarryName}</h3>
           <p className="draft__none">
             Nothing about the quarry has appeared in your results yet.
           </p>
@@ -377,11 +397,8 @@ function DossierPanel() {
             {...(entity === quarry ? { "data-testid": "quarry" } : {})}
           >
             {entity === quarry && <p className="label">The quarry</p>}
-            {/* The briefing gives the quarry's codename, so the heading may. */}
             <h3>
-              {entity === quarry
-                ? env.mission.quarry
-                : labelOf(entity, state.ledger)}
+              {entity === quarry ? quarryName : labelOf(entity, state.ledger)}
             </h3>
             <dl>
               {facts.map(({ fact }) => (

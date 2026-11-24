@@ -1,5 +1,6 @@
 import {
   referenceOperations,
+  referenceWatching,
   type Mission,
   type World,
 } from "../content/types.ts";
@@ -76,6 +77,8 @@ export function travelHours(world: World, from: string, to: string): number {
 
 export interface Budget {
   travel: number;
+  /** Hours spent keeping watch, counted once as travel is (SDD 3.3). */
+  watching: number;
   transmissions: number;
   factor: number;
   hintLadder: number;
@@ -84,13 +87,16 @@ export interface Budget {
 
 /**
  * A mission's budget follows its reference solution through every stage:
- * travel once, transmissions times the factor, and one hint ladder (SDD 3.3).
+ * travel and keeping watch once, transmissions times the factor, and one
+ * hint ladder (SDD 3.3).
  */
 export function computeBudget(mission: Mission, world: World): Budget {
   let travel = 0;
+  let watching = 0;
   let transmissions = 0;
   for (const stage of Object.values(mission.stages)) {
     transmissions += referenceOperations(stage).length * COSTS.transmission;
+    watching += referenceWatching(stage);
     const next = stage.next ? mission.stages[stage.next] : undefined;
     if (next && next.location !== stage.location) {
       travel += travelHours(world, stage.location, next.location);
@@ -99,9 +105,12 @@ export function computeBudget(mission: Mission, world: World): Budget {
   const factor = factorFor(mission);
   return {
     travel,
+    watching,
     transmissions,
     factor,
     hintLadder: HINT_LADDER_COST,
-    total: Math.ceil(travel + transmissions * factor + HINT_LADDER_COST),
+    total: Math.ceil(
+      travel + watching + transmissions * factor + HINT_LADDER_COST,
+    ),
   };
 }

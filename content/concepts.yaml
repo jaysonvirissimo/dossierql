@@ -276,3 +276,24 @@
   payoff: >
     One argument carries a whole form, and the documentation panel says
     which boxes you must fill and which ones have a default value.
+- id: subscriptions
+  title: Subscriptions
+  clearance: 13
+  summary: >
+    A subscription is a request that stays open. It starts with the word
+    `subscription`, asks for exactly one field at its top level, and the
+    archive sends a response for each event, as the hour of the event
+    comes. You ask for the fields of an event in braces, as you ask for
+    the fields of a record. One request can hold several operations, each
+    with a name of its own, and you choose which one to transmit.
+  example: |
+    subscription Quay {
+      harbourWatch(port: "Lisbon") {
+        hour
+        note
+        vessel { name }
+      }
+    }
+  payoff: >
+    One transmission keeps the watch for as long as it stays open, where
+    asking an old log over and over costs an hour each time.

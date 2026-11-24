@@ -1,0 +1,278 @@
+# Records for clearance 13: the harbour office's events, which a standing
+# watch delivers as their hour comes (SDD 5.3). `due` is the hours after a
+# watch on the port is first posted at which an event comes. An event with a
+# due of 0 or less is in the harbour office's old log, from before the watch,
+# and only Query.harbourLog returns it. An event due later is reachable only
+# through a watch.
+#
+# The River Quay watches Lisbon, then Tangier and Casablanca, and reads the
+# old log of Lisbon. The Last Sailing watches Porto and then Praia, and reads
+# the old log of Porto.
+Hand:
+  HND-1301:
+    reference: HND-1301
+    description: Slopes hard to the left, and every downstroke ends in a long hook.
+  HND-1302:
+    reference: HND-1302
+    description: Upright and round, with every letter standing square on the line.
+  HND-1303:
+    reference: HND-1303
+    description: Small and cramped, leaning forward as if in a hurry.
+  HND-1304:
+    reference: HND-1304
+    description: Large and careful, with the letters joined by long loops.
+Officer:
+  teresa-valente:
+    hand: HND-1302
+  rui-fontes:
+    hand: HND-1303
+  gaspar-leal:
+    hand: HND-1304
+# By the Committee's practice the secretary initials the chair's accounts.
+Voucher:
+  VCH-0501:
+    initialledBy: teresa-valente
+    hand: HND-1302
+  VCH-0511:
+    initialledBy: teresa-valente
+    hand: HND-1302
+  VCH-0513:
+    initialledBy: teresa-valente
+    hand: HND-1302
+Vessel:
+  sao-bras:
+    name: São Brás
+    flag: PT
+    lastPort: lisbon
+    boundFor: casablanca
+    owner: LIS-TEJO
+    passengers: []
+    report: Cleared the river quay for Tangier and Casablanca with general cargo.
+  cacilhas:
+    name: Cacilhas
+    flag: PT
+    lastPort: lisbon
+    boundFor: porto
+    owner: LIS-TEJO
+    passengers: []
+    report: Cleared the river quay for Porto with the coastal mail.
+  cabo-espartel:
+    name: Cabo Espartel
+    flag: MA
+    lastPort: tangier
+    boundFor: lisbon
+    passengers: []
+    report: Cleared Tangier for Lisbon with oranges and one sealed letter in the purser's safe.
+  anfa:
+    name: Anfa
+    flag: MA
+    lastPort: casablanca
+    boundFor: lisbon
+    passengers: []
+    report: Cleared Casablanca for Lisbon with phosphate and the hotel mail.
+  atlantida:
+    name: Atlântida
+    flag: PT
+    lastPort: porto
+    boundFor: praia
+    owner: LIS-TEJO
+    passengers: [afonso-mascarenhas, gaspar-leal]
+    report: Cleared Porto for Praia and Rio de Janeiro with passengers.
+  rio-cunene:
+    name: Rio Cunene
+    flag: AO
+    lastPort: porto
+    boundFor: luanda
+    owner: LIS-TEJO
+    charteredBy: LUA-KWANZA
+    passengers: [vasco-teixeira]
+    report: Cleared Porto for Luanda with passengers and the Committee's papers.
+Letter:
+  # In the old log of Lisbon, from before the watch.
+  LTR-1300:
+    reference: LTR-1300
+    paper: A plain sheet, with no heading
+    signature: M
+    addressedTo: The gentleman in cabin 2
+    hand: HND-1301
+    carriedBy: santa-luzia
+  LTR-1301:
+    reference: LTR-1301
+    paper: The paper of the chair of the Standing Committee
+    signature: Afonso Mascarenhas
+    addressedTo: The harbourmaster
+    hand: HND-1301
+    sender: afonso-mascarenhas
+  # Delivered by the watch on Lisbon.
+  LTR-1311:
+    reference: LTR-1311
+    paper: The paper of the Tejo Coastal Line
+    signature: J. Ramos
+    addressedTo: The Porto office of the Tejo Coastal Line
+    carriedBy: cacilhas
+  LTR-1312:
+    reference: LTR-1312
+    paper: The paper of the chair of the Standing Committee
+    signature: M
+    addressedTo: The gentleman in cabin 4
+    hand: HND-1301
+    carriedBy: sao-bras
+  # Delivered by the watches on Tangier and Casablanca.
+  LTR-1321:
+    reference: LTR-1321
+    paper: Plain paper, folded small
+    signature: P.C.
+    addressedTo: M
+    carriedBy: cabo-espartel
+  LTR-1322:
+    reference: LTR-1322
+    paper: The paper of the Hotel Anfa
+    signature: C. Ruiz
+    addressedTo: M. Abreu
+    carriedBy: anfa
+  # Delivered by the watch on Praia.
+  LTR-1351:
+    reference: LTR-1351
+    paper: A sheet torn from a passenger's notebook
+    signature: M
+    addressedTo: The gentleman who meets the Atlântida at Rio de Janeiro
+    hand: HND-1301
+    sender: afonso-mascarenhas
+HarbourEvent:
+  # The old log of Lisbon.
+  HEV-1301:
+    reference: HEV-1301
+    port: lisbon
+    due: 0
+    hour: A quarter to midnight
+    note: The Standing Committee's launch came alongside the river quay. The gentleman aboard signed the harbour office's book for the launch and went up into the city on foot.
+    officer: afonso-mascarenhas
+    hand: HND-1301
+  HEV-1302:
+    reference: HEV-1302
+    port: lisbon
+    due: 0
+    hour: Ten in the morning
+    note: A parcel for the Standing Committee came ashore from the Madeira boat. The Committee's secretary signed the harbour office's book for it.
+    officer: teresa-valente
+    hand: HND-1302
+  HEV-1303:
+    reference: HEV-1303
+    port: lisbon
+    due: 0
+    hour: Noon
+    note: A messenger of the Standing Committee signed the harbour office's book for the Committee's post off the Porto boat.
+    officer: rui-fontes
+    hand: HND-1303
+  HEV-1304:
+    reference: HEV-1304
+    port: lisbon
+    due: 0
+    hour: Half past eleven at night
+    note: A gentleman handed a letter in at the harbour office's window, to be given to the harbourmaster in the morning, and walked back to a waiting launch.
+    letter: LTR-1301
+  HEV-1305:
+    reference: HEV-1305
+    port: lisbon
+    due: 0
+    hour: Two in the morning
+    note: A man in a dark coat handed a sealed letter to the purser of the Santa Luzia at the foot of her gangway, and the purser locked it in his safe.
+    vessel: santa-luzia
+    letter: LTR-1300
+  # The watch on Lisbon.
+  HEV-1311:
+    reference: HEV-1311
+    port: lisbon
+    due: 1
+    hour: Nine in the evening
+    note: A clerk of the Tejo Coastal Line handed a letter to the purser of the Cacilhas before she cast off for Porto.
+    vessel: cacilhas
+    letter: LTR-1311
+  HEV-1312:
+    reference: HEV-1312
+    port: lisbon
+    due: 3
+    hour: Midnight
+    note: A man in a dark coat came down to the river quay, handed a sealed letter to the purser of the São Brás, and walked away up the hill before she cast off for Tangier.
+    vessel: sao-bras
+    letter: LTR-1312
+  # The watch on Tangier.
+  HEV-1321:
+    reference: HEV-1321
+    port: tangier
+    due: 1
+    hour: Six in the morning
+    note: The São Brás berthed at Tangier. Her purser handed a sealed letter ashore to a man who was waiting on the mole and did not give his name.
+    vessel: sao-bras
+    letter: LTR-1312
+  HEV-1322:
+    reference: HEV-1322
+    port: tangier
+    due: 2
+    hour: Half past ten in the morning
+    note: The man from the mole came back and handed a letter to the purser of the Cabo Espartel before she sailed for Lisbon.
+    vessel: cabo-espartel
+    letter: LTR-1321
+  # The watch on Casablanca.
+  HEV-1331:
+    reference: HEV-1331
+    port: casablanca
+    due: 1
+    hour: Eleven in the morning
+    note: A porter of the Hotel Anfa handed the hotel's mail bag and one letter to the purser of the Anfa before she sailed for Lisbon.
+    vessel: anfa
+    letter: LTR-1322
+  HEV-1332:
+    reference: HEV-1332
+    port: casablanca
+    due: 3
+    hour: Three in the afternoon
+    note: The São Brás berthed at Casablanca from Tangier and unloaded general cargo. Nobody came ashore.
+    vessel: sao-bras
+  # The old log of Porto.
+  HEV-1341:
+    reference: HEV-1341
+    port: porto
+    due: 0
+    hour: Eight in the morning
+    note: A messenger of the Standing Committee booked a passage aboard the Atlântida in the name of the chair of the Standing Committee, and paid for it from the Committee's purse.
+    vessel: atlantida
+    officer: afonso-mascarenhas
+  # The watch on Porto.
+  HEV-1342:
+    reference: HEV-1342
+    port: porto
+    due: 1
+    hour: Five in the afternoon
+    note: A messenger of the Standing Committee went aboard the Rio Cunene with a dispatch box and did not come ashore again.
+    vessel: rio-cunene
+    officer: vasco-teixeira
+  HEV-1343:
+    reference: HEV-1343
+    port: porto
+    due: 2
+    hour: Six in the evening
+    note: A car of the Standing Committee came down to the quay. The gentleman in it went aboard the Atlântida and signed the purser's book in the harbour office's presence.
+    vessel: atlantida
+    officer: afonso-mascarenhas
+    hand: HND-1301
+  # The watch on Praia.
+  HEV-1351:
+    reference: HEV-1351
+    port: praia
+    due: 1
+    hour: Seven in the morning
+    note: The Atlântida berthed at Praia to take on water. A messenger of the Standing Committee came ashore and signed the harbour office's book for the ship's mail.
+    vessel: atlantida
+    officer: gaspar-leal
+    hand: HND-1304
+  HEV-1352:
+    reference: HEV-1352
+    port: praia
+    due: 2
+    hour: Nine in the morning
+    note: A gentleman from the Atlântida walked the length of the quay, handed a letter in at the harbour office's window for the vessel's onward mail, and signed the book for it.
+    vessel: atlantida
+    officer: afonso-mascarenhas
+    hand: HND-1301
+    letter: LTR-1351

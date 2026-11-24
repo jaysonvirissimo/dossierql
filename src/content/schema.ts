@@ -84,7 +84,20 @@ const stage = z.strictObject({
     )
     .optional(),
   resolved: text.optional(),
-  referenceSolution: z.union([text, z.array(text)]),
+  referenceSolution: z.union([
+    text,
+    z.array(
+      z.union([
+        text,
+        z.strictObject({
+          operation: text,
+          operationName: text.optional(),
+          variables: z.record(z.string(), z.unknown()).optional(),
+        }),
+        z.strictObject({ keepWatch: z.number().int().positive() }),
+      ]),
+    ),
+  ]),
   referenceVariables: z
     .union([
       z.record(z.string(), z.unknown()),

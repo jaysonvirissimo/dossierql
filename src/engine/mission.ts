@@ -5,7 +5,7 @@ import {
   type Stage,
   type World,
 } from "../content/types.ts";
-import { transmit } from "../graphql/execute.ts";
+import { deliver, transmit } from "../graphql/execute.ts";
 import { mergeFact, type Fact } from "../graphql/facts.ts";
 import type { RawRecord, Store } from "../graphql/store.ts";
 import type { CompletionMode, ProgressEvent } from "./clearance.ts";
@@ -74,6 +74,33 @@ export interface TransmissionRecord {
   cost: number;
   /** The request's weight, stated from clearance 6 (SDD 3.3). */
   weight?: number;
+  /** The operation transmitted, where the document held several (SDD 6.1). */
+  operationName?: string;
+  /**
+   * The standing watch this response belongs to: the response that opened
+   * it, or, with `event`, an event the watch delivered (SDD 6.1).
+   */
+  watch?: { n: number; event?: string };
+}
+
+/** A standing watch: a subscription kept open during a case (SDD 6.1). */
+export interface Watch {
+  /** The watch's number, from 1, in the order the watches were opened. */
+  n: number;
+  /** The transmission that opened it. */
+  opened: number;
+  stageId: string;
+  operation: string;
+  variables: string;
+  operationName?: string;
+  /** The subscription's field and arguments, as in `harbourWatch(port: "Lisbon")`. */
+  label: string;
+  stream: string;
+  events: { id: string; type: string; due: number }[];
+  /** The hour of the case at which it was opened. */
+  openedAt: number;
+  delivered: string[];
+  closed: boolean;
 }
 
 export interface Dispatch {
@@ -141,6 +168,8 @@ export interface StageState {
   solutionRevealed: boolean;
   activeLead: string | null;
   drafts: Record<string, Draft>;
+  /** The operation chosen to transmit, where the editor holds several. */
+  operationName?: string;
 }
 
 /**
@@ -174,11 +203,25 @@ export interface MissionState {
    * clearance 11.
    */
   filed?: RawRecord[];
+  /**
+   * The hours the case has run, which only go up (SDD 3.3). Absent from
+   * saves made before clearance 13, and then 0.
+   */
+  hour?: number;
+  /** The standing watches opened in this attempt. */
+  watches?: Watch[];
+  /** The hour at which each stream was first posted in this attempt. */
+  posted?: Record<string, number>;
 }
 
 export type Action =
   | { type: "begin" }
-  | { type: "edit"; editor?: string; variables?: string }
+  | {
+      type: "edit";
+      editor?: string;
+      variables?: string;
+      operationName?: string;
+    }
   | { type: "transmit" }
   | { type: "pin"; key: string }
   | { type: "unpin"; key: string }
@@ -191,7 +234,9 @@ export type Action =
   | { type: "proceed"; leadId: string }
   | { type: "hint" }
   | { type: "reveal" }
-  | { type: "let-deadline-pass" };
+  | { type: "let-deadline-pass" }
+  | { type: "keep-watch" }
+  | { type: "close-watch"; watch: number };
 
 export type Notice =
   | { kind: "shortfall"; action: string; needed: number; left: number }
@@ -389,7 +434,11 @@ function charge(
       events: [],
     };
   }
-  const outcome = resolve({ ...state, hoursLeft: state.hoursLeft - cost });
+  const outcome = resolve({
+    ...state,
+    hoursLeft: state.hoursLeft - cost,
+    hour: (state.hour ?? 0) + cost,
+  });
   if (
     outcome.state.hoursLeft === 0 &&
     outcome.state.status !== "complete" &&
@@ -484,11 +533,14 @@ function doTransmit(env: Env, state: MissionState): Outcome {
         };
       },
     });
+    const operationName = chosenOperation(stage);
     const sent = transmit(env.store.with(paid.filed ?? []), {
       operation: stage.editor,
       variables: variables.value,
       clearance: env.clearance,
       actions: desk.actions,
+      operationName,
+      watching: true,
     });
     const errors = resultErrors(sent.result.errors);
     if (!sent.transmitted) {
@@ -523,7 +575,30 @@ function doTransmit(env: Env, state: MissionState): Outcome {
       ...(typeof sent.result.extensions?.weight === "number"
         ? { weight: sent.result.extensions.weight }
         : {}),
+      ...(operationName !== undefined ? { operationName } : {}),
     };
+    const watches = after.watches ?? [];
+    const posted = { ...(after.posted ?? {}) };
+    let opened: Watch | undefined;
+    if (sent.watch) {
+      const hour = after.hour ?? 0;
+      posted[sent.watch.stream] ??= hour;
+      opened = {
+        n: watches.length + 1,
+        opened: n,
+        stageId: paid.stageId,
+        operation: stage.editor,
+        variables: stage.variables,
+        ...(operationName !== undefined ? { operationName } : {}),
+        label: sent.watch.label,
+        stream: sent.watch.stream,
+        events: sent.watch.events,
+        openedAt: hour,
+        delivered: [],
+        closed: false,
+      };
+      record.watch = { n: opened.n };
+    }
     const last = filed.travelled ? after.dispatches.at(-1) : undefined;
     return {
       state: {
@@ -531,6 +606,7 @@ function doTransmit(env: Env, state: MissionState): Outcome {
         ledger,
         rejected: null,
         transmissions: [...after.transmissions, record],
+        ...(opened ? { watches: [...watches, opened], posted } : {}),
       },
       ...(last
         ? { notice: { kind: "dispatch" as const, dispatch: last } }
@@ -700,8 +776,149 @@ export function proceed(
   });
 }
 
+/**
+ * The operation the stage transmits: the one chosen, where the editor holds
+ * several, and otherwise none, so that a stale choice never matters.
+ */
+function chosenOperation(stage: StageState): string | undefined {
+  return operationCount(stage.editor) > 1 ? stage.operationName : undefined;
+}
+
+/** How many operations a request holds; 0 when it does not parse. */
+export function operationCount(text: string): number {
+  return operationNames(text).length;
+}
+
+/** The names of a request's operations, in order, with null for one unnamed. */
+export function operationNames(text: string): (string | null)[] {
+  try {
+    return parse(text)
+      .definitions.filter((d) => d.kind === Kind.OPERATION_DEFINITION)
+      .map((d) => d.name?.value ?? null);
+  } catch {
+    return [];
+  }
+}
+
+/** The hour of the case at which an event of a watch comes due. */
+function dueAt(state: MissionState, watch: Watch, due: number): number {
+  return (state.posted?.[watch.stream] ?? watch.openedAt) + due;
+}
+
+/** The events a watch has yet to deliver, at the hours they come due. */
+function pending(
+  state: MissionState,
+  watch: Watch,
+): { id: string; type: string; at: number }[] {
+  if (watch.closed) return [];
+  return watch.events
+    .filter((e) => !watch.delivered.includes(e.id))
+    .map((e) => ({ id: e.id, type: e.type, at: dueAt(state, watch, e.due) }))
+    .filter((e) => e.at > watch.openedAt);
+}
+
+/**
+ * The hours until the next event that an open watch has coming, and the
+ * watch, or null when no open watch has another event (SDD 3.3).
+ */
+export function nextWatchEvent(
+  state: MissionState,
+): { hours: number; watch: number } | null {
+  const hour = state.hour ?? 0;
+  let next: { hours: number; watch: number } | null = null;
+  for (const watch of state.watches ?? []) {
+    for (const event of pending(state, watch)) {
+      const hours = Math.max(0, event.at - hour);
+      if (!next || hours < next.hours) next = { hours, watch: watch.n };
+    }
+  }
+  return next;
+}
+
+/** The watches that are open. */
+export function openWatches(state: MissionState): Watch[] {
+  return (state.watches ?? []).filter((w) => !w.closed);
+}
+
+/**
+ * Delivers every event whose hour has passed to the watch that is open for
+ * it, each as a response of its own that costs nothing (SDD 6.1).
+ */
+function deliverDue(env: Env, outcome: Outcome): Outcome {
+  let state = outcome.state;
+  if (state.clock === "ended" || state.status === "complete") return outcome;
+  const hour = state.hour ?? 0;
+  const due = (state.watches ?? [])
+    .flatMap((watch) =>
+      pending(state, watch)
+        .filter((e) => e.at <= hour)
+        .map((e) => ({ watch, ...e })),
+    )
+    .sort((a, b) => a.at - b.at || a.watch.n - b.watch.n);
+  if (due.length === 0) return outcome;
+  const store = env.store.with(state.filed ?? []);
+  for (const { watch, id, type } of due) {
+    const event = store.get(type, id);
+    const variables = parseVariables(watch.variables);
+    const sent = event
+      ? deliver(
+          store,
+          {
+            operation: watch.operation,
+            variables: variables.ok ? variables.value : undefined,
+            clearance: env.clearance,
+            operationName: watch.operationName,
+          },
+          event,
+        )
+      : undefined;
+    const watches = (state.watches ?? []).map((w) =>
+      w.n === watch.n ? { ...w, delivered: [...w.delivered, id] } : w,
+    );
+    if (!sent?.transmitted) {
+      state = { ...state, watches };
+      continue;
+    }
+    const n = state.transmissions.length + 1;
+    const ledger = { ...state.ledger };
+    for (const { fact, path } of sent.facts) {
+      const known = ledger[fact.key];
+      ledger[fact.key] = {
+        fact: mergeFact(known?.fact, fact),
+        sources: [...(known?.sources ?? []), { transmission: n, path }],
+      };
+    }
+    const record: TransmissionRecord = {
+      n,
+      stageId: state.stageId,
+      operation: watch.operation,
+      formatted: formatted(watch.operation),
+      variables: watch.variables,
+      data: sent.result.data ?? null,
+      errors: resultErrors(sent.result.errors),
+      facts: sent.facts.map(({ fact, path }) => ({ key: fact.key, path })),
+      cost: 0,
+      ...(watch.operationName !== undefined
+        ? { operationName: watch.operationName }
+        : {}),
+      watch: { n: watch.n, event: id },
+    };
+    state = {
+      ...state,
+      watches,
+      ledger,
+      transmissions: [...state.transmissions, record],
+    };
+  }
+  return { ...outcome, state };
+}
+
 /** Applies one player action. Every rule of the investigation lives here. */
 export function act(env: Env, state: MissionState, action: Action): Outcome {
+  return deliverDue(env, rule(env, state, action));
+}
+
+function rule(env: Env, state: MissionState, action: Action): Outcome {
   const none = (next: MissionState): Outcome => ({ state: next, events: [] });
   const stage = stageOf(env.mission, state.stageId);
 
@@ -711,6 +928,9 @@ export function act(env: Env, state: MissionState, action: Action): Outcome {
         ...s,
         editor: action.editor ?? s.editor,
         variables: action.variables ?? s.variables,
+        ...(action.operationName !== undefined
+          ? { operationName: action.operationName }
+          : {}),
       })),
     );
   }
@@ -885,6 +1105,27 @@ export function act(env: Env, state: MissionState, action: Action): Outcome {
         events: [],
       }));
     }
+    case "keep-watch": {
+      const next = nextWatchEvent(state);
+      if (!next) {
+        return refuse(
+          state,
+          "No standing watch that you keep open has another event coming.",
+        );
+      }
+      const cost = next.hours;
+      if (state.clock !== "active") {
+        return none({ ...state, hour: (state.hour ?? 0) + cost });
+      }
+      return charge(env, state, cost, "Keeping watch", (paid) => none(paid));
+    }
+    case "close-watch":
+      return none({
+        ...state,
+        watches: (state.watches ?? []).map((w) =>
+          w.n === action.watch ? { ...w, closed: true } : w,
+        ),
+      });
     case "let-deadline-pass":
       if (state.clock !== "active") return none(state);
       return {

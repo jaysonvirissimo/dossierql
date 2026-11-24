@@ -8,11 +8,12 @@ only if the facts your queries brought back prove it.
 Play it at <https://virissimo.info/dossierql/>.
 
 The design is in [SOFTWARE_DESIGN_DOCUMENT.md](SOFTWARE_DESIGN_DOCUMENT.md).
-This repository implements 1.0 and the first seven levels after it:
-clearance levels 1 to 12, with a teaching case and an assessment for each of
-nested selections, arguments, aliases, fragments, variables, introspection,
-interfaces, unions, pagination, directives, mutations, and input objects.
-The clearance 12 cases are pursuits that end in a warrant. A training range
+This repository implements 1.0 and the eight levels after it: clearance
+levels 1 to 13, with a teaching case and an assessment for each of nested
+selections, arguments, aliases, fragments, variables, introspection,
+interfaces, unions, pagination, directives, mutations, input objects, and
+subscriptions. The clearance 12 cases are pursuits that end in a warrant, and
+the clearance 13 cases keep standing watches that the game clock drives. A training range
 of short drills comes before the first case.
 
 The game runs entirely in the browser. There is no backend, no account, and

@@ -467,7 +467,13 @@ function Findings({
   };
 
   if (!isRecord(record.data)) {
-    return <p>The archive returned no data.</p>;
+    return (
+      <p>
+        {record.watch && record.watch.event === undefined
+          ? "The watch is open. No event has arrived on it yet."
+          : "The archive returned no data."}
+      </p>
+    );
   }
   const meta = introspectionRoots(record.operation);
   const roots = Object.entries(record.data);
@@ -635,6 +641,15 @@ export function Results() {
     ? (["findings", "columns", "raw"] as const)
     : (["findings", "raw"] as const);
   const rejected = state.rejected;
+  // Events that the watches delivered straight after this response, which
+  // a player reading this one could miss.
+  let arrived = 0;
+  if (record) {
+    for (const later of state.transmissions.slice(record.n)) {
+      if (later.watch?.event === undefined) break;
+      arrived++;
+    }
+  }
 
   return (
     <section
@@ -698,6 +713,26 @@ export function Results() {
 
       {record && (
         <>
+          {arrived > 0 && (
+            <p className="note" data-testid="events-after">
+              {arrived === 1
+                ? "A standing watch delivered 1 event after this response."
+                : `Standing watches delivered ${String(arrived)} events after this response.`}{" "}
+              Use Later to read {arrived === 1 ? "it" : "them"}.
+            </p>
+          )}
+          {record.watch && (
+            <p className="results__variables" data-testid="watch-label">
+              {record.watch.event === undefined
+                ? `This request opened standing watch ${String(record.watch.n)}. Each event that the watch reports arrives as a response of its own, as its hour comes. Keep watch, under the editor, lets the hours pass.`
+                : `Standing watch ${String(record.watch.n)} delivered this event, at no cost.`}
+            </p>
+          )}
+          {record.operationName !== undefined && !record.watch?.event && (
+            <p className="results__variables" data-testid="operation-sent">
+              You transmitted the operation <code>{record.operationName}</code>.
+            </p>
+          )}
           {sent !== null && (
             <p className="results__variables" data-testid="sent-with">
               You sent this request with the variables <code>{sent}</code>.

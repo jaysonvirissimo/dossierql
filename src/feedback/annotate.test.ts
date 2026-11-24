@@ -446,3 +446,68 @@ describe("annotate at clearance 12", () => {
     expect(note).not.toMatch(/block string/);
   });
 });
+
+describe("annotate at clearance 13", () => {
+  const at13 = (operation: string, operationName?: string): string[] =>
+    check(operation, schemaFor(13), operationName).map((error) =>
+      annotate({ message: error.message }, true, true),
+    );
+  const watch = (name: string, port: string) =>
+    `subscription ${name} { harbourWatch(port: "${port}") { note } }`;
+  const cases: [string, string[], RegExp][] = [
+    [
+      "a subscription with two top-level fields",
+      at13(
+        `subscription { a: harbourWatch(port: "Lisbon") { note } b: harbourWatch(port: "Tangier") { note } }`,
+      ),
+      /exactly one field at its top level/,
+    ],
+    [
+      "a directive at the top of a subscription",
+      at13(
+        `subscription { harbourWatch(port: "Lisbon") @include(if: true) { note } }`,
+      ),
+      /cannot be left out by a directive/,
+    ],
+    [
+      "two operations with the same name",
+      at13(`${watch("Quay", "Lisbon")} ${watch("Quay", "Tangier")}`, "Quay"),
+      /needs a name that no other operation/,
+    ],
+    [
+      "an operation without a name beside others",
+      at13(`{ cities { name } } ${watch("Quay", "Lisbon")}`, "Quay"),
+      /needs a name of its own/,
+    ],
+    [
+      "several operations and none chosen",
+      at13(`${watch("Quay", "Lisbon")} ${watch("Strait", "Tangier")}`),
+      /list beside the Transmit button/,
+    ],
+    [
+      "a chosen operation the editor no longer holds",
+      at13(`${watch("Quay", "Lisbon")} ${watch("Strait", "Tangier")}`, "Mole"),
+      /no longer in the editor/,
+    ],
+  ];
+  for (const [name, found, expected] of cases) {
+    it(`explains ${name}`, () => {
+      expect(found.length).toBeGreaterThan(0);
+      expect(found.some((n) => expected.test(n))).toBe(true);
+      for (const note of found) {
+        expect(note).not.toMatch(FALLBACK);
+        expect(note).not.toMatch(/[{}]/);
+        expect(styleIssues(note)).toEqual([]);
+      }
+    });
+  }
+
+  it("explains a watch opened outside a case", () => {
+    const note = annotate(
+      { message: "The archive keeps standing watches only during a case." },
+      true,
+    );
+    expect(note).toMatch(/during a case/);
+    expect(styleIssues(note)).toEqual([]);
+  });
+});

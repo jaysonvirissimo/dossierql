@@ -118,6 +118,20 @@ const ADDED: Record<number, string[]> = {
     "Query.premises",
     "Query.search",
   ],
+  13: [
+    "Hand",
+    "HarbourEvent",
+    "Letter",
+    "Subscription",
+    "Officer.hand",
+    "Query.harbourLog",
+    "Vessel.boundFor",
+    "Vessel.passengers",
+    "Voucher.hand",
+    "Voucher.initialledBy",
+    "WarrantReceipt.officer",
+    "WarrantSubject.officer",
+  ],
 };
 
 function surface(level: number): { types: string[]; fields: string[] } {
