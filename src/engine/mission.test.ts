@@ -809,3 +809,127 @@ describe("formatted", () => {
     );
   });
 });
+
+describe("paperwork filed as a mutation in The Messengers' Fares", () => {
+  const fares = envFor("messengers-fares");
+  const stage = fares.mission.stages["sud-express"] as Stage;
+  const [claims] = stage.referenceSolution as string[];
+  const order = `mutation { fileTravelOrder(following: "JRN-0405", to: "Spain") { approved reasons hours to { name } } }`;
+  const play = (state: MissionState, ...actions: Action[]) =>
+    actions.reduce((s, action) => act(fares, s, action).state, state);
+  const atStation = (): MissionState => {
+    const begun = play(startMission(fares), { type: "begin" });
+    const desk = begun.stages[begun.stageId]!;
+    return {
+      ...begun,
+      stageId: "sud-express",
+      stages: { "sud-express": { ...desk, editor: "", variables: "" } },
+    };
+  };
+  const received = (state: MissionState) =>
+    state.transmissions.at(-1)?.data as {
+      fileTravelOrder: { approved: boolean; reasons: string[]; hours: number };
+    };
+
+  it("files a claim and keeps its receipt in the archive", () => {
+    const state = play(
+      atStation(),
+      { type: "edit", editor: claims },
+      { type: "transmit" },
+    );
+    expect(state.filed?.map((r) => r.id)).toEqual(["CLM-0001", "CLM-0002"]);
+    expect(state.ledger["Voucher:VCH-0405.to"]?.fact.value).toEqual({
+      kind: "ref",
+      ref: "City:madrid",
+    });
+    const again = play(
+      state,
+      {
+        type: "edit",
+        editor: `{ claim(serial: "CLM-0001") { status journey { reference } } }`,
+      },
+      { type: "transmit" },
+    );
+    expect(again.transmissions.at(-1)?.data).toEqual({
+      claim: { status: "ALREADY_PAID", journey: { reference: "JRN-0405" } },
+    });
+  });
+
+  it("refuses a claim for anything but the fare", () => {
+    const state = play(
+      atStation(),
+      {
+        type: "edit",
+        editor: `mutation { fileExpenseClaim(journey: "JRN-0405", amount: 412) { status remark voucher { reference } } }`,
+      },
+      { type: "transmit" },
+    );
+    expect(state.transmissions.at(-1)?.data).toEqual({
+      fileExpenseClaim: {
+        status: "REFUSED",
+        remark: expect.stringContaining(
+          "The fare for JRN-0405 is 412.5",
+        ) as string,
+        voucher: null,
+      },
+    });
+  });
+
+  it("returns a travel order without evidence, and charges only the transmission", () => {
+    const start = play(
+      atStation(),
+      { type: "edit", editor: claims },
+      { type: "transmit" },
+    );
+    const state = play(
+      start,
+      { type: "edit", editor: order },
+      { type: "transmit" },
+    );
+    const receipt = received(state).fileTravelOrder;
+    expect(receipt.approved).toBe(false);
+    expect(receipt.reasons[0]).toMatch(/claim still needs evidence/);
+    expect(state.stageId).toBe("sud-express");
+    expect(start.hoursLeft - state.hoursLeft).toBe(COSTS.transmission);
+  });
+
+  it("approves a supported travel order, and charges the journey as the travel control does", () => {
+    let state = play(
+      atStation(),
+      { type: "edit", editor: claims },
+      { type: "transmit" },
+      { type: "open-lead", leadId: "JRN-0405" },
+      {
+        type: "cite",
+        leadId: "JRN-0405",
+        label: "Envelope",
+        factKeys: ["Voucher:VCH-0405.journey", "Voucher:VCH-0405.remark"],
+      },
+      {
+        type: "cite",
+        leadId: "JRN-0405",
+        label: "Destination",
+        factKeys: ["Voucher:VCH-0405.to", "City:madrid.country"],
+      },
+    );
+    const before = state.hoursLeft;
+    const control = act(
+      fares,
+      play(state, {
+        type: "name",
+        leadId: "JRN-0405",
+        binding: "country",
+        value: "ES",
+      }),
+      { type: "proceed", leadId: "JRN-0405" },
+    );
+    state = play(state, { type: "edit", editor: order }, { type: "transmit" });
+    const receipt = received(state).fileTravelOrder;
+    expect(receipt.approved).toBe(true);
+    expect(receipt.reasons).toEqual([]);
+    expect(state.stageId).toBe("madrid");
+    expect(receipt.hours).toBe(before - control.state.hoursLeft);
+    expect(before - state.hoursLeft).toBe(COSTS.transmission + receipt.hours);
+    expect(state.dispatches.at(-1)?.kind).toBe("travel");
+  });
+});

@@ -20,6 +20,13 @@ describe("request weight", () => {
     ).toBe(3);
   });
 
+  it("weighs the receipts of a mutation as it weighs records", () => {
+    const mutation = parse(
+      `mutation { a: fileExpenseClaim(journey: "JRN-0403", amount: 8) { status voucher { paidTo { name } } } b: fileExpenseClaim(journey: "JRN-0404", amount: 8) { status } }`,
+    );
+    expect(requestWeight(schemaFor(11), store, mutation)).toBe(4);
+  });
+
   it("counts a top-level list for every record of its type", () => {
     expect(weigh(`{ cabinet { label } }`)).toBe(store.all("Drawer").length);
   });

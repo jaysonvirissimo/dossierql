@@ -11,6 +11,7 @@ export const CONCEPTS = [
   "unions",
   "pagination",
   "directives",
+  "mutations",
 ] as const;
 export type Concept = (typeof CONCEPTS)[number];
 
@@ -85,6 +86,11 @@ export interface Stage {
   introduces?: Mechanic;
   /** The GraphQL step a player first meets in this stage (SDD 3.7). */
   step?: string;
+  /**
+   * `terminal`: the stage's travel order is filed through the terminal, as
+   * a mutation, and the findings panel shows no button for it (SDD 6).
+   */
+  paperwork?: "terminal";
   objective: string;
   briefing: string;
   clues: Clue[];

@@ -7,10 +7,11 @@ import {
 } from "../content/types.ts";
 import { transmit } from "../graphql/execute.ts";
 import { mergeFact, type Fact } from "../graphql/facts.ts";
-import type { Store } from "../graphql/store.ts";
+import type { RawRecord, Store } from "../graphql/store.ts";
 import type { CompletionMode, ProgressEvent } from "./clearance.ts";
 import { computeBudget, COSTS, travelHours } from "./clock.ts";
 import { emptyDraft, reviewDraft, type Draft } from "./draft.ts";
+import { paperwork } from "./paperwork.ts";
 
 export interface Env {
   mission: Mission;
@@ -119,6 +120,12 @@ export interface MissionState {
   solutionViewed: boolean;
   counter: number;
   outcome: { mode: CompletionMode; late: boolean } | null;
+  /**
+   * The receipts for the paperwork the player filed (SDD 4.2). They join the
+   * archive for the rest of the mission. Absent from saves made before
+   * clearance 11.
+   */
+  filed?: RawRecord[];
 }
 
 export type Action =
@@ -329,7 +336,11 @@ function charge(
     };
   }
   const outcome = resolve({ ...state, hoursLeft: state.hoursLeft - cost });
-  if (outcome.state.hoursLeft === 0 && outcome.state.status !== "complete") {
+  if (
+    outcome.state.hoursLeft === 0 &&
+    outcome.state.status !== "complete" &&
+    outcome.state.clock === "active"
+  ) {
     return { ...outcome, state: expire(env, outcome.state) };
   }
   return outcome;
@@ -378,23 +389,64 @@ function doTransmit(env: Env, state: MissionState): Outcome {
   if (!variables.ok) {
     return refuse(state, VARIABLES_REFUSED);
   }
-  const sent = transmit(env.store, {
-    operation: stage.editor,
-    variables: variables.value,
-    clearance: env.clearance,
-  });
-  const errors = resultErrors(sent.result.errors);
-  if (!sent.transmitted) {
-    // Returned by the clerk before transmission, at no cost (SDD 3.3).
-    return {
-      state: { ...state, rejected: { operation: stage.editor, errors } },
-      notice: { kind: "rejected" },
-      events: [],
-    };
-  }
+  // A request the clerk returns costs nothing, so the request is checked
+  // before the hour is charged. Paperwork is filed after it is charged, so
+  // that a journey a mutation files is charged after the transmission.
   return charge(env, state, COSTS.transmission, "This transmission", (paid) => {
-    const n = paid.transmissions.length + 1;
-    const ledger = { ...paid.ledger };
+    const desk = paperwork<MissionState>({
+      store: env.store,
+      state: paid,
+      stage: (s) => stageOf(env.mission, s.stageId),
+      filed: (s) => s.filed ?? [],
+      file: (s, record) => ({ ...s, filed: [...(s.filed ?? []), record] }),
+      choose: (s, leadId, binding, value) =>
+        withDraft(s, leadId, (d) => ({
+          ...d,
+          bindings: { ...d.bindings, [binding]: value },
+        })),
+      leads: (s) => Object.keys(current(s).drafts),
+      proceed: (s, leadId) => {
+        const before = s.dispatches.length;
+        const outcome = proceed(env, s, leadId);
+        const added = outcome.state.dispatches.slice(before);
+        const journey = added.find((d) => d.kind !== "deadline");
+        const notice = outcome.notice;
+        const reasons =
+          notice?.kind === "refused"
+            ? [notice.text]
+            : notice?.kind === "shortfall"
+              ? [
+                  `${notice.action} would take ${String(notice.needed)} hours, and ${String(notice.left)} are left.`,
+                ]
+              : [];
+        return {
+          state: outcome.state,
+          approved: journey !== undefined,
+          reasons,
+          hours: journey?.cost ?? 0,
+          events: outcome.events,
+        };
+      },
+    });
+    const sent = transmit(env.store.with(paid.filed ?? []), {
+      operation: stage.editor,
+      variables: variables.value,
+      clearance: env.clearance,
+      actions: desk.actions,
+    });
+    const errors = resultErrors(sent.result.errors);
+    if (!sent.transmitted) {
+      // Returned by the clerk before transmission, at no cost (SDD 3.3).
+      return {
+        state: { ...state, rejected: { operation: stage.editor, errors } },
+        notice: { kind: "rejected" },
+        events: [],
+      };
+    }
+    const filed = desk.result();
+    const after = filed.state;
+    const n = after.transmissions.length + 1;
+    const ledger = { ...after.ledger };
     for (const { fact, path } of sent.facts) {
       const known = ledger[fact.key];
       ledger[fact.key] = {
@@ -416,14 +468,18 @@ function doTransmit(env: Env, state: MissionState): Outcome {
         ? { weight: sent.result.extensions.weight }
         : {}),
     };
+    const last = filed.travelled ? after.dispatches.at(-1) : undefined;
     return {
       state: {
-        ...paid,
+        ...after,
         ledger,
         rejected: null,
-        transmissions: [...paid.transmissions, record],
+        transmissions: [...after.transmissions, record],
       },
-      events: [],
+      ...(last
+        ? { notice: { kind: "dispatch" as const, dispatch: last } }
+        : {}),
+      events: filed.events,
     };
   });
 }
@@ -440,7 +496,15 @@ function addDispatch(
   };
 }
 
-function doProceed(env: Env, state: MissionState, leadId: string): Outcome {
+/**
+ * Files a travel order or a deduction for a lead. The travel control and a
+ * mutation's travel order both call this (SDD 6).
+ */
+export function proceed(
+  env: Env,
+  state: MissionState,
+  leadId: string,
+): Outcome {
   const stage = stageOf(env.mission, state.stageId);
   const draft = draftOf(current(state), leadId);
   const review = reviewDraft(stage, draft, state.ledger);
@@ -657,7 +721,7 @@ export function act(env: Env, state: MissionState, action: Action): Outcome {
       });
     }
     case "proceed":
-      return doProceed(env, state, action.leadId);
+      return proceed(env, state, action.leadId);
     case "hint": {
       const step = current(state).hintStep;
       if (step >= COSTS.hints.length) return none(state);

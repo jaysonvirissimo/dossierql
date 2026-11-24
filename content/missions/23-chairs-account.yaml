@@ -1,0 +1,161 @@
+id: chairs-account
+title: The Chair's Account
+campaign: fourth-desk
+order: 12
+clearance: 11
+kind: assessment
+teaches: null
+practises: [nested-selections, arguments, aliases, mutations]
+requires: [nested-selections, arguments, aliases, mutations]
+summary: >
+  The Standing Committee keeps an account for its chair, and it paid for
+  the car that met the envelope in Madrid. Madrid Station's drivers took
+  somebody from the Hotel Inglés the next day, and the accounts office
+  knows who.
+motif: seal
+clock:
+  countdown: The night train for Lisbon leaves Madrid in {remaining}
+  expired: The night train for Lisbon has left Madrid
+  onExpiry: end
+startingStage: hotel
+
+debrief:
+  onTime: |
+    Afonso Mascarenhas, chair of the Standing Committee, took the sealed
+    envelope from the Hotel Inglés in a car of Madrid Station, and
+    countersigned the voucher for its fare. The fare was paid from the
+    chair's own account, on the chair's own authority.
+
+    The chair holds the post by right of office, and the chair's name is
+    on no office's list of officers. That is why no paper the inquiry
+    held gave it. Every voucher on the chair's account carries the
+    initials A.M. The notes that sent the first inquiry to the receipt
+    were signed with the single letter M. One letter is not an
+    identification, and nothing the inquiry holds shows that the chair
+    wrote those notes.
+  stampOnTime: CHAIR IDENTIFIED
+  comparison: >
+    The reference solution reads the drivers' book MDB-0113 with one
+    query. Then one mutation files the claims for both cars that left the
+    Hotel Inglés, under the aliases `quintas` and `salgado`, with the
+    fares written as decimal numbers, 22.5 and 9.5, so the two receipts
+    cost one transmission.
+  geography: >
+    The border between Portugal and Spain runs for about 1,200
+    kilometres, from the mouth of the Minho in the north to the mouth of
+    the Guadiana in the south. It is one of the oldest borders in Europe.
+
+stages:
+  hotel:
+    location: ES
+    objective: Identify the officer who took the sealed envelope from the Hotel Inglés.
+
+    briefing: |
+      You are in Madrid. Madrid Station's drivers' book for the day after
+      the Sud Express came in is MDB-0113. Two of the station's cars left
+      the Hotel Inglés that day, and their lines in the book say "As
+      directed". The accounts office paid both fares. Its vouchers say
+      which account paid each fare, who authorised the payment, and who
+      countersigned.
+
+      Identify the officer who took the sealed envelope from the Hotel
+      Inglés.
+
+    clues:
+      - text: >
+          The officer countersigned the voucher for the car that took the
+          sealed envelope from the Hotel Inglés.
+        constraint:
+          $voucher.remark: Car from the Hotel Inglés, with a sealed envelope. Paid from the chair's account on the chair's own authority.
+          $voucher.countersignedBy: $officer
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        Two cars left the Hotel Inglés. Only one of them carried any
+        papers.
+      concept: >
+        File a claim for each car's journey in one mutation, with an
+        alias on each fileExpenseClaim. Write each fare exactly as the
+        book gives it, as a number without quotation marks.
+      schema: >
+        Look at Query.journeyBook, Mutation.fileExpenseClaim,
+        and Voucher.countersignedBy.
+      skeleton: |
+        quintas: fileExpenseClaim(journey: "JRN-0511", amount: 22.5) { status voucher { remark countersignedBy { name post } } }
+
+    solution:
+      type: deduction
+      officer: afonso-mascarenhas
+    labels:
+      officer: Officer
+
+    claims:
+      - id: took
+        prompt: This officer took the sealed envelope from the Hotel Inglés.
+        evidenceSets:
+          - facts:
+              - entity: Voucher:$voucher
+                field: remark
+                equals: Car from the Hotel Inglés, with a sealed envelope. Paid from the chair's account on the chair's own authority.
+              - entity: Voucher:$voucher
+                field: countersignedBy
+                equals: Officer:$officer
+          - facts:
+              - entity: Voucher:VCH-0511
+                field: journey
+                equals: Journey:JRN-0511
+              - entity: Voucher:VCH-0511
+                field: countersignedBy
+                equals: Officer:$officer
+    leadOutcomes:
+      ines-carvalho:
+        refutation:
+          claim: took
+          facts:
+            - entity: Voucher:VCH-0512
+              field: remark
+              equals: Car for a messenger of the Standing Committee, from the Hotel Inglés to the station, without any papers.
+            - entity: Voucher:VCH-0512
+              field: authorisedBy
+              equals: Officer:$officer
+        ruledOut: |
+          Inês Carvalho, head of Madrid Station, authorised the fare for
+          the other car from the Hotel Inglés. That car took a messenger
+          of the Committee to the station, without any papers.
+
+    resolved: |
+      Deduction accepted. Afonso Mascarenhas, chair of the Standing
+      Committee, took the sealed envelope from the Hotel Inglés, and paid
+      for the car from the chair's own account.
+
+    referenceSolution:
+      - |
+        query {
+          journeyBook(reference: "MDB-0113") {
+            journeys { reference messenger { name } from to fare chargedTo { name } }
+          }
+        }
+      - |
+        mutation {
+          quintas: fileExpenseClaim(journey: "JRN-0511", amount: 22.5) {
+            status
+            voucher {
+              journey { reference }
+              remark
+              countersignedBy { name post }
+              authorisedBy { name }
+            }
+          }
+          salgado: fileExpenseClaim(journey: "JRN-0512", amount: 9.5) {
+            status
+            voucher {
+              journey { reference }
+              remark
+              countersignedBy { name post }
+              authorisedBy { name }
+            }
+          }
+        }

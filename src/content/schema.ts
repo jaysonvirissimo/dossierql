@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_CLEARANCE } from "../graphql/sdl.ts";
 import { CONCEPTS, MECHANICS } from "./types.ts";
 
 /** Strict shapes for authored content. Unknown keys are errors. */
@@ -33,6 +34,7 @@ const stage = z.strictObject({
   location: z.string().regex(/^[A-Z]{2}$/),
   introduces: z.enum(MECHANICS).optional(),
   step: z.string().optional(),
+  paperwork: z.literal("terminal").optional(),
   objective: text,
   briefing: text,
   clues: z
@@ -94,7 +96,7 @@ export const missionSchema = z
     title: text,
     campaign: text,
     order: z.number().int().positive(),
-    clearance: z.number().int().min(1).max(10),
+    clearance: z.number().int().min(1).max(MAX_CLEARANCE),
     kind: z.enum(["teaching", "assessment", "coda"]),
     teaches: concept.nullable(),
     practises: z.array(concept),

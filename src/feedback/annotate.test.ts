@@ -1,3 +1,4 @@
+import { GraphQLError } from "graphql";
 import { describe, expect, it } from "vitest";
 import { loadContent } from "../../scripts/load-content.ts";
 import { buildCatalog } from "../content/catalog.ts";
@@ -303,4 +304,65 @@ describe("annotate at clearance 10", () => {
       wrong.some((n) => /only argument that "@include" takes/.test(n)),
     ).toBe(true);
   });
+});
+
+describe("annotate at clearance 11", () => {
+  const { store } = buildCatalog(loadContent().raw);
+  const actions = {
+    fileExpenseClaim: () => {
+      throw new GraphQLError(
+        'No journey book holds a journey "JRN-9999". A journey is given by the reference written beside it.',
+      );
+    },
+    fileTravelOrder: () => {
+      throw new Error("not used");
+    },
+  };
+  const sent = (operation: string, withActions = true) =>
+    transmit(store, {
+      operation,
+      clearance: 11,
+      ...(withActions ? { actions } : {}),
+    }).result.errors?.map((error) =>
+      annotate({ message: error.message }, true),
+    ) ?? [];
+
+  const cases: [string, string[], RegExp][] = [
+    [
+      "a mutation field asked for in a query",
+      sent(`{ fileExpenseClaim(journey: "JRN-0402", amount: 24) { status } }`),
+      /starts with the word mutation instead of query/,
+    ],
+    [
+      "a number in quotation marks",
+      sent(
+        `mutation { fileExpenseClaim(journey: "JRN-0405", amount: "412.5") { status } }`,
+      ),
+      /removing the quotation marks/,
+    ],
+    [
+      "a journey the books do not hold",
+      sent(
+        `mutation { fileExpenseClaim(journey: "JRN-9999", amount: 1) { status } }`,
+      ),
+      /found no journey with the reference "JRN-9999"/,
+    ],
+    [
+      "paperwork outside a case",
+      sent(
+        `mutation { fileExpenseClaim(journey: "JRN-0402", amount: 24) { status } }`,
+        false,
+      ),
+      /Mutations are filed during a case/,
+    ],
+  ];
+  for (const [name, found, expected] of cases) {
+    it(`explains ${name}`, () => {
+      expect(found).toHaveLength(1);
+      expect(found[0]).toMatch(expected);
+      expect(found[0]).not.toMatch(FALLBACK);
+      expect(found[0]).not.toMatch(/[{}]/);
+      expect(styleIssues(found[0] ?? "")).toEqual([]);
+    });
+  }
 });

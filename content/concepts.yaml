@@ -225,3 +225,29 @@
   payoff: >
     One operation reads a file quickly and then in full. You change a
     variable, and you leave the query as it is.
+- id: mutations
+  title: Mutations
+  clearance: 11
+  summary: >
+    A mutation files paperwork with the archive. It starts with the word
+    `mutation` instead of `query`, and each of its fields files one form.
+    The field's arguments are the boxes of the form, and the field returns
+    a receipt, whose fields you ask for in braces, as you ask for the
+    fields of a record. In the example, one mutation files two expense
+    claims. The field `fileExpenseClaim` appears twice, so each claim has
+    an alias. The archive files the claims one at a time, in the order
+    the mutation lists them.
+  example: |
+    mutation {
+      outward: fileExpenseClaim(journey: "JRN-0403", amount: 8) {
+        status
+        voucher { remark countersignedBy { name } }
+      }
+      onward: fileExpenseClaim(journey: "JRN-0405", amount: 412.5) {
+        status
+        voucher { to { name } }
+      }
+    }
+  payoff: >
+    One transmission files several forms, and every receipt that comes
+    back is evidence you can cite.

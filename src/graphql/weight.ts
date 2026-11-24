@@ -196,7 +196,13 @@ export function requestWeight(
   for (const definition of document.definitions) {
     if (definition.kind !== Kind.OPERATION_DEFINITION) continue;
     declared = definition.variableDefinitions ?? [];
-    const root = definition.operation === "query" ? query : null;
+    // A mutation's receipts are records, weighed as a query's are.
+    const root =
+      definition.operation === "query"
+        ? query
+        : definition.operation === "mutation"
+          ? schema.getMutationType()
+          : null;
     if (root) total += weigh(definition.selectionSet, root, new Set());
   }
   return total;

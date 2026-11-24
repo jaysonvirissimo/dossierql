@@ -447,22 +447,37 @@ export function DraftPanel() {
                 {cost(fieldCheckCost(env, state, draft.leadId))}
               </button>
             )}
-            <button
-              type="button"
-              className="button button--primary"
-              disabled={closed || draft.ruledOut}
-              onClick={() =>
-                dispatch({ type: "proceed", leadId: draft.leadId })
-              }
-            >
-              {travel ? `Travel${cost(journey)}` : "Submit deduction"}
-            </button>
+            {travel && stage.paperwork === "terminal" ? (
+              <p className="draft__status" data-testid="terminal-order">
+                At your clearance, you file this travel order from the terminal.
+                When the claims are supported, transmit a mutation with{" "}
+                <code>fileTravelOrder</code>. Give <code>following</code> the
+                reference of this draft&apos;s lead, <code>{draft.leadId}</code>
+                , and give <code>to</code> the country&apos;s name.
+                {timed &&
+                  journey > 0 &&
+                  ` The order costs one hour to transmit, and the journey takes ${hours(journey)} more.`}
+              </p>
+            ) : (
+              <button
+                type="button"
+                className="button button--primary"
+                disabled={closed || draft.ruledOut}
+                onClick={() =>
+                  dispatch({ type: "proceed", leadId: draft.leadId })
+                }
+              >
+                {travel ? `Travel${cost(journey)}` : "Submit deduction"}
+              </button>
+            )}
           </div>
           {!review.allSupported && !draft.ruledOut && (
             <p className="draft__status">
-              {onlyChoices
-                ? `The facts you cited are complete. Make the ${review.unnamed.length === 1 ? "choice" : "choices"} above to complete the ${formName.toLowerCase()}.`
-                : `${unsupported === 1 ? "1 claim is" : `${String(unsupported)} claims are`} not yet supported, so the ${formName.toLowerCase()} cannot be accepted yet.`}
+              {onlyChoices && travel && stage.paperwork === "terminal"
+                ? "The facts you cited are complete. You can leave the country blank: the travel order you file from the terminal chooses it from its to argument."
+                : onlyChoices
+                  ? `The facts you cited are complete. Make the ${review.unnamed.length === 1 ? "choice" : "choices"} above to complete the ${formName.toLowerCase()}.`
+                  : `${unsupported === 1 ? "1 claim is" : `${String(unsupported)} claims are`} not yet supported, so the ${formName.toLowerCase()} cannot be accepted yet.`}
               {review.canFieldCheck &&
                 " A field check sends a dispatch about the missing evidence. Your citations stay in the draft."}
             </p>

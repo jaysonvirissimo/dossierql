@@ -90,6 +90,17 @@ const ADDED: Record<number, string[]> = {
   ],
   9: ["PageInfo", "WatchBook", "WatchEntry", "WatchPage", "Query.watchBook"],
   10: ["Endorsement", "Paper", "PaperFile", "PaperPage", "Query.paperFile"],
+  11: [
+    "Account",
+    "ClaimReceipt",
+    "Journey",
+    "JourneyBook",
+    "Mutation",
+    "TravelReceipt",
+    "Voucher",
+    "Query.claim",
+    "Query.journeyBook",
+  ],
 };
 
 function surface(level: number): { types: string[]; fields: string[] } {

@@ -326,6 +326,20 @@ function asksThrough(
 }
 
 /** The concepts an operation's text makes use of. */
+export function filesTravelOrder(operation: string): boolean {
+  let found = false;
+  visit(parse(operation), {
+    OperationDefinition(node) {
+      if (node.operation !== "mutation") return false;
+      return undefined;
+    },
+    Field(node) {
+      if (node.name.value === "fileTravelOrder") found = true;
+    },
+  });
+  return found;
+}
+
 export function conceptsUsed(operation: string): Set<Concept> {
   const used = new Set<Concept>();
   let depth = 0;
@@ -358,6 +372,9 @@ export function conceptsUsed(operation: string): Set<Concept> {
       }
     },
     VariableDefinition: () => void used.add("variables"),
+    OperationDefinition: (node) => {
+      if (node.operation === "mutation") used.add("mutations");
+    },
   });
   if (usesIntrospection(document)) used.add("introspection");
   if (asksThrough(document, isInterfaceType)) used.add("interfaces");
@@ -464,6 +481,7 @@ const VOCABULARY = [
   "pagination",
   "cursor",
   "directive",
+  "mutation",
 ];
 
 // ------------------------------------------------------------ the checks
@@ -1194,7 +1212,15 @@ function checkSolvable(
       }
     }
 
+    // Where the travel order is filed through the terminal, the reference
+    // solution files it last, once the evidence for it is cited.
+    const held: { operation: string; variables?: Record<string, unknown> }[] =
+      [];
     for (const { operation, variables } of referenceOperations(stage)) {
+      if (stage.paperwork === "terminal" && filesTravelOrder(operation)) {
+        held.push({ operation, ...(variables ? { variables } : {}) });
+        continue;
+      }
       state = act(env, state, {
         type: "edit",
         editor: operation,
@@ -1329,6 +1355,33 @@ function checkSolvable(
       );
       return;
     }
+    if (stage.paperwork === "terminal") {
+      if (stage.solution.type !== "destination" || held.length === 0) {
+        report(
+          `${at}.paperwork`,
+          "paperwork",
+          "A stage whose travel order is filed through the terminal needs a destination, and a reference solution that files the order with fileTravelOrder.",
+        );
+        return;
+      }
+      for (const { operation, variables } of held) {
+        state = act(env, state, {
+          type: "edit",
+          editor: operation,
+          variables: variables ? JSON.stringify(variables) : "",
+        }).state;
+        state = act(env, state, { type: "transmit" }).state;
+      }
+      if (state.stageId === stageId && state.status !== "complete") {
+        report(
+          `${at}.referenceSolution`,
+          "solvability",
+          "The travel order that the reference solution files is not approved.",
+        );
+        return;
+      }
+      continue;
+    }
     const moved = act(env, state, { type: "proceed", leadId });
     if (moved.notice?.kind !== "dispatch") {
       report(
@@ -1428,6 +1481,7 @@ function checkCurriculum(
     "unions",
     "pagination",
     "directives",
+    "mutations",
   ] as const) {
     if (used.has(concept) && !declared.has(concept)) {
       report(

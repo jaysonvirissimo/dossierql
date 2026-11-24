@@ -71,6 +71,10 @@ start.
 | `novice-walkthrough.md`          | _The Inner Room_                   | `cipher-counter`       | 10        |
 | `clean-room-solve.md`            | _The Envelope Book_                | `cipher-counter`       | 10        |
 | `novice-walkthrough.md`          | _The Envelope Book_                | `cipher-counter`       | 10        |
+| `clean-room-solve.md`            | _The Messengers' Fares_            | `envelope-book`        | 11        |
+| `novice-walkthrough.md`          | _The Messengers' Fares_            | `envelope-book`        | 11        |
+| `clean-room-solve.md`            | _The Chair's Account_              | `envelope-book`        | 11        |
+| `novice-walkthrough.md`          | _The Chair's Account_              | `envelope-book`        | 11        |
 | `simulated-sessions.md`, round 1 | the drills and the first two cases | none                   | 1         |
 | `simulated-sessions.md`, round 2 | the path given in the prompt       | in the prompt          | 2         |
 
@@ -118,6 +122,15 @@ start.
   second, through The Cipher Counter, and you remember what their debriefs
   taught. You have never written a directive." For _The Envelope Book_,
   add: "You have also played The Inner Room."
+- **_The Messengers' Fares_ and _The Chair's Account_.** They are the
+  clearance 11 cases of the second campaign. Seed the completion of
+  `envelope-book`, and for _The Chair's Account_ the completion of
+  `messengers-fares` as well. For the novice walkthrough of _The Messengers'
+  Fares_, set [PRIOR PLAY] to: "You have played every case of the first
+  campaign and every earlier case of the second, through The Envelope Book,
+  and you remember what their debriefs taught. You have only ever read from
+  the archive, and you have never written a mutation." For _The Chair's
+  Account_, add: "You have also played The Messengers' Fares."
 - **The simulated rounds.** Run each round once for each persona, P1 to P4,
   in a fresh context each time. Start round 2 only after round 1's summary
   is written and its fixes are made. If round 1's fixes change the opening,

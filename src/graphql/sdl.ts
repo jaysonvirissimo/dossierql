@@ -54,6 +54,18 @@ export const SDL = /* GraphQL */ `
     watchBook(reference: ID!): WatchBook @clearance(level: 9)
     "One file of papers, by the reference on its cover."
     paperFile(reference: ID!): PaperFile @clearance(level: 10)
+    "One journey book, by the reference on its cover."
+    journeyBook(reference: ID!): JourneyBook @clearance(level: 11)
+    "One expense claim that you filed, by the serial on its receipt."
+    claim(serial: ID!): ClaimReceipt @clearance(level: 11)
+  }
+
+  "The paperwork you can file with the archive. Each field files one form and returns the receipt for it. When a request files several forms, the archive files them one at a time, in the order the request lists them."
+  type Mutation @clearance(level: 11) {
+    "Files an expense claim for the fare of one journey in a journey book. The accounts office pays a fare once, and only for the amount of the fare. The receipt says whether the fare was already paid, and if it was, gives the voucher it was paid on."
+    fileExpenseClaim(journey: ID!, amount: Float!): ClaimReceipt
+    "Files the travel order on your draft for one lead. following is the record the draft is for, and to is the country the order sends you to, by its name or its two-letter code. The receipt says whether the order was approved, and why not when it was not."
+    fileTravelOrder(following: ID!, to: String!): TravelReceipt
   }
 
   "A sovereign state."
@@ -620,6 +632,102 @@ export const SDL = /* GraphQL */ `
     "The officer who wrote the endorsement. Empty when nobody can read the initials."
     officer: Officer
   }
+
+  "A journey book: the journeys that an office's messengers made, in the order they made them."
+  type JourneyBook @clearance(level: 11) {
+    "The reference on the book's cover."
+    reference: ID!
+    "The office and the days that the book covers, as written on its cover."
+    title: String!
+    "The journeys in the book, in the order they were made."
+    journeys: [Journey!]!
+  }
+
+  "One journey in a journey book, as the messenger wrote it down."
+  type Journey @clearance(level: 11) {
+    "The reference written beside the journey."
+    reference: ID!
+    "The messenger who made the journey."
+    messenger: Officer
+    "Where the journey started, in the messenger's words."
+    from: String!
+    "Where the journey ended, in the messenger's words."
+    to: String!
+    "The fare, as the messenger wrote it in the book."
+    fare: Float!
+    "The account that the messenger asked for the fare to be charged to. The accounts office decides which account pays."
+    chargedTo: Account
+  }
+
+  "An account that the accounts office pays fares from."
+  type Account @clearance(level: 11) {
+    "The reference of the account."
+    reference: ID!
+    "The account's name in the accounts office's books."
+    name: String!
+    "The office that the account belongs to."
+    office: Office
+  }
+
+  "A voucher: the accounts office's record of a fare it paid."
+  type Voucher @clearance(level: 11) {
+    "The reference of the voucher."
+    reference: ID!
+    "The journey whose fare the voucher paid."
+    journey: Journey!
+    "The amount paid."
+    amount: Float!
+    "The city where the journey ended, as the accounts office recorded it."
+    to: City
+    "The officer the fare was paid to."
+    paidTo: Officer
+    "The account the fare was paid from."
+    paidFrom: Account!
+    "The officer who authorised the payment."
+    authorisedBy: Officer
+    "The officer who countersigned the voucher. When a messenger carries a paper, the accounts office pays the fare only after the officer who took the paper from the messenger has countersigned. Empty when nobody countersigned."
+    countersignedBy: Officer
+    "The accounts office's remark on the voucher."
+    remark: String!
+  }
+
+  "What the accounts office did with an expense claim."
+  enum ClaimStatus @clearance(level: 11) {
+    "The fare was paid before, on the voucher that the receipt gives."
+    ALREADY_PAID
+    "The claim was not paid. The receipt's remark says why."
+    REFUSED
+  }
+
+  "The receipt for an expense claim that you filed."
+  type ClaimReceipt @clearance(level: 11) {
+    "The receipt's serial. The accounts office numbers receipts in the order it files the claims, so a lower number was filed earlier."
+    serial: ID!
+    "The journey that the claim was for."
+    journey: Journey!
+    "The amount that the claim asked for."
+    amount: Float!
+    "What the accounts office did with the claim."
+    status: ClaimStatus!
+    "The accounts office's remark on the claim."
+    remark: String!
+    "The voucher that the fare was already paid on. Empty when the claim was refused."
+    voucher: Voucher
+  }
+
+  "The receipt for a travel order that you filed."
+  type TravelReceipt @clearance(level: 11) {
+    "The receipt's serial."
+    serial: ID!
+    "Whether the order was approved. An approved order sends you on the journey."
+    approved: Boolean!
+    "The country that the order sends you to. Empty when the archive found no country by that name or code."
+    to: Country
+    "Why the order was not approved. Empty when it was."
+    reasons: [String!]!
+    "The hours that the journey took from the mission clock."
+    hours: Int!
+  }
 `;
 
-export const MAX_CLEARANCE = 10;
+export const MAX_CLEARANCE = 11;

@@ -4639,6 +4639,13 @@
       "lon": 28.28
     },
     {
+      "id": "madrid",
+      "name": "Madrid",
+      "country": "ES",
+      "lat": 40.42,
+      "lon": -3.7
+    },
+    {
       "id": "manila",
       "name": "Manila",
       "country": "PH",

@@ -295,3 +295,27 @@
     way round: it leaves the field out when `$summary` is `true`. The
     value after `if` has the type `Boolean!`, so a variable that you write
     there must be declared as `Boolean!`, with the `!`.
+- id: mutation
+  term: mutation
+  clearance: 11
+  matches: [mutations, mutation field, mutation fields]
+  definition: >
+    A request that changes the archive, such as filing an expense claim.
+    It is written like a query, and starts with the word `mutation`
+    instead of `query`. Each field of a mutation files one form and
+    returns the receipt for it, and you ask for the fields of the receipt
+    in braces, as you ask for the fields of a record. In
+    `mutation { fileExpenseClaim(journey: "JRN-0398", amount: 12) { status } }`,
+    the archive files one claim and returns its status. When a mutation
+    has several fields, the archive files them one at a time, in the order
+    you wrote them. Two fields with the same name need an alias each.
+- id: decimal-number
+  term: decimal number
+  clearance: 11
+  matches: [decimal numbers, Float]
+  definition: >
+    A number with a point and digits after it, such as `412.5`. The type
+    `Float` takes a decimal number or a whole number, so you can write
+    `amount: 412.5` or `amount: 12`. Write the number without quotation
+    marks: `"412.5"` is text, and the archive refuses text where a `Float`
+    goes.

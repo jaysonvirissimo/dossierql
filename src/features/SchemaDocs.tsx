@@ -86,6 +86,7 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
   const schema = schemaFor(clearance);
   const types = useMemo(() => {
     const query = schema.getQueryType();
+    const mutation = schema.getMutationType();
     const all = Object.values(schema.getTypeMap()).filter(
       (t): t is Entry =>
         (isObjectType(t) ||
@@ -94,10 +95,12 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
           isEnumType(t)) &&
         !t.name.startsWith("__") &&
         t !== query &&
+        t !== mutation &&
         !isUndocumented(t.name),
     );
     all.sort((a, b) => a.name.localeCompare(b.name));
-    return query ? [query, ...all] : all;
+    // The roots come first: Query, then Mutation from clearance 11.
+    return [query, mutation, ...all].filter((t): t is Entry => !!t);
   }, [schema]);
   const seized = types.some(
     (type) =>
@@ -163,6 +166,20 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
           </>
         )}
       </p>
+      {schema.getMutationType() && (
+        <p className="tool__lede" data-testid="mutations">
+          A request that files paperwork starts at the second entry,{" "}
+          <code>Mutation</code>. Write <code>mutation</code> instead of{" "}
+          <code>query</code>, and put one of its fields inside the braces. Each
+          field files one form, its arguments fill in the form, and it returns a
+          receipt, whose fields you ask for in braces. For example,{" "}
+          <code>
+            mutation {"{"} fileExpenseClaim(journey: "JRN-0398", amount: 12){" "}
+            {"{"} status {"}"} {"}"}
+          </code>{" "}
+          files one expense claim and asks for its status.
+        </p>
+      )}
       {seized && (
         <p className="tool__lede" data-testid="undocumented">
           Not everything the archive holds at clearance {clearance} is in this
@@ -209,9 +226,10 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
             {isEnumType(type) && (
               <span>
                 {" "}
-                · An enum. An argument of this type takes one of the values
-                below. You write the value as it is listed, without quotation
-                marks, as in <code>{exampleValue(schema, type)}</code>.
+                · An enum. A field or an argument of this type holds one of the
+                values below. When you give one as an argument, you write the
+                value as it is listed, without quotation marks, as in{" "}
+                <code>{exampleValue(schema, type)}</code>.
               </span>
             )}
             {isObjectType(type) && type.getInterfaces().length > 0 && (

@@ -90,6 +90,11 @@ const RULES: Rule[] = [
       `The inline fragment for ${String(m[2])} stands inside a field that returns ${String(m[1])} records, and a record of type ${String(m[1])} is never of type ${String(m[2])}. An inline fragment goes inside a field that can return ${String(m[2])} records. The documentation panel lists the kinds of record that each interface and each union stands for.`,
   },
   {
+    test: /^Cannot query field "(fileExpenseClaim|fileTravelOrder)" on type "Query"/,
+    note: (m) =>
+      `"${String(m[1])}" files paperwork, so it is a field of Mutation, not of Query. A request that files paperwork starts with the word mutation instead of query. The glossary entry for a mutation shows how.`,
+  },
+  {
     test: /^Cannot query field "(\w+)" on type "(\w+)"/,
     note: (m) =>
       isUnion(String(m[2]))
@@ -263,6 +268,11 @@ const RULES: Rule[] = [
     note: (m) =>
       `"${String(m[1])}" is not one of the values of ${String(m[2])}. The documentation panel lists every value of ${String(m[2])}, and you write a value exactly as the panel lists it, in capital letters.`,
   },
+  {
+    test: /^Float cannot represent non numeric value: "/,
+    note: () =>
+      "This argument takes a number, and a number is written without quotation marks. With quotation marks around it, the number is text. The clerk suggests removing the quotation marks around the value.",
+  },
   { test: /cannot represent/, note: () => VALUE_KIND },
   {
     test: /^(\w+) (\S+) is classified above your clearance\.$/,
@@ -307,6 +317,16 @@ const RULES: Rule[] = [
   {
     test: /^The archive answers queries|operation is not supported by the schema/,
     note: () => "You can read from this archive and do nothing else to it.",
+  },
+  {
+    test: /^No journey book holds a journey "([^"]*)"/,
+    note: (m) =>
+      `The accounts office found no journey with the reference "${String(m[1])}", so it filed nothing for that claim. Each journey in a journey book has its reference beside it, and you give the reference exactly as the book writes it.`,
+  },
+  {
+    test: /^The archive takes paperwork only during a case/,
+    note: () =>
+      "The training range answers queries and takes no paperwork. Mutations are filed during a case.",
   },
   {
     test: /^The request contains no operation/,

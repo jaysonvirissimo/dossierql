@@ -11,6 +11,7 @@
 # --- Europe
 - { id: lisbon, name: Lisbon, country: PT, lat: 38.72, lon: -9.14 }
 - { id: porto, name: Porto, country: PT, lat: 41.15, lon: -8.61 }
+- { id: madrid, name: Madrid, country: ES, lat: 40.42, lon: -3.70 }
 - { id: marseille, name: Marseille, country: FR, lat: 43.30, lon: 5.37 }
 - { id: genoa, name: Genoa, country: IT, lat: 44.41, lon: 8.93 }
 - { id: trieste, name: Trieste, country: IT, lat: 45.65, lon: 13.78 }

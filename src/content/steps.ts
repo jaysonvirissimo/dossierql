@@ -326,6 +326,28 @@ export const STEPS: readonly Step[] = [
         return found;
       }),
   },
+  {
+    id: "aliased-mutations",
+    clearance: 11,
+    summary:
+      "several mutation fields in one request, which run in the order written, each under an alias",
+    uses: (document) =>
+      document.definitions.some(
+        (definition) =>
+          definition.kind === Kind.OPERATION_DEFINITION &&
+          definition.operation === "mutation" &&
+          definition.selectionSet.selections.filter(
+            (s) => s.kind === Kind.FIELD && s.alias,
+          ).length >= 2,
+      ),
+  },
+  {
+    id: "decimal-number",
+    clearance: 11,
+    summary: "a decimal number, as in an expense claim's amount: 412.5",
+    term: "decimal number",
+    uses: (document) => hasNode(document, Kind.FLOAT),
+  },
 ];
 
 export function stepById(id: string): Step | undefined {

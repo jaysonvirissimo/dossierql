@@ -169,6 +169,23 @@ export class Store {
   types(): string[] {
     return [...this.byType.keys()];
   }
+
+  /**
+   * The archive with more records filed in it, such as the receipts for the
+   * paperwork a player filed. The records must not need `@inverse` lists:
+   * this store's inverses are not computed again.
+   */
+  with(records: readonly RawRecord[]): Store {
+    if (records.length === 0) return this;
+    const byType = new Map(this.byType);
+    for (const record of records) {
+      const table = new Map(byType.get(record.type) ?? []);
+      table.set(record.id, record);
+      byType.set(record.type, table);
+    }
+    const copy = Object.create(Store.prototype) as Store;
+    return Object.assign(copy, { byType, kinds: this.kinds });
+  }
 }
 
 export function inverseOf(

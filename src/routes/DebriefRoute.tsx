@@ -210,7 +210,9 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
               reference solution is one economical way, not the only way. If you
               typed a request on one line, it is laid out here over several
               lines so that it is easier to read. The word <code>query</code> at
-              the start of a request is optional.
+              the start of a request is optional. The word <code>mutation</code>{" "}
+              is not, because without it the archive reads the request as a
+              query.
             </p>
           </section>
 

@@ -1,0 +1,615 @@
+id: messengers-fares
+title: The Messengers' Fares
+campaign: fourth-desk
+order: 11
+clearance: 11
+kind: teaching
+teaches: mutations
+practises: [nested-selections, arguments, aliases]
+requires: [nested-selections, arguments, aliases]
+summary: >
+  The Standing Committee keeps no register, but its messengers ride on
+  fares that the accounts office pays. The accounts office will not open
+  its books to the inquiry. It answers every expense claim with a
+  receipt, though.
+motif: register
+clock:
+  countdown: The accounts office closes its books for the day in {remaining}
+  expired: The accounts office has closed its books for the day
+  onExpiry: end
+startingStage: fares
+
+debrief:
+  onTime: |
+    Rui Fontes carried the First Desk's envelope from the counter of the
+    Cipher Room to the Committee's rooms, and then to Santa Apolónia
+    station. On the platform he handed it to Gaspar Leal, the Committee's
+    other messenger, who took it to Madrid on the Sud Express. A car of
+    Madrid Station met the train, and the fare for the car was paid from
+    the Standing Committee's own account for its chair.
+
+    The fares on the envelope's way were paid by the Standing Committee,
+    and the chair's account paid for the last of them. The inquiry now asks who draws on the chair's
+    account.
+  stampOnTime: FARES TRACED
+  comparison: >
+    The reference solution reads each journey book with one query, and
+    then files its claims with mutations. In the Committee's rooms one
+    mutation files one claim. At the station, one mutation files two
+    claims, with the aliases `fontes` and `paiva` on the two
+    `fileExpenseClaim` fields, so the two receipts cost one transmission.
+    The fare on the Sud Express is 412.5, written without quotation
+    marks. The travel order to Spain is a mutation of its own,
+    `fileTravelOrder(following: "JRN-0405", to: "Spain")`, filed after
+    the evidence for it was cited. In Madrid one mutation files the
+    claims for both cars that met the train. Every claim that you filed
+    stays in the archive under the serial on its receipt, and
+    `claim(serial:)` reads it again.
+  geography: >
+    Madrid stands near the centre of the Iberian Peninsula, on a high
+    plateau about 650 metres above the sea. It is one of the highest
+    capitals in Europe.
+
+stages:
+  fares:
+    location: PT
+    objective: Identify the account that paid Rui Fontes's fare to the counter of the Cipher Room.
+
+    briefing: |
+      You read this case at a desk in Lisbon. Rui Fontes, messenger to
+      the Standing Committee, called for the First Desk's envelope at the
+      counter of the Cipher Room, and carried it to the Committee's
+      rooms. The Committee keeps no register. The messengers' room in
+      Lisbon keeps a journey book, LJB-0112, with a line for every journey
+      that its messengers made that day. Each line gives the fare, and
+      the account that the messenger asked to be charged.
+
+      The accounts office decides which account pays a fare, and it does
+      not let the inquiry read its books. It answers an expense claim,
+      though. When you file a claim for the fare of a journey, the
+      accounts office sends back a receipt. When the fare was paid
+      already, the receipt gives the voucher that paid it, and the
+      voucher says which account the money came from.
+
+      Transmit the starter query to read the journey book. Then replace
+      the query with a request that files a claim. A request that files
+      paperwork is a [mutation](glossary:mutation). It starts with the
+      word `mutation` instead of `query`, and inside its braces you write
+      the field `fileExpenseClaim`. The field takes two arguments:
+      `journey`, the reference of a journey in the book, and `amount`,
+      the fare that the book gives for the journey. The field returns the
+      receipt, which is a record. Ask for the receipt's fields in braces
+      after the field, as you ask for the fields of any record. Open
+      `voucher` on the receipt. Inside it, ask for `journey { reference }`,
+      which shows the journey that the voucher paid, and for
+      `paidFrom { name }`, which shows the account that paid it.
+
+      A query only reads, and a mutation leaves something behind. The
+      archive keeps every claim that you file, under the serial on its
+      receipt, and the query field `claim(serial:)` reads a claim again.
+
+      Identify the account that paid Rui Fontes's fare to the counter of
+      the Cipher Room.
+
+    clues:
+      - text: >
+          The account paid the fare for Fontes's journey to the counter
+          of the Cipher Room.
+        constraint:
+          $voucher.journey: Journey:JRN-0402
+          $voucher.paidFrom: $account
+
+    scaffold:
+      level: guided
+      starterQuery: |
+        query {
+          journeyBook(reference: "LJB-0112") {
+            journeys {
+              reference
+              messenger { name }
+              from
+              to
+              fare
+              chargedTo { name }
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        The journey book gives the account that Fontes asked to be
+        charged. The voucher gives the account that the accounts office
+        paid from.
+      concept: >
+        Write mutation, then braces. Inside the braces write
+        fileExpenseClaim with the arguments journey and amount, and
+        braces after it for the fields of the receipt. Open voucher
+        inside those braces, and paidFrom inside voucher.
+      schema: >
+        Look at Mutation.fileExpenseClaim, ClaimReceipt.voucher, and
+        Voucher.paidFrom.
+      skeleton: |
+        mutation { fileExpenseClaim(journey: "JRN-0402", amount: 24) { status voucher { reference journey { reference } paidFrom { name } } } }
+
+    solution:
+      type: deduction
+      account: ACC-0207
+    labels:
+      account: Account
+
+    claims:
+      - id: paid
+        prompt: This account paid Rui Fontes's fare to the counter of the Cipher Room.
+        evidenceSets:
+          - facts:
+              - entity: Voucher:$voucher
+                field: journey
+                equals: Journey:JRN-0402
+              - entity: Voucher:$voucher
+                field: paidFrom
+                equals: Account:$account
+          - facts:
+              - entity: Voucher:VCH-0402
+                field: paidTo
+                equals: Officer:rui-fontes
+              - entity: Voucher:VCH-0402
+                field: paidFrom
+                equals: Account:$account
+
+    leadOutcomes:
+      ACC-0101:
+        refutation:
+          claim: paid
+          facts:
+            - entity: Voucher:VCH-0402
+              field: remark
+              equals: Paid from the Committee's general account on the secretary's authority. The messenger asked for the First Desk to be charged.
+        ruledOut: |
+          Fontes asked for his fare to the counter to be charged to the
+          First Desk, because the envelope was the First Desk's. The
+          accounts office paid it from the Committee's general account
+          instead.
+
+    resolved: |
+      Deduction accepted. The accounts office paid Fontes's fare to the
+      counter from the Standing Committee's general account, on the
+      authority of the Committee's secretary, Teresa Valente. Fontes had
+      asked for the First Desk to be charged.
+
+    referenceSolution:
+      - |
+        query {
+          journeyBook(reference: "LJB-0112") {
+            journeys {
+              reference
+              messenger { name }
+              from
+              to
+              fare
+              chargedTo { name }
+            }
+          }
+        }
+      - |
+        mutation {
+          fileExpenseClaim(journey: "JRN-0402", amount: 24) {
+            status
+            remark
+            voucher {
+              reference
+              journey { reference }
+              paidTo { name }
+              paidFrom { name }
+            }
+          }
+        }
+
+    next: station
+
+  station:
+    location: PT
+    step: aliased-mutations
+    objective: Identify the officer who took the sealed envelope from Rui Fontes.
+
+    briefing: |
+      The journey book has two journeys whose line says "As directed"
+      where the place should be. A messenger writes "As directed" when the
+      book may not say where the journey went. Rui Fontes made one of the
+      two journeys, JRN-0403, from the Committee's rooms. Nuno Paiva,
+      messenger to the First Desk, made the other, JRN-0404, from the
+      First Desk. Each fare was 8.
+
+      A voucher says more than the book does. When a messenger hands a
+      paper on, the officer who takes the paper countersigns the voucher
+      for the messenger's fare, and the voucher's `countersignedBy` gives
+      that officer.
+
+      One mutation can file both claims. Write `fileExpenseClaim` twice
+      inside the braces after `mutation`, once for each journey. The two
+      fields have the same name and different arguments, so put an
+      [alias](glossary:alias) before each one, as in
+      `fontes: fileExpenseClaim(…)` and `paiva: fileExpenseClaim(…)`.
+      The archive files the claims one at a time, in the order that you
+      write them. Ask for `serial` on each receipt, and the serials show
+      that order. The
+      mutation is one transmission, so it costs one hour, however many
+      claims it files.
+
+      Identify the officer who took the sealed envelope from Rui Fontes.
+
+    clues:
+      - text: >
+          The officer countersigned the voucher for the fare that carried
+          the sealed envelope to Santa Apolónia station.
+        constraint:
+          $voucher.remark: Fare to Santa Apolónia station, with a sealed envelope for the Sud Express. Countersigned on the platform by the messenger who took the envelope on.
+          $voucher.countersignedBy: $officer
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        mutation {
+          fontes: fileExpenseClaim(journey: "JRN-0403", amount: 8) {
+            serial
+            status
+            voucher { remark countersignedBy { name } }
+          }
+          # Write the claim for Nuno Paiva's journey here, under the
+          # alias paiva.
+        }
+
+    hints:
+      nudge: >
+        Both vouchers were countersigned. Only one of them is for a fare
+        that carried an envelope.
+      concept: >
+        Write paiva: fileExpenseClaim(journey: "JRN-0404", amount: 8)
+        under the claim for Fontes, with the same braces after it. The
+        alias goes before the field's name, with a colon.
+      schema: >
+        Look at Mutation.fileExpenseClaim, Voucher.remark, and
+        Voucher.countersignedBy.
+      skeleton: |
+        paiva: fileExpenseClaim(journey: "JRN-0404", amount: 8) { status voucher { remark countersignedBy { name } } }
+
+    solution:
+      type: deduction
+      officer: gaspar-leal
+    labels:
+      officer: Officer
+
+    claims:
+      - id: took
+        prompt: This officer took the sealed envelope from Rui Fontes at the station.
+        evidenceSets:
+          - facts:
+              - entity: Voucher:$voucher
+                field: remark
+                equals: Fare to Santa Apolónia station, with a sealed envelope for the Sud Express. Countersigned on the platform by the messenger who took the envelope on.
+              - entity: Voucher:$voucher
+                field: countersignedBy
+                equals: Officer:$officer
+          - facts:
+              - entity: Voucher:VCH-0403
+                field: journey
+                equals: Journey:JRN-0403
+              - entity: Voucher:VCH-0403
+                field: countersignedBy
+                equals: Officer:$officer
+
+    leadOutcomes:
+      duarte-sequeira:
+        refutation:
+          claim: took
+          facts:
+            - entity: Voucher:VCH-0404
+              field: remark
+              equals: Fare to Santa Apolónia station, to collect the First Desk's post off the night train from Porto. Countersigned at the First Desk by the officer who received the post.
+            - entity: Voucher:VCH-0404
+              field: countersignedBy
+              equals: Officer:$officer
+        ruledOut: |
+          Duarte Sequeira countersigned the voucher for Nuno Paiva's fare.
+          Paiva went to the station for the First Desk's post, and
+          Sequeira took the post from him at the First Desk.
+
+    resolved: |
+      Deduction accepted. Rui Fontes took the sealed envelope to Santa
+      Apolónia station, and handed it to Gaspar Leal on the platform.
+      Leal is a messenger of the Standing Committee too, and the envelope
+      was for the Sud Express.
+
+    referenceSolution:
+      - |
+        mutation {
+          fontes: fileExpenseClaim(journey: "JRN-0403", amount: 8) {
+            status
+            voucher { journey { reference } remark countersignedBy { name } }
+          }
+          paiva: fileExpenseClaim(journey: "JRN-0404", amount: 8) {
+            status
+            voucher { journey { reference } remark countersignedBy { name } }
+          }
+        }
+
+    next: sud-express
+
+  sud-express:
+    location: PT
+    step: decimal-number
+    paperwork: terminal
+    objective: File the travel order that follows the envelope to the country where its journey on the Sud Express ended.
+
+    briefing: |
+      Gaspar Leal took the envelope at Santa Apolónia station. Two
+      journeys in the book start at the station and say "As directed":
+      JRN-0405, which Leal made, and JRN-0406, which Vasco Teixeira made.
+      The fare for JRN-0405 is 412.5, and the fare for JRN-0406 is 96.5.
+      The accounts office pays a claim only for the exact fare. A claim
+      for 412 is refused, and the receipt's remark says so.
+
+      Write each fare as a [decimal number](glossary:decimal-number),
+      with the point, as in `amount: 412.5`. Write it without quotation
+      marks: `"412.5"` is text, and the argument `amount` takes a number.
+      Each voucher's `to` gives the city where the journey ended.
+
+      At your clearance, the travel order is paperwork too, and you file
+      it from the terminal rather than from the findings panel. First open
+      a draft for the journey and cite the evidence on it. Then transmit a
+      mutation with the field `fileTravelOrder`. Its argument `following`
+      takes the reference of the journey on your draft, and `to` takes the
+      name of the country. Ask for `approved`, `reasons`, and `hours` on
+      the receipt. The draft offers a button that chooses the
+      country. You can leave it, because the order chooses the country on
+      the draft from `to`. An approved order sends you on the journey, and takes its hours from the clock, as an order from the
+      findings panel does.
+
+      File the travel order that follows the envelope to the country
+      where its journey on the Sud Express ended.
+
+    clues:
+      - text: >
+          The journey carried the sealed envelope for the chair of the
+          Standing Committee.
+        constraint:
+          $voucher.remark: Second-class fare on the Sud Express, with a sealed envelope for the chair of the Standing Committee.
+          $voucher.journey: $journey
+      - text: >
+          The journey ended in a city of the destination country.
+        constraint:
+          $voucher.journey: $journey
+          $voucher.to: $city
+          $city.country: $country
+
+    scaffold:
+      level: partial
+      carryOver: true
+
+    hints:
+      nudge: >
+        Only one of the two vouchers is for a fare that carried an
+        envelope. Its to gives the city where the journey ended.
+      concept: >
+        Write amount: 412.5 with the point and no quotation marks. When
+        the evidence is cited, transmit mutation { fileTravelOrder(following:
+        "JRN-0405", to: "…") { approved reasons } } with the country's
+        name after to.
+      schema: >
+        Look at Voucher.to, City.country, and Mutation.fileTravelOrder.
+      skeleton: |
+        leal: fileExpenseClaim(journey: "JRN-0405", amount: 412.5) { status voucher { journey { reference } remark to { name country { name } } } }
+
+    solution:
+      type: destination
+      journey: JRN-0405
+      country: ES
+    labels:
+      journey: Journey
+      country: Destination country
+
+    claims:
+      - id: envelope
+        prompt: This journey carried the sealed envelope.
+        evidenceSets:
+          - facts:
+              - entity: Voucher:$voucher
+                field: journey
+                equals: Journey:$journey
+              - entity: Voucher:$voucher
+                field: remark
+                equals: Second-class fare on the Sud Express, with a sealed envelope for the chair of the Standing Committee.
+          - facts:
+              - entity: Journey:$journey
+                field: messenger
+                equals: Officer:gaspar-leal
+              - entity: Journey:$journey
+                field: from
+                equals: Santa Apolónia station
+      - id: destination
+        prompt: The journey ended in the destination country.
+        evidenceSets:
+          - facts:
+              - entity: Voucher:$voucher
+                field: journey
+                equals: Journey:$journey
+              - entity: Voucher:$voucher
+                field: to
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+          - facts:
+              - entity: Voucher:$voucher
+                field: journey
+                equals: Journey:$journey
+              - entity: Voucher:$voucher
+                field: to
+                equals: City:$city
+              - entity: Country:$country
+                field: cities
+                includes: City:$city
+
+    leadOutcomes:
+      JRN-0406:
+        refutation:
+          claim: envelope
+          facts:
+            - entity: Voucher:VCH-0406
+              field: journey
+              equals: Journey:$journey
+            - entity: Voucher:VCH-0406
+              field: remark
+              equals: Fare on the night train to Porto, with the Committee's papers for the Porto office.
+        ruledOut: |
+          Vasco Teixeira took the night train to Porto with the
+          Committee's papers for the Porto office. He carried no envelope.
+
+    resolved: |
+      Travel order approved. Gaspar Leal took the envelope to Madrid on
+      the Sud Express, second class. You take the next train after it.
+
+    referenceSolution:
+      - |
+        mutation {
+          leal: fileExpenseClaim(journey: "JRN-0405", amount: 412.5) {
+            status
+            voucher {
+              journey { reference }
+              remark
+              to { name country { name } }
+            }
+          }
+          teixeira: fileExpenseClaim(journey: "JRN-0406", amount: 96.5) {
+            status
+            voucher {
+              journey { reference }
+              remark
+              to { name country { name } }
+            }
+          }
+        }
+      - |
+        mutation {
+          fileTravelOrder(following: "JRN-0405", to: "Spain") {
+            approved
+            reasons
+            hours
+          }
+        }
+
+    next: madrid
+
+  madrid:
+    location: ES
+    objective: Identify the account that paid for the car that met Gaspar Leal at the railway station in Madrid.
+
+    briefing: |
+      You are in Madrid. Madrid Station keeps a drivers' book, MDB-0112,
+      for the evening that the Sud Express came in from Lisbon. A drivers'
+      book is a journey book, and you read it with
+      `journeyBook(reference: "MDB-0112")`. Two of the
+      station's cars met the train at the Estación del Norte, and both
+      lines in the book say "As directed". The book says that both fares
+      were to be charged to the station's own account, and the book's
+      fares are decimal numbers.
+
+      The accounts office pays Madrid Station's fares too. File the claims
+      for both cars in one mutation, with an alias on each claim. On each
+      voucher, read the remark, who countersigned the voucher, and which
+      account paid it.
+
+      Identify the account that paid for the car that met Gaspar Leal at
+      the railway station in Madrid.
+
+    clues:
+      - text: >
+          Gaspar Leal countersigned the voucher for the car that met him in
+          Madrid.
+        constraint:
+          $voucher.countersignedBy: Officer:gaspar-leal
+          $voucher.to: City:madrid
+          $voucher.paidFrom: $account
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        Both cars were charged to Madrid Station in the drivers' book.
+        Only one of them was paid from that account.
+      concept: >
+        Read the drivers' book with journeyBook(reference: "MDB-0112").
+        Then file two claims in one mutation, one under each alias, with
+        the fares written as decimal numbers.
+      schema: >
+        Look at Query.journeyBook, Voucher.countersignedBy, and
+        Voucher.paidFrom.
+      skeleton: |
+        quintas: fileExpenseClaim(journey: "JRN-0501", amount: 14.5) { status voucher { remark countersignedBy { name } paidFrom { name } } }
+
+    solution:
+      type: deduction
+      account: ACC-0208
+    labels:
+      account: Account
+
+    claims:
+      - id: met
+        prompt: This account paid for the car that met Gaspar Leal at the station.
+        evidenceSets:
+          - facts:
+              - entity: Voucher:$voucher
+                field: countersignedBy
+                equals: Officer:gaspar-leal
+              - entity: Voucher:$voucher
+                field: to
+                equals: City:madrid
+              - entity: Voucher:$voucher
+                field: paidFrom
+                equals: Account:$account
+          - facts:
+              - entity: Voucher:$voucher
+                field: remark
+                equals: Car to meet the Sud Express, for a messenger of the Standing Committee and the sealed envelope he carried. Paid from the chair's account, on the secretary's instruction sent ahead by telegram.
+              - entity: Voucher:$voucher
+                field: paidFrom
+                equals: Account:$account
+
+    leadOutcomes:
+      ACC-0310:
+        refutation:
+          claim: met
+          facts:
+            - entity: Voucher:VCH-0502
+              field: remark
+              equals: Car to meet the Sud Express, for the station's bag from Lisbon.
+            - entity: Voucher:VCH-0502
+              field: paidFrom
+              equals: Account:$account
+        ruledOut: |
+          Madrid Station's account paid for the other car, which met the
+          train for the station's bag from Lisbon.
+
+    resolved: |
+      Deduction accepted. The car that met Gaspar Leal and the envelope
+      was paid from the Standing Committee's account for its chair, on an
+      instruction that Teresa Valente sent ahead by telegram.
+
+    referenceSolution:
+      - |
+        query {
+          journeyBook(reference: "MDB-0112") {
+            journeys { reference messenger { name } from to fare chargedTo { name } }
+          }
+        }
+      - |
+        mutation {
+          quintas: fileExpenseClaim(journey: "JRN-0501", amount: 14.5) {
+            status
+            voucher { remark to { name } countersignedBy { name } paidFrom { name } }
+          }
+          salgado: fileExpenseClaim(journey: "JRN-0502", amount: 11.5) {
+            status
+            voucher { remark to { name } countersignedBy { name } paidFrom { name } }
+          }
+        }

@@ -1,0 +1,357 @@
+# Records for clearance 11: journey books, and the accounts office's
+# vouchers for the fares in them (SDD 3.7). A voucher is reached only
+# through the receipt for an expense claim, so the inquiry reads the
+# accounts office's books by filing claims. LJB-0112 is the journey book of
+# the messengers' room in Lisbon, MDB-0112 the drivers' book of Madrid
+# Station for the same evening, and MDB-0113 the drivers' book for the day
+# after.
+Office:
+  madrid-station:
+    name: Madrid Station
+    city: madrid
+Officer:
+  gaspar-leal:
+    name: Gaspar Leal
+    post: Messenger
+    initials: G.L.
+    office: standing-committee
+  vasco-teixeira:
+    name: Vasco Teixeira
+    post: Messenger
+    initials: V.T.
+    office: standing-committee
+  nuno-paiva:
+    name: Nuno Paiva
+    post: Messenger
+    initials: N.P.
+    office: first-desk
+  rafael-quintas:
+    name: Rafael Quintas
+    post: Driver
+    initials: R.Q.
+    office: madrid-station
+  tomas-salgado:
+    name: Tomás Salgado
+    post: Driver
+    initials: T.S.
+    office: madrid-station
+  ines-carvalho:
+    name: Inês Carvalho
+    post: Head of station
+    initials: I.C.
+    office: madrid-station
+  # The chair holds the post by right of office and is on no office's
+  # establishment, so no list of officers holds the chair.
+  afonso-mascarenhas:
+    name: Afonso Mascarenhas
+    post: Chair of the Standing Committee
+    initials: A.M.
+Account:
+  ACC-0101:
+    reference: ACC-0101
+    name: First Desk, messengers' fares
+    office: first-desk
+  ACC-0207:
+    reference: ACC-0207
+    name: Standing Committee, general account
+    office: standing-committee
+  ACC-0208:
+    reference: ACC-0208
+    name: Standing Committee, the chair's account
+    office: standing-committee
+  ACC-0310:
+    reference: ACC-0310
+    name: Madrid Station, drivers' fares
+    office: madrid-station
+JourneyBook:
+  LJB-0112:
+    reference: LJB-0112
+    title: The journey book of the messengers' room in Lisbon, for the day that Cipher Room entry CR-0112 was handed in
+    journeys:
+      - JRN-0398
+      - JRN-0399
+      - JRN-0402
+      - JRN-0403
+      - JRN-0404
+      - JRN-0405
+      - JRN-0406
+      - JRN-0407
+      - JRN-0408
+  MDB-0112:
+    reference: MDB-0112
+    title: The drivers' book of Madrid Station, for the evening that the Sud Express came in from Lisbon
+    journeys:
+      - JRN-0501
+      - JRN-0502
+      - JRN-0503
+  MDB-0113:
+    reference: MDB-0113
+    title: The drivers' book of Madrid Station, for the day after the Sud Express came in from Lisbon
+    journeys:
+      - JRN-0511
+      - JRN-0512
+      - JRN-0513
+      - JRN-0514
+Journey:
+  JRN-0398:
+    reference: JRN-0398
+    messenger: vasco-teixeira
+    from: The Committee's rooms
+    to: The Treasury, and back
+    fare: 12
+    chargedTo: ACC-0207
+  JRN-0399:
+    reference: JRN-0399
+    messenger: nuno-paiva
+    from: The First Desk
+    to: The Foreign Ministry, and back
+    fare: 12
+    chargedTo: ACC-0101
+  JRN-0402:
+    reference: JRN-0402
+    messenger: rui-fontes
+    from: The Committee's rooms
+    to: The Cipher Room counter, and back
+    fare: 24
+    chargedTo: ACC-0101
+  JRN-0403:
+    reference: JRN-0403
+    messenger: rui-fontes
+    from: The Committee's rooms
+    to: As directed
+    fare: 8
+    chargedTo: ACC-0207
+  JRN-0404:
+    reference: JRN-0404
+    messenger: nuno-paiva
+    from: The First Desk
+    to: As directed
+    fare: 8
+    chargedTo: ACC-0101
+  JRN-0405:
+    reference: JRN-0405
+    messenger: gaspar-leal
+    from: Santa Apolónia station
+    to: As directed
+    fare: 412.5
+    chargedTo: ACC-0207
+  JRN-0406:
+    reference: JRN-0406
+    messenger: vasco-teixeira
+    from: Santa Apolónia station
+    to: As directed
+    fare: 96.5
+    chargedTo: ACC-0207
+  JRN-0407:
+    reference: JRN-0407
+    messenger: nuno-paiva
+    from: Santa Apolónia station
+    to: The First Desk
+    fare: 8
+    chargedTo: ACC-0101
+  JRN-0408:
+    reference: JRN-0408
+    messenger: rui-fontes
+    from: Santa Apolónia station
+    to: The Committee's rooms
+    fare: 8
+    chargedTo: ACC-0207
+  JRN-0501:
+    reference: JRN-0501
+    messenger: rafael-quintas
+    from: Estación del Norte
+    to: As directed
+    fare: 14.5
+    chargedTo: ACC-0310
+  JRN-0502:
+    reference: JRN-0502
+    messenger: tomas-salgado
+    from: Estación del Norte
+    to: As directed
+    fare: 11.5
+    chargedTo: ACC-0310
+  JRN-0503:
+    reference: JRN-0503
+    messenger: tomas-salgado
+    from: Madrid Station
+    to: The Embassy, and back
+    fare: 6
+    chargedTo: ACC-0310
+  JRN-0511:
+    reference: JRN-0511
+    messenger: rafael-quintas
+    from: Hotel Inglés
+    to: As directed
+    fare: 22.5
+    chargedTo: ACC-0310
+  JRN-0512:
+    reference: JRN-0512
+    messenger: tomas-salgado
+    from: Hotel Inglés
+    to: As directed
+    fare: 9.5
+    chargedTo: ACC-0310
+  JRN-0513:
+    reference: JRN-0513
+    messenger: rafael-quintas
+    from: As directed
+    to: Estación del Norte
+    fare: 18
+    chargedTo: ACC-0310
+  JRN-0514:
+    reference: JRN-0514
+    messenger: tomas-salgado
+    from: Madrid Station
+    to: The Embassy, and back
+    fare: 6
+    chargedTo: ACC-0310
+Voucher:
+  VCH-0398:
+    reference: VCH-0398
+    journey: JRN-0398
+    amount: 12
+    to: lisbon
+    paidTo: vasco-teixeira
+    paidFrom: ACC-0207
+    authorisedBy: teresa-valente
+    remark: Fare to the Treasury and back, with the Committee's letters.
+  VCH-0399:
+    reference: VCH-0399
+    journey: JRN-0399
+    amount: 12
+    to: lisbon
+    paidTo: nuno-paiva
+    paidFrom: ACC-0101
+    authorisedBy: duarte-sequeira
+    remark: Fare to the Foreign Ministry and back, with the First Desk's bag.
+  VCH-0402:
+    reference: VCH-0402
+    journey: JRN-0402
+    amount: 24
+    to: lisbon
+    paidTo: rui-fontes
+    paidFrom: ACC-0207
+    authorisedBy: teresa-valente
+    remark: Paid from the Committee's general account on the secretary's authority. The messenger asked for the First Desk to be charged.
+  VCH-0403:
+    reference: VCH-0403
+    journey: JRN-0403
+    amount: 8
+    to: lisbon
+    paidTo: rui-fontes
+    paidFrom: ACC-0207
+    authorisedBy: teresa-valente
+    countersignedBy: gaspar-leal
+    remark: Fare to Santa Apolónia station, with a sealed envelope for the Sud Express. Countersigned on the platform by the messenger who took the envelope on.
+  VCH-0404:
+    reference: VCH-0404
+    journey: JRN-0404
+    amount: 8
+    to: lisbon
+    paidTo: nuno-paiva
+    paidFrom: ACC-0101
+    authorisedBy: duarte-sequeira
+    countersignedBy: duarte-sequeira
+    remark: Fare to Santa Apolónia station, to collect the First Desk's post off the night train from Porto. Countersigned at the First Desk by the officer who received the post.
+  VCH-0405:
+    reference: VCH-0405
+    journey: JRN-0405
+    amount: 412.5
+    to: madrid
+    paidTo: gaspar-leal
+    paidFrom: ACC-0207
+    authorisedBy: teresa-valente
+    remark: Second-class fare on the Sud Express, with a sealed envelope for the chair of the Standing Committee.
+  VCH-0406:
+    reference: VCH-0406
+    journey: JRN-0406
+    amount: 96.5
+    to: porto
+    paidTo: vasco-teixeira
+    paidFrom: ACC-0207
+    authorisedBy: teresa-valente
+    remark: Fare on the night train to Porto, with the Committee's papers for the Porto office.
+  VCH-0407:
+    reference: VCH-0407
+    journey: JRN-0407
+    amount: 8
+    to: lisbon
+    paidTo: nuno-paiva
+    paidFrom: ACC-0101
+    authorisedBy: duarte-sequeira
+    remark: Fare back from the station, with the First Desk's post.
+  VCH-0408:
+    reference: VCH-0408
+    journey: JRN-0408
+    amount: 8
+    to: lisbon
+    paidTo: rui-fontes
+    paidFrom: ACC-0207
+    authorisedBy: teresa-valente
+    remark: Fare back from the station, without the envelope.
+  VCH-0501:
+    reference: VCH-0501
+    journey: JRN-0501
+    amount: 14.5
+    to: madrid
+    paidTo: rafael-quintas
+    paidFrom: ACC-0208
+    authorisedBy: teresa-valente
+    countersignedBy: gaspar-leal
+    remark: Car to meet the Sud Express, for a messenger of the Standing Committee and the sealed envelope he carried. Paid from the chair's account, on the secretary's instruction sent ahead by telegram.
+  VCH-0502:
+    reference: VCH-0502
+    journey: JRN-0502
+    amount: 11.5
+    to: madrid
+    paidTo: tomas-salgado
+    paidFrom: ACC-0310
+    authorisedBy: ines-carvalho
+    countersignedBy: ines-carvalho
+    remark: Car to meet the Sud Express, for the station's bag from Lisbon.
+  VCH-0503:
+    reference: VCH-0503
+    journey: JRN-0503
+    amount: 6
+    to: madrid
+    paidTo: tomas-salgado
+    paidFrom: ACC-0310
+    authorisedBy: ines-carvalho
+    remark: Car to the Embassy and back, with the station's bag.
+  VCH-0511:
+    reference: VCH-0511
+    journey: JRN-0511
+    amount: 22.5
+    to: madrid
+    paidTo: rafael-quintas
+    paidFrom: ACC-0208
+    authorisedBy: afonso-mascarenhas
+    countersignedBy: afonso-mascarenhas
+    remark: Car from the Hotel Inglés, with a sealed envelope. Paid from the chair's account on the chair's own authority.
+  VCH-0512:
+    reference: VCH-0512
+    journey: JRN-0512
+    amount: 9.5
+    to: madrid
+    paidTo: tomas-salgado
+    paidFrom: ACC-0310
+    authorisedBy: ines-carvalho
+    remark: Car for a messenger of the Standing Committee, from the Hotel Inglés to the station, without any papers.
+  VCH-0513:
+    reference: VCH-0513
+    journey: JRN-0513
+    amount: 18
+    to: madrid
+    paidTo: rafael-quintas
+    paidFrom: ACC-0208
+    authorisedBy: afonso-mascarenhas
+    remark: Car back to the station for the chair's train to Lisbon. Paid from the chair's account on the chair's own authority.
+  VCH-0514:
+    reference: VCH-0514
+    journey: JRN-0514
+    amount: 6
+    to: madrid
+    paidTo: tomas-salgado
+    paidFrom: ACC-0310
+    authorisedBy: ines-carvalho
+    remark: Car to the Embassy and back, with the station's bag.

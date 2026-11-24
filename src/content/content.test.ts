@@ -28,9 +28,9 @@ describe("the authored course", () => {
     expect(validateContent(raw)).toEqual([]);
   });
 
-  it("covers clearance 1 to 10 with a teaching mission and an assessment each", () => {
+  it("covers clearance 1 to 11 with a teaching mission and an assessment each", () => {
     const cases = raw.missions.filter((m) => m.kind !== "coda");
-    expect(cases).toHaveLength(20);
+    expect(cases).toHaveLength(22);
   });
 
   it("ends the first campaign with one coda", () => {
@@ -873,5 +873,39 @@ describe("the directives case has a reason to leave detail out", () => {
       .filter((issue) => issue.code === "weight")
       .map((issue) => issue.message);
     expect(issues.join(" ")).toMatch(/no reason to leave detail out/);
+  });
+});
+
+describe("the steps of clearance 11 are recognised", () => {
+  const uses = (id: string, query: string) =>
+    stepById(id)?.uses(parse(query)) ?? false;
+  const claim = (journey: string, amount: string) =>
+    `fileExpenseClaim(journey: "${journey}", amount: ${amount}) { status }`;
+
+  it("several mutation fields under aliases, and not one, and not a query", () => {
+    expect(
+      uses(
+        "aliased-mutations",
+        `mutation { a: ${claim("JRN-0403", "8")} b: ${claim("JRN-0404", "8")} }`,
+      ),
+    ).toBe(true);
+    expect(
+      uses("aliased-mutations", `mutation { a: ${claim("JRN-0403", "8")} }`),
+    ).toBe(false);
+    expect(
+      uses(
+        "aliased-mutations",
+        `{ a: city(name: "Lisbon") { name } b: city(name: "Porto") { name } }`,
+      ),
+    ).toBe(false);
+  });
+
+  it("a decimal number, and not a whole number", () => {
+    expect(
+      uses("decimal-number", `mutation { ${claim("JRN-0405", "412.5")} }`),
+    ).toBe(true);
+    expect(
+      uses("decimal-number", `mutation { ${claim("JRN-0402", "24")} }`),
+    ).toBe(false);
   });
 });

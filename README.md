@@ -8,10 +8,10 @@ evidence supports.
 Play it at <https://virissimo.info/dossierql/>.
 
 The design is in [SOFTWARE_DESIGN_DOCUMENT.md](SOFTWARE_DESIGN_DOCUMENT.md).
-This repository implements 1.0 and the first five levels after it:
-clearance levels 1 to 10, with a teaching case and an assessment for each of
+This repository implements 1.0 and the first six levels after it:
+clearance levels 1 to 11, with a teaching case and an assessment for each of
 nested selections, arguments, aliases, fragments, variables, introspection,
-interfaces, unions, pagination, and directives. A training range of short drills comes before the
+interfaces, unions, pagination, directives, and mutations. A training range of short drills comes before the
 first case.
 
 The game runs entirely in the browser. There is no backend, no account, and

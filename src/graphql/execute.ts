@@ -16,6 +16,7 @@ import {
   type GraphQLSchema,
   type ValidationContext,
 } from "graphql";
+import { isActionName, type Actions } from "./actions.ts";
 import { factKey, type Fact, type FactOccurrence } from "./facts.ts";
 import { schemaFor } from "./schema.ts";
 import {
@@ -37,6 +38,8 @@ export interface Transmission {
   variables?: Record<string, unknown> | undefined;
   /** The clearance in force (SDD 3.8). */
   clearance: number;
+  /** What a mutation files its paperwork with (SDD 4.2). */
+  actions?: Actions | undefined;
 }
 
 export interface TransmissionResult {
@@ -97,6 +100,7 @@ interface Context {
   clearance: number;
   occurrences: FactOccurrence[];
   resolved: number;
+  actions: Actions | undefined;
 }
 
 function pathArray(path: {
@@ -278,6 +282,19 @@ const resolveField: GraphQLFieldResolver<unknown, Context> = (
   const shape = fieldShape(info.returnType);
   const { store } = context;
 
+  if (info.parentType === info.schema.getMutationType()) {
+    // The engine files the paperwork and returns the receipt (SDD 4.2).
+    // The archive runs a mutation's fields one at a time, in order.
+    const name = info.fieldName;
+    if (!context.actions || !isActionName(name)) {
+      throw new GraphQLError("The archive takes paperwork only during a case.");
+    }
+    const actions = context.actions;
+    return name === "fileExpenseClaim"
+      ? actions.fileExpenseClaim(args as { journey: string; amount: number })
+      : actions.fileTravelOrder(args as { following: string; to: string });
+  }
+
   if (info.parentType === info.schema.getQueryType()) {
     if (shape.target === null) return null;
     const candidates = store.all(shape.target);
@@ -417,7 +434,11 @@ export function check(
     ];
   }
   const operation = getOperationAST(parsed.document);
-  if (operation && operation.operation !== "query") {
+  if (
+    operation &&
+    operation.operation !== "query" &&
+    !(operation.operation === "mutation" && schema.getMutationType())
+  ) {
     return [
       new GraphQLError(
         `The archive answers queries. It does not accept a ${operation.operation}.`,
@@ -446,6 +467,7 @@ export function transmit(
     clearance: transmission.clearance,
     occurrences: [],
     resolved: 0,
+    actions: transmission.actions,
   };
   const document = parse(transmission.operation);
   const weight = requestWeight(
