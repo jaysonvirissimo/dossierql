@@ -2433,6 +2433,127 @@ function checkRuledOutText(
   }
 }
 
+/** A text, escaped to match itself in a regular expression. */
+function escapeRe(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * A field-check dispatch tells the player which record settles the doubt
+ * about the lead, so that the player can ask the archive for it (SDD 5.6).
+ * The doubt is the claim the lead cannot yet be shown to meet:
+ *
+ * - for a lead with a refutation, the refuted claim, settled by the records
+ *   the refutation reaches;
+ * - for another wrong lead, the claims that do not hold for it;
+ * - for the solution's lead, any of its claims.
+ *
+ * The lead itself and the cities of the country the check goes to, which the
+ * dispatch's opening scene describes, do not count. Where nothing else is
+ * left, the doubt rests on the lead's own record, and the dispatch mentions
+ * the lead's id. Otherwise it mentions one of the records, by its id or by
+ * the name the archive gives it.
+ */
+function checkFieldCheckText(
+  mission: Mission,
+  truth: readonly Fact[],
+  report: Report,
+): void {
+  const byKey = new Map(truth.map((f) => [factKey(f.entity, f.field), f]));
+  const scalar = (ref: string, field: string): string | null => {
+    const value = byKey.get(factKey(ref, field))?.value;
+    return value?.kind === "scalar" && typeof value.value === "string"
+      ? value.value
+      : null;
+  };
+  const refAt = (ref: string, field: string): string | null => {
+    const value = byKey.get(factKey(ref, field))?.value;
+    return value?.kind === "ref" ? value.ref : null;
+  };
+  const mentionsName = (prose: string, ref: string): boolean =>
+    ["name", "codename", "label", "title"].some((field) => {
+      const name = scalar(ref, field)?.replace(/^The /, "");
+      if (!name || name.length < 3) return false;
+      return new RegExp(`(?<!\\p{L})${escapeRe(name)}(?!\\p{L})`, "iu").test(
+        prose,
+      );
+    });
+  // An id is matched whole, so that INS-MPM-0144 does not count as MPM-0144.
+  const hasId = (prose: string, own: string): boolean =>
+    new RegExp(`(?<![\\w-])${escapeRe(own)}(?![\\w-])`).test(prose);
+  for (const [id, stage] of stageChain(mission)) {
+    const lead = leadBinding(stage);
+    const type = bindingTypes(stage)[lead] ?? "";
+    const solution = Object.fromEntries(solutionBindings(stage));
+    for (const [leadId, outcome] of Object.entries(stage.leadOutcomes ?? {})) {
+      const text = outcome.fieldCheck;
+      if (text === undefined) continue;
+      const only: Bindings = { [lead]: leadId };
+      const claimSets = stage.claims.flatMap((c) =>
+        c.evidenceSets.map((s) => s.facts),
+      );
+      const sets = outcome.refutation
+        ? [outcome.refutation.facts]
+        : leadId === solution[lead]
+          ? claimSets
+          : stage.claims
+              .filter(
+                (c) =>
+                  !c.evidenceSets.some((s) => matchSet(s.facts, truth, only)),
+              )
+              .flatMap((c) => c.evidenceSets.map((s) => s.facts));
+      const records = new Set<string>();
+      for (const set of sets) {
+        const bound = matchSet(set, truth, only) ?? only;
+        for (const pattern of set) {
+          for (const term of [
+            pattern.entity,
+            pattern.includes,
+            pattern.excludes,
+            typeof pattern.equals === "string" ? pattern.equals : undefined,
+          ]) {
+            if (term === undefined || !term.includes(":")) continue;
+            const ref = resolveTerm(term, bound);
+            if (ref) records.add(ref);
+          }
+        }
+      }
+      const city = stage.leads?.[leadId]?.city;
+      const goesTo = refOf(
+        "Country",
+        outcome.location ??
+          (city
+            ? parseRef(refAt(refOf("City", city), "country") ?? "Country:").id
+            : stage.location),
+      );
+      const own = refOf(type, leadId);
+      records.delete(own);
+      for (const ref of [...records]) {
+        if (ref.startsWith("City:") && refAt(ref, "country") === goesTo) {
+          records.delete(ref);
+        }
+      }
+      const prose = text.replace(/\s+/g, " ");
+      const mentioned =
+        records.size === 0
+          ? hasId(prose, leadId)
+          : [...records].some(
+              (ref) =>
+                hasId(prose, parseRef(ref).id) || mentionsName(prose, ref),
+            );
+      if (!mentioned) {
+        report(
+          `${mission.id}.stages.${id}.leadOutcomes.${leadId}.fieldCheck`,
+          "text",
+          records.size === 0
+            ? `The doubt about this lead rests on its own record, so the field-check dispatch must mention ${leadId}.`
+            : "The field-check dispatch must mention a record that settles the doubt about this lead, by its id or its name, so that the player knows what to ask the archive for.",
+        );
+      }
+    }
+  }
+}
+
 /**
  * A term that the mission's clearance introduces is linked to the glossary
  * in a briefing, at or before the first stage that uses it (SDD 5.7). A
@@ -2949,6 +3070,7 @@ export function validateContent(raw: RawContent): Issue[] {
     checkCurriculum(mission, catalog, report);
     checkHintsAndText(mission, catalog, report);
     checkRuledOutText(mission, catalog, report);
+    checkFieldCheckText(mission, truth, report);
     checkFirstUse(mission, catalog, report);
     if (issues.length === before) checkSolvable(mission, catalog, report);
   }

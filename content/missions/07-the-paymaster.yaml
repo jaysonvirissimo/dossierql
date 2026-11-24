@@ -162,10 +162,10 @@ stages:
           IRON_FINCH is in Vienna and knows GREY_PETREL well. The
           Vienna desk settles its accounts in euros.
         fieldCheck: |
-          Vienna's coffee houses are full, and the trams ring their
-          way around the Ringstrasse. Vienna confirms the
-          acquaintance. The cashier asks which currency the account is
-          kept in.
+          Vienna's coffee houses are full, and the trams ring their way
+          around the Ringstrasse. Vienna confirms the acquaintance. The
+          cashier asks which currency Austria uses, because the account
+          is kept in francs.
       BRASS_PIPIT:
         location: LI
         refutation:
@@ -179,14 +179,15 @@ stages:
           does not list the name. They share friends, nothing more.
         fieldCheck: |
           Vaduz is one main street under a castle on the mountainside.
-          Vaduz confirms the francs. The desk asks whose list of
-          associates the name was read from.
+          Vaduz confirms the francs. The desk asks whether BRASS_PIPIT
+          is on GREY_PETREL's list of associates.
       OPAL_WREN:
         location: CH
         fieldCheck: |
           Zurich's lake lies flat and grey under the mountains. Zurich
           knows the name. The bank asks for a travel order with every
-          claim proved before it opens a drawer.
+          claim proved before it opens a drawer, from GREY_PETREL's list
+          of associates to the currency of Switzerland.
 
     resolved: |
       Travel order approved. The plane comes in low over a long lake
@@ -322,9 +323,9 @@ stages:
           Uetliberg Trust has the right director. Its books are
           audited by IRON_FINCH, on behalf of quite another employer.
         fieldCheck: |
-          The bank's carpets are so thick that nobody hears you come
-          in. The bank confirms the director's allegiance. The manager
-          asks who audits the books.
+          The bank's carpets are so thick that nobody hears you come in.
+          The bank confirms the director's allegiance. The manager asks
+          which organization the auditor, IRON_FINCH, answers to.
       CH-GLARUS:
         location: CH
         refutation:
@@ -341,8 +342,9 @@ stages:
           director. The two are said not to speak.
         fieldCheck: |
           The manager's window looks down on the river and its swans.
-          The bank confirms the auditor's allegiance. The manager asks
-          who sits in the director's chair.
+          The bank confirms the auditor's allegiance. The manager says
+          that IRON_FINCH sits in the director's chair, and asks which
+          organization IRON_FINCH answers to.
 
     resolved: |
       Deduction accepted. Zurich freezes the accounts of Limmat

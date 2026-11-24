@@ -151,7 +151,8 @@ stages:
         fieldCheck: |
           Rotterdam's port runs for miles of cranes and grey water
           toward the North Sea. Rotterdam confirms the tiles. The
-          importer asks which currency the buyer was heard to mention.
+          importer asks which currency the Netherlands uses, because the
+          buyer was heard to mention pounds.
       OPO-0830:
         location: GB
         refutation:
@@ -166,8 +167,8 @@ stages:
         fieldCheck: |
           Southampton is grey and wet, and the cruise ships tower over
           the docks. Southampton confirms the currency. The
-          harbourmaster suggests consulting the manifest's description
-          of the goods.
+          harbourmaster suggests reading what the manifest of OPO-0830
+          says the crate holds.
 
     resolved: |
       Travel order approved. The ferry comes up Southampton Water in a
@@ -341,7 +342,8 @@ stages:
         fieldCheck: |
           Oslo's fjord is still, and the white roof of the opera house
           slopes down into the water. Oslo confirms the tiles. The
-          dealer asks which country's currency the buyer asked about.
+          dealer asks which currency Norway uses, because the buyer
+          asked about the Icelandic króna.
       SOU-0921:
         location: IS
         refutation:
@@ -355,9 +357,9 @@ stages:
           yard would like it known that slate is a perfectly good tile.
         fieldCheck: |
           Reykjavik's harbour is cold and bright, with snow on the
-          mountain across the bay. Reykjavik confirms the currency.
-          The stone yard suggests consulting the manifest's
-          description of the goods.
+          mountain across the bay. Reykjavik confirms the currency. The
+          stone yard suggests reading what the manifest of SOU-0921 says
+          the crate holds.
 
     resolved: |
       Deduction accepted. Reykjavik holds the crate at the quay.

@@ -8,7 +8,7 @@ the game communicates on screen. Run both before a mission ships (SDD 10.1).
 - [novice-walkthrough.md](novice-walkthrough.md): where does someone who
   knows JSON and has never written GraphQL get confused?
 - [decision-check.md](decision-check.md): an addition to the novice
-  walkthrough for _The Guest Register_. Can the player say why they chose
+  walkthrough for _The Guest Register_ or _Three Couriers_. Can the player say why they chose
   the next city, and write a lookup for a new cover name from a blank
   editor?
 

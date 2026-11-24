@@ -270,3 +270,20 @@ Sighting:
     operative: SABLE_IBIS
     nameGiven: p-okello
     note: Hired a dhow for the evening.
+  # Three Couriers: the watchers who think they saw GREY_PETREL after the
+  # night the couriers left Zanzibar City.
+  SGT-051:
+    city: lusaka
+    operative: GREY_PETREL
+    nameGiven: a-serrano
+    note: Came in on the bus from the border. Asked the way to the banks.
+  SGT-052:
+    city: lilongwe
+    operative: GREY_PETREL
+    nameGiven: a-serrano
+    note: Bought a newspaper at the bus station and paid in kwacha.
+  SGT-053:
+    city: moroni
+    operative: GREY_PETREL
+    nameGiven: a-serrano
+    note: Came off the evening ferry with one small case.

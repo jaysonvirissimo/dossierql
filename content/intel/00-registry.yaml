@@ -21,17 +21,19 @@ Operative:
     coverNames: [dr-lund]
     organization: parallax-circle
     lastKnownLocation: zanzibar-city
+    knownAssociates: [GREY_PETREL, TIN_FALCON]
   TIN_FALCON:
     codename: TIN_FALCON
     coverNames: [d-lund]
     organization: baltic-exchange
     lastKnownLocation: nairobi
+    knownAssociates: [MARBLE_HERON]
   GREY_PETREL:
     codename: GREY_PETREL
     coverNames: [a-serrano]
     organization: parallax-circle
     lastKnownLocation: lusaka
-    knownAssociates: [OPAL_WREN, IRON_FINCH]
+    knownAssociates: [OPAL_WREN, IRON_FINCH, MARBLE_HERON]
     handler: GILT_MAGPIE
     classified: { handler: 5 }
   SABLE_IBIS:

@@ -561,6 +561,36 @@ describe("validation fails the build when", () => {
     ).toContain("pacing");
   });
 
+  it("a field-check dispatch does not mention the record that settles the doubt", () => {
+    // VAL-0733's intake record says who is to receive the cases. Without it,
+    // the dispatch only describes the place and the lead.
+    const issues = validateContent(
+      mutated("quiet-consignee", (m) => {
+        m.stages.callao!.leadOutcomes!["PE-MERIDIAN-FRT"]!.fieldCheck =
+          "Fog lies low over the port of Callao. Callao confirms that a clerk from Meridian Freight has been at the quay twice.";
+      }),
+    );
+    expect(issues).toContainEqual({
+      path: "quiet-consignee.stages.callao.leadOutcomes.PE-MERIDIAN-FRT.fieldCheck",
+      code: "text",
+      message:
+        "The field-check dispatch must mention a record that settles the doubt about this lead, by its id or its name, so that the player knows what to ask the archive for.",
+    });
+  });
+
+  it("a field-check dispatch counts a record only by its whole id", () => {
+    // MPM-0144 is the lead. The inspector's finding INS-MPM-0144 settles it.
+    const issues = validateContent(
+      mutated("bound-ledgers", (m) => {
+        m.stages.ports!.leadOutcomes!["MPM-0144"]!.fieldCheck =
+          "Maputo's avenues run down to the bay. The inspector asks what is written in the books of MPM-0144.";
+      }),
+    );
+    expect(issues.map((issue) => issue.path)).toContain(
+      "bound-ledgers.stages.ports.leadOutcomes.MPM-0144.fieldCheck",
+    );
+  });
+
   it("a mission after the first introduces two mechanics", () => {
     const copy = mutated("guest-register", (m) => {
       m.stages.luanda!.leadOutcomes!["SGT-027"]!.fieldCheck = "Mombasa asks.";

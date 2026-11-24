@@ -110,6 +110,19 @@ interface EditorProps {
 type Host = HTMLDivElement & { cmView?: EditorView };
 
 /**
+ * Puts the cursor in the editor with the given test id, at the end of its
+ * text, so that a player who chooses to write another query can type at
+ * once.
+ */
+export function focusEditor(testId = "query-editor"): void {
+  const host = document.querySelector<Host>(`[data-testid="${testId}"]`);
+  const view = host?.cmView;
+  if (!view) return;
+  view.dispatch({ selection: { anchor: view.state.doc.length } });
+  view.focus();
+}
+
+/**
  * The editor closes each brace as it is opened. A player who types the
  * closing brace on a new line, as they would on paper, would then have one
  * too many. When every brace is already closed and the next character after

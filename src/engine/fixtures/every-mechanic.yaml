@@ -157,8 +157,8 @@ stages:
           Cape Town confirms the measurements. The harbourmaster
           offers to send a sample of the slate.
         fieldCheck: |
-          The crate contains blue slate. The harbourmaster
-          suggests consulting the manifest's description of the goods.
+          The crate contains blue slate. The harbourmaster suggests
+          reading what the manifest of LIS-0486 says the crate holds.
       LIS-0522:
         location: CV
         refutation:
@@ -178,13 +178,14 @@ stages:
           harbourmaster asks to see the truck that can drive from
           an island to the Namibian border.
         fieldCheck: |
-          Praia confirms the size and material. The harbourmaster
-          asks which land border the truck is meant to cross.
+          Praia confirms the size and material. The harbourmaster asks
+          whether Cabo Verde has a land border with Namibia at all.
       LIS-0417:
         location: AO
         fieldCheck: |
-          Luanda has opened a file on the shipment. The freight
-          office asks for citations for the whole travel order.
+          Luanda has opened a file on the shipment. The freight office
+          asks for the whole travel order to be proved, from the
+          manifest to the border between Angola and Namibia.
 
     resolved: |
       Travel order approved. You land in Luanda as the depot

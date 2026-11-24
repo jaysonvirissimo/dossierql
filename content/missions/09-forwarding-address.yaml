@@ -168,7 +168,8 @@ stages:
         fieldCheck: |
           A great stone staircase runs down from Odesa to its port.
           Odesa confirms the consignee. The harbourmaster asks which
-          continent the forwarding note gave.
+          continent the archive gives for Ukraine, and whether it is the
+          one on the forwarding note.
       TRS-0634:
         location: TR
         refutation:
@@ -183,8 +184,9 @@ stages:
         fieldCheck: |
           In Istanbul the covered bazaar is loud from the first hour,
           and the agent keeps a table at a tea house by its gate.
-          Istanbul confirms the landing. The agent asks whose name is
-          on the consignment.
+          Istanbul confirms the landing. The agent asks whose name is on
+          the consignment, because the quay has it down for Uetliberg
+          Trust.
 
     resolved: |
       Travel order approved. The ship comes up the Bosphorus at first
@@ -319,7 +321,8 @@ stages:
         fieldCheck: |
           The wind comes in off the sea over Odesa's harbour, and the
           cranes stand idle. Odesa confirms it is in Europe. The
-          harbourmaster asks whose name is on the consignment.
+          harbourmaster asks whose name is on the consignment, because
+          his papers have it down for Uetliberg Trust.
       IST-0725:
         location: EG
         refutation:
@@ -338,9 +341,10 @@ stages:
           Alexandria has four crates for Limmat Holdings and a
           clear view of Africa in every direction but north.
         fieldCheck: |
-          Alexandria's long seafront road curves around the harbour,
-          and the trams are full. Alexandria confirms the consignee.
-          The agent asks which continent the note said.
+          Alexandria's long seafront road curves around the harbour, and
+          the trams are full. Alexandria confirms the consignee. The
+          agent asks which continent the archive gives for Egypt, and
+          whether it is the one the note said.
 
     resolved: |
       Deduction accepted. The crate is on its way to Porto.

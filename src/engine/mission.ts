@@ -457,7 +457,9 @@ export function formHold(
   if (rivals.length > 0) {
     const verb = rivals.length === 1 ? "is" : "are";
     const them = rivals.length === 1 ? "it" : "each of them";
-    return `${listed(rivals, "and")} ${verb} still in contention. Rule ${them} out on its own form before you send the ${order}.`;
+    const lead = leadBinding(stage);
+    const box = stage.labels?.[lead] ?? lead;
+    return `${listed(rivals, "and")} ${verb} still in contention. Choose ${them} in the “${box}” box and press Rule out before you send the ${order}.`;
   }
   return null;
 }

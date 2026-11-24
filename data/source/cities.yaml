@@ -110,6 +110,7 @@
 - { id: abidjan, name: Abidjan, country: CI, lat: 5.36, lon: -4.01 }
 - { id: douala, name: Douala, country: CM, lat: 4.05, lon: 9.70 }
 - { id: lusaka, name: Lusaka, country: ZM, lat: -15.42, lon: 28.28 }
+- { id: lilongwe, name: Lilongwe, country: MW, lat: -13.97, lon: 33.79 }
 - { id: moroni, name: Moroni, country: KM, lat: -11.70, lon: 43.26 }
 - { id: vaduz, name: Vaduz, country: LI, lat: 47.14, lon: 9.52 }
 - { id: southampton, name: Southampton, country: GB, lat: 50.90, lon: -1.40 }

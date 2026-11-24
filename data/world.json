@@ -4604,6 +4604,13 @@
       "lon": 3.39
     },
     {
+      "id": "lilongwe",
+      "name": "Lilongwe",
+      "country": "MW",
+      "lat": -13.97,
+      "lon": 33.79
+    },
+    {
       "id": "lisbon",
       "name": "Lisbon",
       "country": "PT",

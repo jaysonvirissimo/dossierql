@@ -149,8 +149,8 @@ stages:
         fieldCheck: |
           Mombasa's old harbour smells of cloves and diesel, under the
           coral walls of Fort Jesus. Mombasa confirms the ledgers are
-          full of figures. The port office asks who directs the
-          company collecting them.
+          full of figures. The port office asks who directs the company
+          collecting them, Kilindini Paper Company.
       MPM-0144:
         location: MZ
         refutation:
@@ -168,8 +168,9 @@ stages:
         fieldCheck: |
           Maputo's wide avenues run down to the bay, and the railway
           station wears a great iron dome. Maputo confirms the
-          consignee's connections. The inspector asks what, if
-          anything, is written in the books.
+          consignee's connections. The inspector has filed her finding
+          as INS-MPM-0144, and it says what, if anything, is written in
+          the books.
 
     resolved: |
       Deduction accepted. Dar es Salaam impounds the crate.

@@ -109,7 +109,7 @@ test("the leads are on the map before departure, and the debrief replays the ded
   await choose(page, "Country of the sighting", "TZ");
   await expect(travel).toBeDisabled();
   await expect(draft(page).getByTestId("form-hold")).toHaveText(
-    "The Maputo sighting is still in contention. Rule it out on its own form before you send the travel order.",
+    "The Maputo sighting is still in contention. Choose it in the “Sighting” box and press Rule out before you send the travel order.",
   );
   await choose(page, "Sighting", "SGT-034");
   await submit(page, /^Rule out/);

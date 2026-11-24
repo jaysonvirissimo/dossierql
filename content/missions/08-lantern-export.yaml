@@ -150,10 +150,10 @@ stages:
           The crate for Piraeus was loaded in Alexandria. Greece
           answers in Greek and holds twenty cases of lamp glass.
         fieldCheck: |
-          At Piraeus the island ferries crowd the harbour, and the
-          agent works from a café on the quay. Alexandria confirms the
-          loading. The agent asks which language the courier expected
-          on the quay.
+          At Piraeus the island ferries crowd the harbour, and the agent
+          works from a café on the quay. Alexandria confirms the
+          loading. The agent asks whether Arabic is among the languages
+          of Greece, where the crate came ashore.
       IST-0290:
         location: TN
         refutation:
@@ -173,8 +173,9 @@ stages:
           loaded in Istanbul, where the stevedores speak Turkish.
         fieldCheck: |
           Tunis lies white and blue beside its lake, and the stalls of
-          the old city are just opening. Tunis confirms the landing.
-          The agent asks where the bales were put aboard.
+          the old city are just opening. Tunis confirms the landing. The
+          agent asks whether Arabic is among the languages of Turkey,
+          where the bales were put aboard.
       CAS-0275:
         location: FR
         refutation:
@@ -194,9 +195,9 @@ stages:
           France lists one language and it is not Arabic.
         fieldCheck: |
           In Marseille the fishing boats are in at the Old Port, and a
-          church watches the harbour from its hill. Casablanca
-          confirms the loading. The Marseille agent asks what is
-          spoken at his end.
+          church watches the harbour from its hill. Casablanca confirms
+          the loading. The Marseille agent asks whether Arabic is among
+          the languages of France.
 
     resolved: |
       Deduction accepted. Beirut is waiting on the quay.

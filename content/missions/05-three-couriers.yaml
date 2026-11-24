@@ -9,8 +9,9 @@ practises: [nested-selections, arguments]
 requires: [nested-selections, arguments]
 summary: >
   Three couriers left Zanzibar City on the same night. One of them is
-  carrying the payment for the tiles.
+  carrying the payment for the tiles. Find out which one, and follow.
 motif: courier
+quarry: GREY_PETREL
 clock:
   countdown: The payment clears in {remaining}
   expired: The payment has cleared
@@ -20,6 +21,8 @@ startingStage: zanzibar
 debrief:
   onTime: |
     The bank in Lusaka stops the payment to Kafue Ceramics Trust.
+    GREY_PETREL is not seen in Lusaka again, and the payment no longer
+    travels with the courier.
     A note arrives at the registry, unsigned except for the
     letter M: "You read quickly. Read further."
   stampOnTime: PAYMENT STOPPED
@@ -30,14 +33,15 @@ debrief:
     files come back side by side, each under its alias. One request costs
     one hour, where three separate requests would have cost three.
   geography: >
-    Zambia shares a border with Tanzania at the southern end of Lake
-    Tanganyika. The Comoros are islands in the Mozambique Channel and
-    border no one.
+    Zambia and Malawi both border Tanzania, and both call their money
+    the kwacha. The Zambian kwacha has the code ZMW and the Malawian
+    kwacha has the code MWK. The Comoros are islands in the Mozambique
+    Channel and border no one.
 
 stages:
   zanzibar:
     location: TZ
-    objective: Identify the courier carrying the payment and the country the courier went to.
+    objective: Identify the courier carrying the payment.
 
     briefing: |
       MARBLE_HERON handed the payment to a courier in Zanzibar
@@ -46,7 +50,7 @@ stages:
       The clerk would be grateful to fetch them in one trip.
 
       The response puts each result under its field name. If you ask
-      for the same field twice, see [alias](glossary:alias) in the Glossary.
+      for the same field twice, read the entry for [alias](glossary:alias).
 
     clues:
       - text: >
@@ -55,11 +59,10 @@ stages:
         constraint:
           $operative.organization: Organization:parallax-circle
       - text: >
-          The courier crossed a land border out of Tanzania and was
-          last seen in the country on the other side.
+          MARBLE_HERON hands money only to an old acquaintance. The
+          courier's file lists MARBLE_HERON among its known associates.
         constraint:
-          $operative.lastKnownLocation.country.borders: Country:TZ
-          $operative.lastKnownLocation.country: $country
+          $operative.knownAssociates: Operative:MARBLE_HERON
 
     scaffold:
       level: guided
@@ -68,16 +71,16 @@ stages:
           operative(codename: "SABLE_IBIS") {
             codename
             organization { name }
-            lastKnownLocation { name country { name borders { name } } }
+            knownAssociates { codename }
           }
           # Ask for GREY_PETREL and TIN_FALCON in this same transmission.
         }
 
     hints:
       nudge: >
-        One courier belongs to the Parallax Circle and was last seen in
-        a country that borders Tanzania. Each of the other two fails one
-        of those two tests.
+        One courier belongs to the Parallax Circle and lists MARBLE_HERON
+        among its known associates. Each of the other two fails one of
+        those two tests.
       concept: >
         If you ask for the operative field three times, all three
         results would come back as operative, and the archive refuses
@@ -85,19 +88,16 @@ stages:
         word you choose, followed by a colon, written before the field.
         Each result then comes back under its alias.
       schema: >
-        Look at Operative.organization, Operative.lastKnownLocation,
-        City.country, and Country.borders.
+        Look at Operative.organization and Operative.knownAssociates.
       skeleton: |
         first: operative(codename: "SABLE_IBIS") { codename }
         second: operative(codename: "GREY_PETREL") { codename }
 
     solution:
-      type: destination
+      type: deduction
       operative: GREY_PETREL
-      country: ZM
     labels:
       operative: Courier
-      country: Country last seen in
 
     claims:
       - id: member
@@ -111,53 +111,36 @@ stages:
               - entity: Organization:parallax-circle
                 field: members
                 includes: Operative:$operative
-      - id: border
-        prompt: The courier was last seen in a country that borders Tanzania.
+      - id: associate
+        prompt: The courier is one of MARBLE_HERON's known associates.
         evidenceSets:
           - facts:
               - entity: Operative:$operative
-                field: lastKnownLocation
-                equals: City:$city
-              - entity: City:$city
-                field: country
-                equals: Country:$country
-              - entity: Country:$country
-                field: borders
-                includes: Country:TZ
+                field: knownAssociates
+                includes: Operative:MARBLE_HERON
           - facts:
-              - entity: Operative:$operative
-                field: lastKnownLocation
-                equals: City:$city
-              - entity: City:$city
-                field: country
-                equals: Country:$country
-              - entity: Country:TZ
-                field: borders
-                includes: Country:$country
+              - entity: Operative:MARBLE_HERON
+                field: knownAssociates
+                includes: Operative:$operative
 
     leadOutcomes:
       SABLE_IBIS:
         location: KM
         refutation:
-          claim: border
+          claim: associate
           facts:
             - entity: Operative:$operative
-              field: lastKnownLocation
-              equals: City:$city
-            - entity: City:$city
-              field: country
-              equals: Country:$country
-            - entity: Country:$country
-              field: borders
-              excludes: Country:TZ
+              field: knownAssociates
+              excludes: Operative:MARBLE_HERON
         ruledOut: |
-          SABLE_IBIS is in Moroni. The Comoros desk points out that
-          the only way across its border is by boat.
+          SABLE_IBIS is a member in good standing, and knows nobody at
+          all, MARBLE_HERON included. MARBLE_HERON does not hand money
+          to strangers.
         fieldCheck: |
           Moroni's harbour is a curve of black volcanic rock, with an
           old white mosque above the water. Moroni confirms SABLE_IBIS
-          is a member in good standing. The harbour office asks which
-          land border was crossed.
+          is a member in good standing. The harbour office asks whether
+          SABLE_IBIS has ever met MARBLE_HERON.
       TIN_FALCON:
         location: KE
         refutation:
@@ -167,44 +150,233 @@ stages:
               field: organization
               equals: Organization:baltic-exchange
         ruledOut: |
-          TIN_FALCON crossed into Kenya and reports to the Baltic
-          Exchange Bureau, which pays its own couriers.
+          TIN_FALCON knows MARBLE_HERON well enough, but reports to the
+          Baltic Exchange Bureau, which pays its own couriers.
         fieldCheck: |
           Nairobi is cool at its height above the sea, and the morning
-          traffic hardly moves. Nairobi confirms the border crossing.
-          The station chief asks whose payroll TIN_FALCON is on.
-      GREY_PETREL:
-        location: ZM
-        fieldCheck: |
-          Lusaka is dusty and bright at midday, and a fan turns slowly
-          in the station's office. Lusaka has a visitor of that
-          description. The station asks for a travel order with every
-          claim proved.
+          traffic hardly moves. Nairobi confirms that TIN_FALCON knows
+          MARBLE_HERON. The station chief asks whether TIN_FALCON is on
+          the payroll of the Parallax Circle or of the Baltic Exchange
+          Bureau.
 
     resolved: |
-      Travel order approved. The plane crosses hours of dry bush and
-      comes down at Lusaka, a city on a high plateau, far from any
-      sea, with jacaranda trees along its avenues. One line of
-      GREY_PETREL's file, the handler, is classified above your
-      clearance. The clerk suggests asking again after a promotion or
-      two.
+      Deduction accepted. GREY_PETREL is carrying the payment, and
+      left Zanzibar City the same night. The registry has three
+      sightings filed under GREY_PETREL since then.
 
     referenceSolution: |
       query {
         petrel: operative(codename: "GREY_PETREL") {
           codename
           organization { name }
-          lastKnownLocation { name country { name borders { name } } }
+          knownAssociates { codename }
         }
         ibis: operative(codename: "SABLE_IBIS") {
           codename
           organization { name }
-          lastKnownLocation { name country { name borders { name } } }
+          knownAssociates { codename }
         }
         falcon: operative(codename: "TIN_FALCON") {
           codename
           organization { name }
-          lastKnownLocation { name country { name borders { name } } }
+          knownAssociates { codename }
+        }
+      }
+
+    next: trail
+
+  trail:
+    location: TZ
+    objective: Identify the sighting that is GREY_PETREL and the country it was in.
+
+    briefing: |
+      Three watchers have each filed a sighting under GREY_PETREL
+      since the night the couriers left: one in Lusaka, one in
+      Lilongwe, and one in Moroni. The case board lists the three
+      sightings, and the map shows where each city is and how long
+      the journey there would take. Only one of the watchers saw
+      GREY_PETREL. The payment clears when the clock runs out, and the
+      courier is carrying it. Follow the courier before then.
+
+      Your travel order goes to the country that watcher was in: on
+      the form, you choose the sighting and the country of the
+      sighting.
+
+    clues:
+      - text: >
+          All three sightings were filed under GREY_PETREL.
+        constraint:
+          $sighting.operative: Operative:GREY_PETREL
+      - text: >
+          The courier crossed a land border out of Tanzania.
+        constraint:
+          $sighting.city.country.borders: Country:TZ
+      - text: >
+          Before crossing, the courier changed shillings into kwacha.
+          The receipt from the bureau gives the currency's code as ZMW.
+        constraint:
+          $sighting.city.country.currency.code: ZMW
+          $sighting.city.country: $country
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          operative(codename: "GREY_PETREL") {
+            codename
+            # Where was the courier seen? The form asks about the
+            # borders of that country and the code of its currency.
+          }
+        }
+
+    hints:
+      nudge: >
+        One sighting is in a country that borders Tanzania and uses the
+        currency with the code ZMW. Each of the other two fails one of
+        those two tests.
+      concept: >
+        Open sightings inside GREY_PETREL's file. Inside each sighting,
+        open city, and inside the city open country. Ask for the
+        country's borders and its currency.
+      schema: >
+        Look at Operative.sightings, Sighting.city, City.country,
+        Country.borders, and Country.currency.
+      skeleton: |
+        operative(codename: "GREY_PETREL") {
+          sightings { id city { name country { name borders { name } currency { code name } } } }
+        }
+
+    solution:
+      type: destination
+      sighting: SGT-051
+      country: ZM
+    labels:
+      sighting: Sighting
+      country: Country of the sighting
+
+    claims:
+      - id: border
+        prompt: The sighting was in a country that borders Tanzania.
+        evidenceSets:
+          - facts:
+              - entity: Sighting:$sighting
+                field: city
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: borders
+                includes: Country:TZ
+          - facts:
+              - entity: Sighting:$sighting
+                field: city
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:TZ
+                field: borders
+                includes: Country:$country
+      - id: currency
+        prompt: The sighting was in a country whose currency has the code ZMW.
+        evidenceSets:
+          - facts:
+              - entity: Sighting:$sighting
+                field: city
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: currency
+                equals: Currency:$currency
+              - entity: Currency:$currency
+                field: code
+                equals: ZMW
+          - facts:
+              - entity: Sighting:$sighting
+                field: city
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Currency:$currency
+                field: code
+                equals: ZMW
+              - entity: Currency:$currency
+                field: countries
+                includes: Country:$country
+
+    leads:
+      SGT-051:
+        label: The Lusaka sighting
+        city: lusaka
+      SGT-052:
+        label: The Lilongwe sighting
+        city: lilongwe
+      SGT-053:
+        label: The Moroni sighting
+        city: moroni
+
+    leadOutcomes:
+      SGT-052:
+        location: MW
+        refutation:
+          claim: currency
+          facts:
+            - entity: Sighting:$sighting
+              field: city
+              equals: City:$city
+            - entity: City:$city
+              field: country
+              equals: Country:$country
+            - entity: Country:$country
+              field: currency
+              equals: Currency:$currency
+            - entity: Currency:$currency
+              field: code
+              equals: MWK
+        ruledOut: |
+          Lilongwe's watcher did see somebody pay in kwacha. Malawi's
+          kwacha has the code MWK, and the receipt from the bureau
+          does not.
+      SGT-053:
+        location: KM
+        refutation:
+          claim: border
+          facts:
+            - entity: Sighting:$sighting
+              field: city
+              equals: City:$city
+            - entity: City:$city
+              field: country
+              equals: Country:$country
+            - entity: Country:$country
+              field: borders
+              excludes: Country:TZ
+        ruledOut: |
+          Moroni's watcher saw somebody come off the ferry. The Comoros
+          are islands, and nobody crosses into them by land.
+
+    resolved: |
+      Travel order approved. The plane crosses hours of dry bush and
+      comes down at Lusaka, a city on a high plateau, far from any
+      sea, with jacaranda trees along its avenues. GREY_PETREL was at
+      a bank off Cairo Road this morning and left an hour before your
+      plane came in. The cashier still has the courier's payment
+      slips on the counter. One line of GREY_PETREL's file, the
+      handler, is classified above your clearance. The clerk suggests
+      asking again after a promotion or two.
+
+    referenceSolution: |
+      query {
+        operative(codename: "GREY_PETREL") {
+          codename
+          sightings {
+            id
+            city { name country { name borders { name } currency { code name } } }
+          }
         }
       }
 
@@ -215,7 +387,7 @@ stages:
     objective: Identify the company the payment for the tiles is going to.
 
     briefing: |
-      GREY_PETREL has lodged three payments at a Lusaka bank. The
+      GREY_PETREL lodged three payments at the bank before leaving. The
       payees are Kafue Ceramics Trust, Copperbelt Clay Works, and
       Beira Tile Agency. One payment is for the tiles. The bank
       will stop one payment and only one.
@@ -320,7 +492,8 @@ stages:
         fieldCheck: |
           The bank is a cool marble hall off Cairo Road, Lusaka's long
           main street. The bank confirms who directs Copperbelt Clay
-          Works. The manager asks where the company is registered.
+          Works. The manager asks whether Portuguese is spoken in the
+          country where the company is registered.
       MZ-BEIRA:
         location: MZ
         refutation:
@@ -336,9 +509,9 @@ stages:
           Beira Tile Agency is registered in Mozambique and directed
           by TIN_FALCON, whose loyalties lie further north.
         fieldCheck: |
-          Beira lies low and flat beside the sea, and old railway
-          sheds rust by the docks. Beira confirms the registration.
-          The agent asks which organization the director answers to.
+          Beira lies low and flat beside the sea, and old railway sheds
+          rust by the docks. Beira confirms the registration. The agent
+          asks which organization the director, TIN_FALCON, answers to.
 
     resolved: |
       Deduction accepted. The bank stops the payment to Kafue

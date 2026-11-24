@@ -1,4 +1,5 @@
 import { leadFacts } from "../../engine/board.ts";
+import { COSTS } from "../../engine/clock.ts";
 import { useWorkspace } from "./context.ts";
 import { FactLine } from "./Evidence.tsx";
 import { hours } from "./describe.ts";
@@ -49,6 +50,12 @@ export function LeadBoard({ onShowMap }: { onShowMap(): void }) {
                   >
                     Show on the map
                   </button>
+                </p>
+              )}
+              {priced && lead.fieldCheckHours !== undefined && (
+                <p className="board__prices" data-testid="lead-prices">
+                  A field check on this lead costs {hours(lead.fieldCheckHours)}
+                  . A query to the archive costs {hours(COSTS.transmission)}.
                 </p>
               )}
               {facts.length === 0 ? (

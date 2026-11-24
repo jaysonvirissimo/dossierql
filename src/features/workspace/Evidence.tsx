@@ -2,6 +2,7 @@ import { bindingTypes, leadBinding } from "../../content/types.ts";
 import type { Dispatch, Returned } from "../../engine/mission.ts";
 import { refOf } from "../../graphql/store.ts";
 import { useWorkspace } from "./context.ts";
+import { focusEditor } from "./Editor.tsx";
 import { describeFact, hours, labelOf, words } from "./describe.ts";
 
 /** One fact, with a button that opens the response it first came back in. */
@@ -74,10 +75,13 @@ const CHIP = {
 export function ReturnedForm({
   returned,
   fieldCheck,
+  transmission,
 }: {
   returned: Returned;
   /** The price shown on the field check button, such as " (2 hours)". */
   fieldCheck: string;
+  /** The price of one transmission, shown the same way, such as " (1 hour)". */
+  transmission: string;
 }) {
   const { stage, state, dispatch } = useWorkspace();
   const types = bindingTypes(stage);
@@ -164,19 +168,38 @@ export function ReturnedForm({
         submit the {returned.order} again.
       </p>
       {returned.canFieldCheck && (
-        <p>
-          A field check sends someone to look into {leadName} and report back.
-          Your choices on the form stay as they are.{" "}
-          <button
-            type="button"
-            className="button button--small"
-            onClick={() =>
-              dispatch({ type: "field-check", leadId: returned.leadId })
-            }
-          >
-            Order a field check{fieldCheck}
-          </button>
-        </p>
+        <div className="returned__choices" data-testid="field-check-choice">
+          <div className="returned__choice">
+            <p>
+              A field check sends someone to look into {leadName} on the spot.
+              Their dispatch tells you which record holds the missing fact, and
+              you then ask the archive for that record. Your choices on the form
+              stay as they are.
+            </p>
+            <button
+              type="button"
+              className="button button--small"
+              onClick={() =>
+                dispatch({ type: "field-check", leadId: returned.leadId })
+              }
+            >
+              Order a field check{fieldCheck}
+            </button>
+          </div>
+          <div className="returned__choice">
+            <p>
+              Or you can ask the archive yourself. If you can work out which
+              record holds the missing fact, one transmission brings it back.
+            </p>
+            <button
+              type="button"
+              className="button button--small"
+              onClick={() => focusEditor()}
+            >
+              Write another query{transmission}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

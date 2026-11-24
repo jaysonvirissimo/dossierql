@@ -9,6 +9,7 @@ import { travelHours } from "../../engine/clock.ts";
 import { refOf } from "../../graphql/store.ts";
 import { labelOf, type Ledger } from "./describe.ts";
 import {
+  fieldCheckCost,
   leadCountry,
   leadStatus,
   type Env,
@@ -23,6 +24,12 @@ export interface LeadView {
   country?: Country;
   /** The journey from the stage's country, or 0 within the same country. */
   hours: number;
+  /**
+   * The price of a field check on the lead, while one is still on offer:
+   * the stage writes a check for it, and the lead is neither ruled out nor
+   * already checked. The card shows it beside the price of one query.
+   */
+  fieldCheckHours?: number;
   status: LeadStatus;
 }
 
@@ -47,13 +54,19 @@ export function stageLeads(
       code && code !== stage.location
         ? travelHours(env.world, stage.location, code)
         : 0;
+    const status = leadStatus(state, id);
+    const fieldCheckOpen =
+      status === "open" && Boolean(stage.leadOutcomes?.[id]?.fieldCheck);
     return {
       id,
       label: lead.label,
       ...(city ? { city } : {}),
       ...(country ? { country } : {}),
       hours,
-      status: leadStatus(state, id),
+      ...(fieldCheckOpen
+        ? { fieldCheckHours: fieldCheckCost(env, state, id) }
+        : {}),
+      status,
     };
   });
 }

@@ -4,7 +4,7 @@ import {
   referenceOperations,
   solutionBindings,
 } from "../../content/types.ts";
-import { travelHours } from "../../engine/clock.ts";
+import { COSTS, travelHours } from "../../engine/clock.ts";
 import {
   emptyDraft,
   fromLedger,
@@ -146,9 +146,15 @@ export function DraftPanel() {
     .filter(([name]) => types[name] === "Country")
     .map(([name]) => draft?.bindings[name])
     .find((code) => code);
-  const journey =
-    named && named !== stage.location
+  // Until the form names a country, the journey has no price: the next
+  // stage's country is the answer, so its price would give the answer away.
+  const countryBox = others.some(([name]) => types[name] === "Country");
+  const journey: number | null = named
+    ? named !== stage.location
       ? travelHours(env.world, stage.location, named)
+      : 0
+    : countryBox
+      ? null
       : proceedCost(env, state);
 
   return (
@@ -484,6 +490,8 @@ export function DraftPanel() {
                 reference of this draft&apos;s lead, <code>{draft.leadId}</code>
                 , and give <code>to</code> the country&apos;s name.
                 {timed &&
+                  journey !== null &&
+                  journey !== null &&
                   journey > 0 &&
                   ` The order costs one hour to transmit, and the journey takes ${hours(journey)} more.`}
               </p>
@@ -498,7 +506,7 @@ export function DraftPanel() {
                 }
               >
                 {travel
-                  ? `Travel${cost(journey)}`
+                  ? `Travel${journey === null ? "" : cost(journey)}`
                   : warrant
                     ? applyLabel(warrantRejectionCost(state))
                     : "Submit deduction"}
@@ -536,6 +544,7 @@ export function DraftPanel() {
             fieldCheck={cost(
               fieldCheckCost(env, state, notice.returned.leadId),
             )}
+            transmission={cost(COSTS.transmission)}
           />
         )}
         {notice?.kind === "shortfall" && (
@@ -616,9 +625,15 @@ function DecisionForm({
     .filter(([name]) => types[name] === "Country")
     .map(([name]) => draft?.bindings[name])
     .find((code) => code);
-  const journey =
-    named && named !== stage.location
+  // Until the form names a country, the journey has no price: the next
+  // stage's country is the answer, so its price would give the answer away.
+  const countryBox = others.some(([name]) => types[name] === "Country");
+  const journey: number | null = named
+    ? named !== stage.location
       ? travelHours(env.world, stage.location, named)
+      : 0
+    : countryBox
+      ? null
       : proceedCost(env, state);
   const options = (type: string) =>
     knownRecords(state, type)
@@ -741,6 +756,7 @@ function DecisionForm({
             , and give <code>to</code> the country&apos;s name. The archive
             checks the claims above when it receives the order.
             {timed &&
+              journey !== null &&
               journey > 0 &&
               ` The order costs one hour to transmit, and the journey takes ${hours(journey)} more.`}
           </p>
@@ -755,7 +771,7 @@ function DecisionForm({
             }
           >
             {travel
-              ? `Travel${cost(journey)}`
+              ? `Travel${journey === null ? "" : cost(journey)}`
               : warrant
                 ? applyLabel(warrantRejectionCost(state))
                 : "Submit deduction"}

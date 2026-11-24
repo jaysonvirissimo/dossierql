@@ -150,9 +150,9 @@ stages:
         fieldCheck: |
           Valparaíso climbs its hills in painted houses, and the
           funicular lifts creak up from the port. Valparaíso confirms
-          who directs Meridian Forwarding. The shipping clerk adds
-          that the company is on the papers already, as the shipper,
-          and asks which end of the voyage customs meant.
+          who directs Meridian Forwarding. The shipping clerk adds that
+          the company is on the papers for VAL-0733 already, as the
+          shipper, and asks which end of the voyage customs meant.
       PE-MERIDIAN-FRT:
         location: PE
         fieldCheck: |

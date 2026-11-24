@@ -208,6 +208,17 @@ test("a case with a clock: rule out a lead, check another, and run out of time",
     name: /Order a field check/,
   });
   await expect(check).toContainText("2 hours");
+  // Beside the check, another query, at the price of one transmission. It
+  // only puts the cursor in the editor, and costs nothing until sent.
+  const another = page
+    .getByTestId("field-check-choice")
+    .getByRole("button", { name: /Write another query/ });
+  await expect(another).toContainText("1 hour");
+  await press(another);
+  await expect(
+    page.getByRole("textbox", { name: "GraphQL query" }),
+  ).toBeFocused();
+  await expect(clock(page)).toContainText("16 of 17 hours left");
   await press(check);
   await expect(draft(page)).toContainText(
     "asks who directs the company collecting them",
