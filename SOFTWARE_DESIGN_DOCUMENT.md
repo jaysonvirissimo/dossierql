@@ -1,7 +1,7 @@
 # DossierQL — Software Design Document
 
 **Status:** Draft
-**Version:** 0.13
+**Version:** 0.14
 **Last updated:** November 24, 2026
 
 ## 1. Introduction and Overview
@@ -98,6 +98,8 @@ At clearance 10 the entries that clearance 9 withheld come back, and the inquiry
 
 At clearance 11 the inquiry follows the envelope by its fares. The Standing Committee keeps no register, but its messengers ride on fares that the accounts office pays, and the accounts office will not open its books to the inquiry. It answers an expense claim, though, with a receipt that gives the voucher on which the fare was already paid. That is the story reason for mutations: the inquiry files paperwork to read what the archive will not let it query. *The Messengers' Fares* follows the envelope from the Committee's rooms. Rui Fontes carried it to Santa Apolónia station and handed it on the platform to Gaspar Leal, the Committee's other messenger, who took it to Madrid on the Sud Express. Every fare was paid by the Standing Committee on Teresa Valente's authority, and the car that met the train in Madrid was paid from the account the Committee keeps for its chair. The assessment, *The Chair's Account*, reads Madrid Station's drivers' book for the next day. The car that took the envelope from the Hotel Inglés was countersigned for by Afonso Mascarenhas, chair of the Standing Committee, and paid from the chair's account on the chair's own authority. The chair holds the post by right of office and is on no office's list of officers, which is why no paper the inquiry held gave the chair's name. The answer identifies the chair and makes the question harder: every voucher on the chair's account carries the initials A.M., and nothing the inquiry holds shows that the chair wrote the notes signed M. M is not identified at clearance 11.
 
+Clearance 12 is planned (Milestone 14) and not yet written. It turns the inquiry from reading papers into a pursuit. One named operative of the Parallax Circle leaves Lisbon, and the player follows them through several countries, arriving each time just after they have gone. The level ends with a warrant on the bureaucracy's form, which is the story reason for input objects, and with an arrest. Who the warrant names, and how far the arrest goes toward identifying M, is settled when the level is written. Clearance 13 keeps the end of the campaign.
+
 All characters, agencies, organizations, and storylines will be original creations. References to the game's creative influences must not imply affiliation with the owners of the source franchises.
 
 ### 2.4 Recurring Cast
@@ -106,6 +108,7 @@ A small recurring cast gives the game's systems a voice.
 
 - **The records clerk** runs the archive behind the terminal. The clerk annotates GraphQL errors, delivers hints, and returns malformed requests unprocessed. The clerk is weary and precise, never mocking. In the coda (Section 2.3) the clerk turns out to have countersigned and filed both sets of orders, as the functionary who processes whatever the desk sends down. The clerk did not write the orders and is not the adversary. The clerk goes on teaching afterward, so nothing in the story may give the player a reason to distrust a hint or an annotation.
 - **The adversary** is a recurring figure in the campaign's criminal organization who leaves notes, narrowly escapes, and gives the player someone to pursue across missions. In the first campaign the adversary signs notes with the letter M. M's last note is what sends the player to the receipt. M is still at large and unidentified when the campaign ends.
+- **Circle operatives** are planned from clearance 12 (Milestone 14). A case that ends in an arrest has one operative of the Parallax Circle as its quarry. Each has a cover name, a habit, and a weakness, written in the understated absurdity of Section 2.2: an operative who cannot pass a bookshop, or who always tips in the wrong currency. The operative's dossier shows only what the player's queries have retrieved (Section 8.2).
 - **The bureaucracy** grants clearance, approves or rejects warrants, and bills travel. It explains the game's rules in the form of regulations.
 
 ## 3. Game and Learning Design
@@ -203,6 +206,15 @@ There is no numeric score in the MVP, and request weight does not become one. Th
 Missions that end with an arrest require a warrant. The player identifies an operative on the form, and the archive looks in the ledger for evidence of each claim the warrant makes, such as an alias link or presence at the scene. Deductions and travel orders already work this way (Section 3.2), so a warrant brings no new way of handling evidence.
 
 The bureaucracy returns a warrant whose blank boxes need filling, at no cost. Once a warrant is submitted, a rejection costs time. Warrants are introduced after destination missions, once the player is comfortable gathering evidence. They arrive after the MVP (Section 11).
+
+The first warrants are planned for clearance 12 (Milestone 14), at the end of a pursuit. A pursuit is a case in which the player follows one operative from country to country (Section 2.4):
+
+- Each travel stage asks where the operative went next, and the clue is a fact about the place (Section 5.6).
+- The player lands just after the operative has left. The arrival dispatch says what the operative left behind, such as a cold cup of coffee or a forwarding address, and that is the next stage's lead.
+- The clock's deadline is the operative's escape. The briefing names it, as every deadline is named (Section 3.3).
+- An accepted warrant ends the case with the stamp **DETAINED**. When the deadline passes first, the stamp is **AT LARGE**.
+
+The warrant is a casework mechanic, and it takes a row in the table of Section 3.15 when it is built.
 
 ### 3.5 Failure and Dead Ends
 
@@ -303,6 +315,24 @@ Give the target feature a visible payoff during the case. Aliases save a transmi
 ### 3.8 Clearance and Progression
 
 Clearance is the player's rank. It is one more than the highest level whose assessment mission the player has passed, so a new player holds clearance 1.
+
+Rank titles are planned (Milestone 15). Each clearance will carry a title in the agency's civil-service style, and the debrief of a case that promotes the player will stamp the new title beside the outcome. The title is read from the clearance and never stored (Section 7.4). The titles are provisional:
+
+| Clearance | Title |
+|---|---|
+| 1 | Probationary Clerk |
+| 2 | Junior Clerk |
+| 3 | Clerk |
+| 4 | Senior Clerk |
+| 5 | Assistant Analyst |
+| 6 | Analyst |
+| 7 | Senior Analyst |
+| 8 | Case Officer |
+| 9 | Senior Case Officer |
+| 10 | Principal Officer |
+| 11 | Deputy Head of Section |
+| 12 | Head of Section |
+| 13 | Controller |
 
 Clearance controls two things:
 
@@ -1225,6 +1255,8 @@ Validation cannot catch everything, so mission authors also follow these rules.
 - **Give every claim two routes.** The two evidence sets should pass through different records, so that a player who misses one field can still make the case. Prefer a second route through records the schema already has, such as a border seen from the other side. Add a record for the purpose only when none exists, because each one enlarges the schema a beginner has to read.
 - **Write a fresh assessment case.** Change the evidence or relationships enough that a player has to decide which fields to retrieve. Keep the goal clear and leave the editor blank.
 - **Say which record settles a contents claim.** A claim about what a shipment holds accepts the shipping papers (`manifest`) or the inspector's finding, whichever shows it. When the papers cannot tell the candidates apart, the clue says so, so that the player knows why the inspection is needed in that case and was not in an earlier one.
+- **Find the next city from a fact about the place.** In a pursuit (Section 3.4), the clue to where the operative went next is a fact that the world data holds: the currency they changed money into, or the language they asked for directions in. The player settles it with a query. *The Borrowed Chronometer* and *The Guest Register* already use clues of this kind.
+- **Open an arrival with the place.** The dispatch for a journey's arrival, and the dead end of a field check, begin with a short scene of the place before the casework: a harbour, a market, a railway platform. The scene agrees with the world data and mentions no date (Section 2.1). Existing travel stages and field checks are rewritten to this rule in Milestone 15.
 - **Run the queries before writing the text.** Briefings, clues, hints, and dead ends must describe what the engine actually returns. Text written from expectation is the most common source of broken missions.
 - **Introduce a term before using it.** Otherwise link its glossary entry.
 - **Say what to change.** A starter query marks the part the player is meant to complete.
@@ -1400,6 +1432,20 @@ Give each case one motif drawn from its subject. A strip of cobalt tilework mark
 - Put hints, the manual, and other help alongside the working area. At narrower widths the layout reflows without covering the editor or its results.
 - Pair status color with a text label. Make clues and travel information available as text.
 - Support keyboard play throughout, honor reduced-motion preferences, and keep the working layout usable at a window width of 1024 pixels.
+
+Motion is planned (Milestone 15). Four animations mark the moments when the case moves:
+
+- **Travel.** When a journey is approved, the map panel draws the route from city to city, and the clock counts down by the journey's hours.
+- **The stamp.** The debrief's decision stamp lands with a short stamping motion, as the stamp on a passed drill already does.
+- **An accepted form.** The accepted form slides into the dispatches.
+- **A dossier.** When a dossier opens, its page is clipped into the file.
+
+These rules govern every animation:
+
+- An animation never delays text or input. The player can read and type while it plays.
+- An animation is short.
+- No animation plays when the system asks for reduced motion or when the player turns motion off in Settings.
+- Text is never revealed letter by letter. Reading is most of the game.
 
 ### 8.2 Primary Screens
 
@@ -1681,13 +1727,40 @@ The first screen loaded every mission file, and the initial bundle stood at 137.
 
 **Success criterion:** No stage or debrief text is in the initial bundle, and a save made before the change keeps its investigation.
 
+### Milestone 14 — Clearance 12: The Arrest
+
+This milestone is planned, and none of it is built. It adds the seventh level of *The Fourth Desk*. The level is a pursuit that ends in the game's first warrant and first arrest (Sections 2.3 and 3.4). The adversary is identified in clearance 12 or 13 and not before.
+
+- Add the warrant: a form that identifies an operative, judged from the ledger as every form is (Sections 3.2 and 3.4). Give it a row in the table of Section 3.15, and extend the Pacing validation check to it (Section 5.5).
+- Add the stamps **DETAINED** and **AT LARGE**.
+- Add the clearance 12 schema, with `requestWarrant` and its input object, and the steps that row 12 of the coverage table lists: an input object, a block string, a variable with a default value, and an input object marked `@oneOf` (Section 3.7).
+- Add the records of the operative the level pursues, and show them in the operative dossier as the player retrieves them (Sections 2.4 and 8.2).
+- Write an arrival dispatch for each journey of the pursuit that lands just after the operative has left (Section 3.4).
+- Write each pursuit clue as a fact about the place, under the rule of Section 5.6.
+- Add the concept card for input objects, and glossary entries for an input object and a block string.
+- Author the teaching mission as a pursuit in four stages that follow the coverage table, and an assessment that ends in a warrant.
+- Run both agent playtests on the two new cases, and act on what they find.
+
+**Success criterion:** A player who has never written an input object can follow an operative through several countries, each journey found from a fact about the place, and apply for a warrant with an input object, each GraphQL step in a stage that introduces nothing else.
+
+### Milestone 15 — The Chase on Screen
+
+This milestone is planned, and none of it is built. It does not depend on Milestone 14. It makes travel and promotion feel like events, in the cases that already exist.
+
+- Add the rank titles of Section 3.8, and stamp the new title on the debrief of a case that promotes the player.
+- Rewrite the arrival dispatches of the seven cases that have a destination stage, and the dead ends of field checks, so that each opens with a scene of the place (Section 5.6).
+- Add the four animations of Section 8.1: the route and the clock on travel, the debrief stamp, the accepted form, and the dossier page.
+- Add end-to-end checks that no animation plays when motion is reduced, and that the player can type while an animation plays.
+- Run the novice walkthrough on one case with a destination stage, and act on what it finds.
+
+**Success criterion:** A reader who does not know the answer can say, after one travel stage, where they landed and what the place is like, and no animation delays a player who reads or types.
+
 ### After 1.0
 
-Where this document says that a feature arrives after the MVP, and Milestones 5 to 13 do not list it, the feature arrives after 1.0.
+Where this document says that a feature arrives after the MVP, and Milestones 5 to 15 do not list it, the feature arrives after 1.0.
 
-- Clearance levels 12 and 13, input objects and subscriptions, with the steps of Section 3.7. The adversary is identified in these levels and not before. Clearance 11 identifies the chair of the Standing Committee, and leaves open whether the chair is M.
+- Clearance level 13, subscriptions, with the steps of Section 3.7. Clearance 12 is planned in Milestone 14. The adversary is identified in clearance 12 or 13 and not before. Clearance 11 identifies the chair of the Standing Committee, and leaves open whether the chair is M.
 - A kata for introspection, whose pass does not rest on facts (Section 3.11).
-- Warrants and missions that end in an arrest.
 - Conflicting reports and source reliability.
 - Deductions and warrants as mutations. Travel orders are filed as mutations from clearance 11.
 - Seeded mission variants.
