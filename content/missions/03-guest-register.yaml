@@ -196,8 +196,10 @@ stages:
           that nobody there bargains in Swahili, least of all the porter.
 
     resolved: |
-      Travel order approved. The hotel in Zanzibar City produces
-      its register and a pot of tea.
+      Travel order approved. The ferry comes into the harbour of
+      Zanzibar City past a line of wooden sailing boats, and the old
+      town rises behind the quay in white stone and carved wooden
+      doors. The hotel produces its register and a pot of tea.
 
     referenceSolution: |
       query {

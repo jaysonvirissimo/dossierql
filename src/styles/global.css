@@ -299,15 +299,35 @@ input {
   transform: rotate(-4deg);
 }
 
+/* The stamp lands on the page, as a rubber stamp does (SDD 8.1). */
+.stamp--land {
+  animation: stamp-land var(--motion) ease-out both;
+}
+
+.stamp--rank {
+  font-size: 1rem;
+}
+
+@keyframes stamp-land {
+  from {
+    opacity: 0;
+    transform: rotate(-4deg) scale(1.6);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     transition: none !important;
     animation: none !important;
     scroll-behavior: auto !important;
   }
 }
 
-:root[data-motion="reduced"] * {
+:root[data-motion="reduced"] *,
+:root[data-motion="reduced"] *::before,
+:root[data-motion="reduced"] *::after {
   transition: none !important;
   animation: none !important;
   scroll-behavior: auto !important;

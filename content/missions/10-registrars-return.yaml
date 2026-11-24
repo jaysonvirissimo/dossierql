@@ -149,8 +149,9 @@ stages:
           Rotterdam has blue glazed tiles of the right size, bought
           and paid for in euros by a man who wanted a bathroom.
         fieldCheck: |
-          Rotterdam confirms the tiles. The importer asks which
-          currency the buyer was heard to mention.
+          Rotterdam's port runs for miles of cranes and grey water
+          toward the North Sea. Rotterdam confirms the tiles. The
+          importer asks which currency the buyer was heard to mention.
       OPO-0830:
         location: GB
         refutation:
@@ -163,12 +164,16 @@ stages:
           Southampton takes pounds. This crate is slate, and the
           harbourmaster remarks that he has heard of you from Cape Town.
         fieldCheck: |
-          Southampton confirms the currency. The harbourmaster
-          suggests consulting the manifest's description of the goods.
+          Southampton is grey and wet, and the cruise ships tower over
+          the docks. Southampton confirms the currency. The
+          harbourmaster suggests consulting the manifest's description
+          of the goods.
 
     resolved: |
-      Travel order approved. Southampton has already relabelled
-      the crate.
+      Travel order approved. The ferry comes up Southampton Water in a
+      grey drizzle, past the cranes of the container port and the
+      stones of the old town wall, and the harbourmaster meets you
+      under an umbrella. Southampton has already relabelled the crate.
 
     referenceSolution: |
       query Departures($city: String!) {
@@ -334,8 +339,9 @@ stages:
           Oslo has blue tiles and a dealer who prices them in
           Norwegian kroner, which is one letter and a sea away.
         fieldCheck: |
-          Oslo confirms the tiles. The dealer asks which country's
-          currency the buyer asked about.
+          Oslo's fjord is still, and the white roof of the opera house
+          slopes down into the water. Oslo confirms the tiles. The
+          dealer asks which country's currency the buyer asked about.
       SOU-0921:
         location: IS
         refutation:
@@ -348,8 +354,10 @@ stages:
           Reykjavik expects a crate of slate as well. The stone
           yard would like it known that slate is a perfectly good tile.
         fieldCheck: |
-          Reykjavik confirms the currency. The stone yard suggests
-          consulting the manifest's description of the goods.
+          Reykjavik's harbour is cold and bright, with snow on the
+          mountain across the bay. Reykjavik confirms the currency.
+          The stone yard suggests consulting the manifest's
+          description of the goods.
 
     resolved: |
       Deduction accepted. Reykjavik holds the crate at the quay.

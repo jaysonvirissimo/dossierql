@@ -148,17 +148,19 @@ stages:
           Meridian Forwarding sent the cases. Valparaíso observes
           that a company seldom posts things to itself.
         fieldCheck: |
-          Valparaíso confirms who directs Meridian Forwarding. The
-          shipping clerk adds that the company is on the papers
-          already, as the shipper, and asks which end of the voyage
-          customs meant.
+          Valparaíso climbs its hills in painted houses, and the
+          funicular lifts creak up from the port. Valparaíso confirms
+          who directs Meridian Forwarding. The shipping clerk adds
+          that the company is on the papers already, as the shipper,
+          and asks which end of the voyage customs meant.
       PE-MERIDIAN-FRT:
         location: PE
         fieldCheck: |
-          Callao confirms that a clerk from Meridian Freight has been
-          at the quay twice, asking after six cases. The depot wrote
-          the cases up when they came ashore, and its intake record
-          for VAL-0733 says who is to receive them.
+          Fog lies low over the port of Callao, and sea lions bark
+          under the quay. Callao confirms that a clerk from Meridian
+          Freight has been at the quay twice, asking after six cases.
+          The depot wrote the cases up when they came ashore, and its
+          intake record for VAL-0733 says who is to receive them.
 
     resolved: |
       Deduction accepted. Customs keeps the cases.

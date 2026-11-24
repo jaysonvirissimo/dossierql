@@ -81,8 +81,8 @@ the text a player reads.
 - **The engine is one reducer.** `act(env, state, action)` in
   `src/engine/mission.ts` holds every rule of an investigation. The interface
   only dispatches actions and renders state.
-- **Rank is derived.** Saves hold the list of what happened. Clearance and
-  concept cards are recomputed from it, so curriculum changes need no
+- **Rank is derived.** Saves hold the list of what happened. Clearance, its
+  rank title (`src/engine/rank.ts`), and concept cards are recomputed from it, so curriculum changes need no
   migration.
 - **Costs live in one table.** `src/engine/clock.ts` has every cost and
   factor. A mission's budget is computed from its reference solution.

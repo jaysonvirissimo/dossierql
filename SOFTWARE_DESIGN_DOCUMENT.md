@@ -316,7 +316,7 @@ Give the target feature a visible payoff during the case. Aliases save a transmi
 
 Clearance is the player's rank. It is one more than the highest level whose assessment mission the player has passed, so a new player holds clearance 1.
 
-Rank titles are planned (Milestone 15). Each clearance will carry a title in the agency's civil-service style, and the debrief of a case that promotes the player will stamp the new title beside the outcome. The title is read from the clearance and never stored (Section 7.4). The titles are provisional:
+Each clearance carries a rank title in the agency's civil-service style. When an assessment promotes the player, its debrief stamps the new title beside the outcome, and the promotion note gives the title with the new clearance. The title is read from the clearance and never stored (Section 7.4):
 
 | Clearance | Title |
 |---|---|
@@ -1260,7 +1260,7 @@ Validation cannot catch everything, so mission authors also follow these rules.
 - **Write a fresh assessment case.** Change the evidence or relationships enough that a player has to decide which fields to retrieve. Keep the goal clear and leave the editor blank.
 - **Say which record settles a contents claim.** A claim about what a shipment holds accepts the shipping papers (`manifest`) or the inspector's finding, whichever shows it. When the papers cannot tell the candidates apart, the clue says so, so that the player knows why the inspection is needed in that case and was not in an earlier one.
 - **Find the next city from a fact about the place.** In a pursuit (Section 3.4), the clue to where the operative went next is a fact that the world data holds: the currency they changed money into, or the language they asked for directions in. The player settles it with a query. *The Borrowed Chronometer* and *The Guest Register* already use clues of this kind.
-- **Open an arrival with the place.** The dispatch for a journey's arrival, and the dead end of a field check, begin with a short scene of the place before the casework: a harbour, a market, a railway platform. The scene agrees with the world data and mentions no date (Section 2.1). Existing travel stages and field checks are rewritten to this rule in Milestone 15.
+- **Open an arrival with the place.** The dispatch for a journey's arrival, and the dead end of a field check, begin with a short scene of the place before the casework: a harbour, a market, a railway platform. The scene agrees with the world data and mentions no date (Section 2.1).
 - **Run the queries before writing the text.** Briefings, clues, hints, and dead ends must describe what the engine actually returns. Text written from expectation is the most common source of broken missions.
 - **Introduce a term before using it.** Otherwise link its glossary entry.
 - **Say what to change.** A starter query marks the part the player is meant to complete.
@@ -1437,18 +1437,18 @@ Give each case one motif drawn from its subject. A strip of cobalt tilework mark
 - Pair status color with a text label. Make clues and travel information available as text.
 - Support keyboard play throughout, honor reduced-motion preferences, and keep the working layout usable at a window width of 1024 pixels.
 
-Motion is planned (Milestone 15). Four animations mark the moments when the case moves:
+Four animations mark the moments when the case moves:
 
-- **Travel.** When a journey is approved, the map panel draws the route from city to city, and the clock counts down by the journey's hours.
+- **Travel.** When a journey is approved, the clock counts down by the journey's hours. The map panel draws every journey of the case from capital to capital and lists the route as text. A new stage opens on its briefing, so the newest route draws in the first time the player opens the map after the journey. The clock counts down whenever the case costs time, and only the figure moves: the text a screen reader or a test reads is the true figure from the first frame.
 - **The stamp.** The debrief's decision stamp lands with a short stamping motion, as the stamp on a passed drill already does.
-- **An accepted form.** The accepted form slides into the dispatches.
-- **A dossier.** When a dossier opens, its page is clipped into the file.
+- **An accepted form.** The accepted form slides into the dispatches. So does a dispatch for a lead ruled out or a field check. A dispatch read again later, or after a reload, does not move.
+- **A dossier.** When the Dossiers tab opens, each page is clipped into the file.
 
 These rules govern every animation:
 
 - An animation never delays text or input. The player can read and type while it plays.
 - An animation is short.
-- No animation plays when the system asks for reduced motion or when the player turns motion off in Settings.
+- No animation plays when the system asks for reduced motion or when the player turns motion off in Settings. Every animation is written in CSS, so the one rule that switches motion off covers all of them.
 - Text is never revealed letter by letter. Reading is most of the game.
 
 ### 8.2 Primary Screens
@@ -1751,13 +1751,15 @@ The initial bundle stays under its budget of 100 kB, at 94.0 kB.
 
 ### Milestone 15 — The Chase on Screen
 
-This milestone is planned, and none of it is built. It does not depend on Milestone 14. It makes travel and promotion feel like events, in the cases that already exist.
+This milestone makes travel and promotion feel like events, in the cases that already exist. It does not depend on Milestone 14. Every task is built.
 
 - Add the rank titles of Section 3.8, and stamp the new title on the debrief of a case that promotes the player.
 - Rewrite the arrival dispatches of the seven cases before clearance 12 that have a destination stage, and the dead ends of field checks, so that each opens with a scene of the place (Section 5.6). The clearance 12 cases already follow the rule.
 - Add the four animations of Section 8.1: the route and the clock on travel, the debrief stamp, the accepted form, and the dossier page.
 - Add end-to-end checks that no animation plays when motion is reduced, and that the player can type while an animation plays.
 - Run the novice walkthrough on one case with a destination stage, and act on what it finds.
+
+The initial bundle stays under its budget of 100 kB, at 94.1 kB.
 
 **Success criterion:** A reader who does not know the answer can say, after one travel stage, where they landed and what the place is like, and no animation delays a player who reads or types.
 

@@ -161,8 +161,10 @@ stages:
           IRON_FINCH is in Vienna and knows GREY_PETREL well. The
           Vienna desk settles its accounts in euros.
         fieldCheck: |
-          Vienna confirms the acquaintance. The cashier asks which
-          currency the account is kept in.
+          Vienna's coffee houses are full, and the trams ring their
+          way around the Ringstrasse. Vienna confirms the
+          acquaintance. The cashier asks which currency the account is
+          kept in.
       BRASS_PIPIT:
         location: LI
         refutation:
@@ -175,17 +177,21 @@ stages:
           BRASS_PIPIT banks in francs in Vaduz. GREY_PETREL's file
           does not list the name. They share friends, nothing more.
         fieldCheck: |
+          Vaduz is one main street under a castle on the mountainside.
           Vaduz confirms the francs. The desk asks whose list of
           associates the name was read from.
       OPAL_WREN:
         location: CH
         fieldCheck: |
-          Zurich knows the name. The bank asks for a travel order
-          with every claim proved before it opens a drawer.
+          Zurich's lake lies flat and grey under the mountains. Zurich
+          knows the name. The bank asks for a travel order with every
+          claim proved before it opens a drawer.
 
     resolved: |
-      Travel order approved. Zurich receives you with a ledger
-      and a list of three companies.
+      Travel order approved. The plane comes in low over a long lake
+      with mountains at its far end, and Zurich lies along the river
+      where the lake empties, its trams ringing past shuttered banks.
+      Zurich receives you with a ledger and a list of three companies.
 
     referenceSolution: |
       query {
@@ -315,7 +321,8 @@ stages:
           Uetliberg Trust has the right director. Its books are
           audited by IRON_FINCH, on behalf of quite another employer.
         fieldCheck: |
-          The bank confirms the director's allegiance. The manager
+          The bank's carpets are so thick that nobody hears you come
+          in. The bank confirms the director's allegiance. The manager
           asks who audits the books.
       CH-GLARUS:
         location: CH
@@ -332,8 +339,9 @@ stages:
           Glarus Assay Office has a Parallax auditor and a Baltic
           director. The two are said not to speak.
         fieldCheck: |
-          The bank confirms the auditor's allegiance. The manager
-          asks who sits in the director's chair.
+          The manager's window looks down on the river and its swans.
+          The bank confirms the auditor's allegiance. The manager asks
+          who sits in the director's chair.
 
     resolved: |
       Deduction accepted. Zurich freezes the accounts of Limmat

@@ -21,6 +21,7 @@ import {
 import { schemaFor } from "../../graphql/schema.ts";
 import { href } from "../../routes/parseRoute.ts";
 import { Prose } from "../Prose.tsx";
+import { ClockFigure } from "./ClockFigure.tsx";
 import { Clues } from "./Clues.tsx";
 import { WorkspaceContext, type WorkspaceValue } from "./context.ts";
 import { hours } from "./describe.ts";
@@ -292,7 +293,8 @@ export default function Workspace({ mission }: { mission: Mission }) {
                     {clockLine(mission.clock, state.hoursLeft)}
                   </p>
                   <p className="casebar__budget">
-                    {state.hoursLeft} of {hours(state.budget)} left
+                    <ClockFigure value={state.hoursLeft} /> of{" "}
+                    {hours(state.budget)} left
                   </p>
                 </>
               ) : (
@@ -312,7 +314,7 @@ export default function Workspace({ mission }: { mission: Mission }) {
         {mission.clock && state.clock === "ended" && (
           <div className="note note--bad workspace__ended" role="alert">
             {mission.debrief.stampExpired && (
-              <p className="stamp" data-testid="stamp">
+              <p className="stamp stamp--land" data-testid="stamp">
                 {mission.debrief.stampExpired}
               </p>
             )}

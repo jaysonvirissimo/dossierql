@@ -99,7 +99,7 @@
 
 .drill__passed .stamp {
   flex: none;
-  animation: drill-stamp 180ms ease-out;
+  animation: stamp-land 180ms ease-out;
 }
 
 .drill__next {
@@ -113,13 +113,6 @@
 .drill__docs > summary {
   cursor: pointer;
   font-weight: 600;
-}
-
-@keyframes drill-stamp {
-  from {
-    opacity: 0;
-    transform: rotate(-4deg) scale(1.6);
-  }
 }
 
 @media (max-width: 900px) {

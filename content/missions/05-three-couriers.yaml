@@ -154,8 +154,10 @@ stages:
           SABLE_IBIS is in Moroni. The Comoros desk points out that
           the only way across its border is by boat.
         fieldCheck: |
-          Moroni confirms SABLE_IBIS is a member in good standing.
-          The harbour office asks which land border was crossed.
+          Moroni's harbour is a curve of black volcanic rock, with an
+          old white mosque above the water. Moroni confirms SABLE_IBIS
+          is a member in good standing. The harbour office asks which
+          land border was crossed.
       TIN_FALCON:
         location: KE
         refutation:
@@ -168,18 +170,24 @@ stages:
           TIN_FALCON crossed into Kenya and reports to the Baltic
           Exchange Bureau, which pays its own couriers.
         fieldCheck: |
-          Nairobi confirms the border crossing. The station chief
-          asks whose payroll TIN_FALCON is on.
+          Nairobi is cool at its height above the sea, and the morning
+          traffic hardly moves. Nairobi confirms the border crossing.
+          The station chief asks whose payroll TIN_FALCON is on.
       GREY_PETREL:
         location: ZM
         fieldCheck: |
-          Lusaka has a visitor of that description. The station
-          asks for a travel order with every claim proved.
+          Lusaka is dusty and bright at midday, and a fan turns slowly
+          in the station's office. Lusaka has a visitor of that
+          description. The station asks for a travel order with every
+          claim proved.
 
     resolved: |
-      Travel order approved. One line of GREY_PETREL's file, the
-      handler, is classified above your clearance. The clerk
-      suggests asking again after a promotion or two.
+      Travel order approved. The plane crosses hours of dry bush and
+      comes down at Lusaka, a city on a high plateau, far from any
+      sea, with jacaranda trees along its avenues. One line of
+      GREY_PETREL's file, the handler, is classified above your
+      clearance. The clerk suggests asking again after a promotion or
+      two.
 
     referenceSolution: |
       query {
@@ -310,8 +318,9 @@ stages:
           manager lists the country's languages and Portuguese is
           not among them.
         fieldCheck: |
-          The bank confirms who directs Copperbelt Clay Works. The
-          manager asks where the company is registered.
+          The bank is a cool marble hall off Cairo Road, Lusaka's long
+          main street. The bank confirms who directs Copperbelt Clay
+          Works. The manager asks where the company is registered.
       MZ-BEIRA:
         location: MZ
         refutation:
@@ -327,8 +336,9 @@ stages:
           Beira Tile Agency is registered in Mozambique and directed
           by TIN_FALCON, whose loyalties lie further north.
         fieldCheck: |
-          Beira confirms the registration. The agent asks which
-          organization the director answers to.
+          Beira lies low and flat beside the sea, and old railway
+          sheds rust by the docks. Beira confirms the registration.
+          The agent asks which organization the director answers to.
 
     resolved: |
       Deduction accepted. The bank stops the payment to Kafue

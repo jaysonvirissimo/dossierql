@@ -538,7 +538,7 @@ export function DraftPanel() {
           </div>
         )}
         {notice?.kind === "dispatch" && (
-          <div className="note dispatch">
+          <div className="note dispatch dispatch--new">
             <p className="label">
               Dispatch
               {state.clock === "none"

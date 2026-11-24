@@ -47,6 +47,71 @@
   color: var(--terminal-dim);
 }
 
+/*
+ * The clock counts down by the hours a journey cost (SDD 8.1). The true
+ * figure stays in the text; the count is drawn over it while it plays.
+ */
+@property --hours {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 0;
+}
+
+.clock-figure {
+  position: relative;
+  font-variant-numeric: tabular-nums;
+}
+
+.clock-figure--count {
+  animation: clock-hide calc(var(--motion) * 3) step-end;
+}
+
+.clock-figure__count::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  counter-reset: hours var(--hours);
+  content: counter(hours);
+  opacity: 0;
+  animation:
+    clock-count calc(var(--motion) * 3) ease-out,
+    clock-show calc(var(--motion) * 3) step-end;
+}
+
+/* The count inherits the figures it runs between. */
+.clock-figure__count {
+  position: absolute;
+  inset: 0;
+  color: var(--terminal-dim);
+}
+
+@keyframes clock-count {
+  from {
+    --hours: var(--from);
+  }
+  to {
+    --hours: var(--to);
+  }
+}
+
+@keyframes clock-hide {
+  from {
+    color: transparent;
+  }
+  to {
+    color: inherit;
+  }
+}
+
+@keyframes clock-show {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 .workspace__ended {
   display: flex;
   gap: var(--space-3);
@@ -613,8 +678,28 @@
   margin-top: var(--space-2);
 }
 
+/* An accepted form slides into the dispatches (SDD 8.1). */
+.dispatch--new {
+  animation: dispatch-in var(--motion) ease-out both;
+}
+
+@keyframes dispatch-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+}
+
 .dispatch .label {
   margin-bottom: var(--space-1);
+}
+
+/* A dossier's page is clipped into the file as it opens (SDD 8.1). */
+@keyframes dossier-clip {
+  from {
+    opacity: 0;
+    transform: translateY(-0.75rem) rotate(-1deg);
+  }
 }
 
 .tools__panel {
@@ -710,6 +795,7 @@
 }
 
 .dossier {
+  animation: dossier-clip var(--motion) ease-out both;
   align-self: stretch;
   border: 1px solid var(--rule);
   background: var(--paper-raised);
@@ -780,6 +866,29 @@
   fill: var(--rust);
   stroke: var(--paper-raised);
   stroke-width: 1;
+}
+
+.map__route {
+  stroke: var(--rust);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 0.02 0.015;
+  fill: none;
+}
+
+/* The newest journey draws from city to city (SDD 8.1). */
+.map__route--new {
+  stroke-dasharray: 1;
+  animation: route-draw calc(var(--motion) * 3) ease-out both;
+}
+
+@keyframes route-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 .journeys {

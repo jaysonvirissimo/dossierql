@@ -45,5 +45,7 @@
   --radius: 3px;
   --focus: 2px solid var(--cobalt);
   --fast: 120ms;
+  /* An animation is short and never delays text or input (SDD 8.1). */
+  --motion: 240ms;
   --shadow: 0 1px 0 rgb(0 0 0 / 6%), 0 6px 18px rgb(20 14 4 / 10%);
 }

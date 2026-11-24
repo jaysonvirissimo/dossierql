@@ -147,8 +147,10 @@ stages:
           Mombasa's ledgers are written up, in a tidy northern hand.
           Their consignee answers to the Baltic Exchange Bureau.
         fieldCheck: |
-          Mombasa confirms the ledgers are full of figures. The
-          port office asks who directs the company collecting them.
+          Mombasa's old harbour smells of cloves and diesel, under the
+          coral walls of Fort Jesus. Mombasa confirms the ledgers are
+          full of figures. The port office asks who directs the
+          company collecting them.
       MPM-0144:
         location: MZ
         refutation:
@@ -164,8 +166,10 @@ stages:
           Maputo's crate is going to the right sort of company. Its
           forty volumes are blank, and the inspector has borrowed one.
         fieldCheck: |
-          Maputo confirms the consignee's connections. The inspector
-          asks what, if anything, is written in the books.
+          Maputo's wide avenues run down to the bay, and the railway
+          station wears a great iron dome. Maputo confirms the
+          consignee's connections. The inspector asks what, if
+          anything, is written in the books.
 
     resolved: |
       Deduction accepted. Dar es Salaam impounds the crate.

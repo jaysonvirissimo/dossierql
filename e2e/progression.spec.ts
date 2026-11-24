@@ -77,6 +77,11 @@ test("a player who knows GraphQL is promoted by placement", async ({
   await expect(
     page.getByText(/Placement passed. You now hold clearance 3/),
   ).toBeVisible();
+  // The new rank is stamped beside the outcome (SDD 3.8).
+  await expect(page.getByTestId("rank-stamp")).toHaveText("Clerk");
+  await expect(
+    page.getByText(/clearance 3 and the title of Clerk/),
+  ).toBeVisible();
   await expect(page.locator(".shell-bar__rank")).toHaveText("Clearance 3");
 
   // Placement grants the cards for the levels skipped, and opens their cases.

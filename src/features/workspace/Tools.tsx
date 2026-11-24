@@ -35,7 +35,7 @@ const TABS = [
 type TabId = (typeof TABS)[number][0];
 
 function CasePanel() {
-  const { env, state, stage, restart, dispatch } = useWorkspace();
+  const { env, state, stage, restart, dispatch, notice } = useWorkspace();
   const [confirming, setConfirming] = useState(false);
   const [passing, setPassing] = useState(false);
   const here = state.dispatches.filter((d) => d.stageId === state.stageId);
@@ -59,7 +59,15 @@ function CasePanel() {
           <h3>Dispatches</h3>
           <ol className="dispatches">
             {[...earlier, ...here].map((dispatch) => (
-              <li key={dispatch.n} className="dispatch">
+              <li
+                key={dispatch.n}
+                className={
+                  notice?.kind === "dispatch" &&
+                  notice.dispatch.n === dispatch.n
+                    ? "dispatch dispatch--new"
+                    : "dispatch"
+                }
+              >
                 <span className="label">
                   {words(dispatch.kind.replace("-", " "))}
                   {dispatch.leadId

@@ -371,7 +371,9 @@ stages:
                 includes: Country:$country
 
     resolved: |
-      Travel order approved. You land in Luanda as the depot
+      Travel order approved. The plane comes down over a wide bay,
+      where a long spit of sand shelters the harbour and the cranes of
+      the port stand over the water. You land in Luanda as the depot
       finishes logging the morning's arrivals.
 
     referenceSolution: []

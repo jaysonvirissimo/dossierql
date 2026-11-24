@@ -4,6 +4,7 @@ import { loadMission } from "../content/course.ts";
 import { referenceOperations } from "../content/types.ts";
 import { availability } from "../engine/clearance.ts";
 import { readTechnique } from "../engine/debrief.ts";
+import { rankTitle } from "../engine/rank.ts";
 import { ConceptCardView } from "../features/ConceptCardView.tsx";
 import { Prose } from "../features/Prose.tsx";
 import { href } from "./parseRoute.ts";
@@ -105,11 +106,21 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
                   ? "File closed"
                   : "Case resolved"}
             </h1>
-            <p className="stamp" data-testid="stamp">
-              {late
-                ? (mission.debrief.stampLate ?? mission.debrief.stampOnTime)
-                : mission.debrief.stampOnTime}
-            </p>
+            <div className="debrief__stamps">
+              <p className="stamp stamp--land" data-testid="stamp">
+                {late
+                  ? (mission.debrief.stampLate ?? mission.debrief.stampOnTime)
+                  : mission.debrief.stampOnTime}
+              </p>
+              {promoted && (
+                <p
+                  className="stamp stamp--rank stamp--land"
+                  data-testid="rank-stamp"
+                >
+                  {rankTitle(standing.clearance)}
+                </p>
+              )}
+            </div>
           </div>
 
           <section aria-labelledby="outcome-title">
@@ -132,8 +143,8 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
             {promoted && (
               <p className="note">
                 {completion.placement
-                  ? `Placement passed. You now hold clearance ${String(standing.clearance)}, with the concept cards for the levels you skipped.`
-                  : `Assessment passed. You now hold clearance ${String(standing.clearance)}.`}
+                  ? `Placement passed. You now hold clearance ${String(standing.clearance)} and the title of ${rankTitle(standing.clearance)}, with the concept cards for the levels you skipped.`
+                  : `Assessment passed. You now hold clearance ${String(standing.clearance)} and the title of ${rankTitle(standing.clearance)}.`}
                 {!course.missions.some(
                   (m) => m.clearance >= standing.clearance,
                 ) &&

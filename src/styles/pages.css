@@ -237,6 +237,13 @@
   gap: var(--space-3);
 }
 
+.debrief__stamps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
 .debrief__aside {
   font-size: 0.9375rem;
   color: var(--ink-soft);

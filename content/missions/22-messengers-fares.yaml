@@ -465,8 +465,11 @@ stages:
           Committee's papers for the Porto office. He carried no envelope.
 
     resolved: |
-      Travel order approved. Gaspar Leal took the envelope to Madrid on
-      the Sud Express, second class. You take the next train after it.
+      Travel order approved. The train after the Sud Express carries
+      you all night and all morning across the dry high plain, and
+      Madrid comes up under a hard blue sky. Gaspar Leal rode ahead of
+      you to Madrid on the Sud Express, second class, with the
+      envelope.
 
     referenceSolution:
       - |

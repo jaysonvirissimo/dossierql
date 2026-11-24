@@ -163,8 +163,9 @@ stages:
           Odesa has four crates for Limmat Holdings. The
           harbourmaster reports that Ukraine is still in Europe.
         fieldCheck: |
-          Odesa confirms the consignee. The harbourmaster asks
-          which continent the forwarding note gave.
+          A great stone staircase runs down from Odesa to its port.
+          Odesa confirms the consignee. The harbourmaster asks which
+          continent the forwarding note gave.
       TRS-0634:
         location: TR
         refutation:
@@ -177,12 +178,16 @@ stages:
           Two crates reached Istanbul for Uetliberg Trust. They
           contain machine parts and an apology from the shipper.
         fieldCheck: |
-          Istanbul confirms the landing. The agent asks whose
-          name is on the consignment.
+          In Istanbul the covered bazaar is loud from the first hour,
+          and the agent keeps a table at a tea house by its gate.
+          Istanbul confirms the landing. The agent asks whose name is
+          on the consignment.
 
     resolved: |
-      Travel order approved. Istanbul's quay has already sent
-      the crate on.
+      Travel order approved. The ship comes up the Bosphorus at first
+      light, past domes and minarets and the gulls that follow every
+      ferry, and ties up below the Galata Tower. Istanbul's quay has
+      already sent the crate on.
 
     referenceSolution: |
       query Departures($city: String!) {
@@ -309,8 +314,9 @@ stages:
           Odesa is in Europe and its crates are for Uetliberg
           Trust. The harbourmaster is beginning to recognise your hand.
         fieldCheck: |
-          Odesa confirms it is in Europe. The harbourmaster asks
-          whose name is on the consignment.
+          The wind comes in off the sea over Odesa's harbour, and the
+          cranes stand idle. Odesa confirms it is in Europe. The
+          harbourmaster asks whose name is on the consignment.
       IST-0725:
         location: EG
         refutation:
@@ -329,8 +335,9 @@ stages:
           Alexandria has four crates for Limmat Holdings and a
           clear view of Africa in every direction but north.
         fieldCheck: |
-          Alexandria confirms the consignee. The agent asks which
-          continent the note said.
+          Alexandria's long seafront road curves around the harbour,
+          and the trams are full. Alexandria confirms the consignee.
+          The agent asks which continent the note said.
 
     resolved: |
       Deduction accepted. The crate is on its way to Porto.

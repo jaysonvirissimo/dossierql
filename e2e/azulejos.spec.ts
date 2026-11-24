@@ -152,6 +152,11 @@ test("the Azulejos case, by keyboard at 1024 pixels, with no clock", async ({
   await expect(draft(page).getByTestId("evidence-chain")).toContainText(
     "country Angola · borders",
   );
+  // The map draws the journey and lists it as text (SDD 8.1).
+  await openTool(page, "Map");
+  await expect(page.getByTestId("route")).toHaveText("Portugal to Angola");
+  await expect(page.locator(".map__route")).toHaveCount(1);
+  await openTool(page, "Case");
   // A new country opens on a clean results panel, with Lisbon's kept.
   await expect(
     page.getByText("Nothing has been transmitted from here yet."),
