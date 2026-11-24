@@ -170,12 +170,12 @@ go back and revise an answer later.
 
 1. "What was new in that stage?" List each new thing separately: GraphQL
    syntax and game controls alike.
-2. For each control the stage used, such as Cite, the draft form, Submit,
+2. For each control the stage used, such as the boxes on the form, Submit,
    travel, a hint, or a field check: "What was that for?" If you cannot
    explain a control, say so.
 3. After a stage that ends in a submitted form: "Which facts support each
-   claim?" Answer from memory. Then compare your answer with the facts you
-   actually cited, and record any difference.
+   claim?" Answer from memory. Then compare your answer with the evidence
+   chain the accepted form showed, and record any difference.
 
 Answer these at the points named:
 

@@ -52,11 +52,11 @@ before the player goes on. Write the answers down in the player's own words.
   one new GraphQL step, or more than one new casework mechanic, asked for
   too much (SDD section 3.15). Note anything else they list, such as a
   record, a phrase, or a panel, as load.
-- Point at each control the stage used (Cite, the draft form, Submit, travel)
+- Point at each control the stage used (the boxes on the form, Submit, travel)
   and ask "What was that for?" A control the player cannot explain is a
   finding.
 - After a stage that ends in a submitted form: "Which facts support each
-  claim?" Check the answer against what the player actually cited.
+  claim?" Check the answer against the evidence chain the form showed.
 
 **In Azulejos, stage 4 (Luanda)**: after the player reads the replacement
 label, watch whether they want to send another query or look for the answer
@@ -105,7 +105,7 @@ Opened the Orientation: yes / no
 | Azulejos 4, Luanda           |         |                     |                                 |                  |       |
 | Borrowed Chronometer         |         |                     |                                 |                  |       |
 
-Which facts support each claim (their answer, and whether it matches what was cited):
+Which facts support each claim (their answer, and whether it matches the evidence chain):
 
 Luanda: did the label prompt another query? How did they identify the signer?
 

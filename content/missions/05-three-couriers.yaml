@@ -174,7 +174,7 @@ stages:
         location: ZM
         fieldCheck: |
           Lusaka has a visitor of that description. The station
-          asks for a travel order with every claim cited.
+          asks for a travel order with every claim proved.
 
     resolved: |
       Travel order approved. One line of GREY_PETREL's file, the

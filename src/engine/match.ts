@@ -139,6 +139,45 @@ export function mostTogether(
 }
 
 /**
+ * The furthest the facts reach into a set from the records already bound
+ * (SDD 3.2). A pattern counts only when its record is fixed or bound by a
+ * pattern met before it, so every fact counted connects back to the bound
+ * records. Used to tell a player how far their responses go toward a claim.
+ */
+export function reach(
+  patterns: readonly FactPattern[],
+  facts: readonly Fact[],
+  bindings: Bindings = {},
+): Filled {
+  let best: Filled = { bindings, facts: [] };
+  // A pattern about a fixed record connects only through a value it shares
+  // with a fact already counted, so it waits for one.
+  const anchored = (pattern: FactPattern, bound: Bindings, met: number) => {
+    const t = term(pattern.entity);
+    return t.binding === null ? met > 0 : bound[t.binding] !== undefined;
+  };
+  const search = (
+    left: readonly FactPattern[],
+    bound: Bindings,
+    met: Fact[],
+  ): void => {
+    if (met.length > best.facts.length) best = { bindings: bound, facts: met };
+    left.forEach((pattern, i) => {
+      if (!anchored(pattern, bound, met.length)) return;
+      const rest = left.filter((_, j) => j !== i);
+      for (const fact of facts) {
+        if (fact.field !== pattern.field) continue;
+        for (const next of matchFact(pattern, fact, bound)) {
+          search(rest, next, [...met, fact]);
+        }
+      }
+    });
+  };
+  search(patterns, bindings, []);
+  return best;
+}
+
+/**
  * Whether a fact could take part in a pattern at all, given the bindings
  * already fixed. Used to tell a player that a citation is beside the point.
  */

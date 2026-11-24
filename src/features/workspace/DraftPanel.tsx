@@ -7,6 +7,7 @@ import {
 import { travelHours } from "../../engine/clock.ts";
 import {
   emptyDraft,
+  fromLedger,
   reviewDraft,
   type ClaimReview,
 } from "../../engine/draft.ts";
@@ -19,6 +20,7 @@ import {
 import { parseRef, refOf } from "../../graphql/store.ts";
 import { useWorkspace } from "./context.ts";
 import { describeFact, hours, labelOf, typeWords, words } from "./describe.ts";
+import { EvidenceChain, ReturnedForm } from "./Evidence.tsx";
 
 const STATUS = {
   supported: { chip: "chip--ok", text: "Supported" },
@@ -76,7 +78,12 @@ export function DraftPanel() {
   const draft = active
     ? (stageState.drafts[active] ?? emptyDraft(active))
     : null;
-  const review = draft ? reviewDraft(stage, draft, state.ledger) : null;
+  // Where the archive checks the form, nothing is reviewed before it is
+  // submitted, so the form shows no status.
+  const review =
+    draft && !fromLedger(stage)
+      ? reviewDraft(stage, draft, state.ledger)
+      : null;
   const others = solutionBindings(stage).filter(([name]) => name !== lead);
   // The records the player chose on the form, each with the label of its box.
   const chosen = others
@@ -138,34 +145,38 @@ export function DraftPanel() {
     <section className="draft paper" aria-labelledby="draft-title">
       <header className="panel-head">
         <h2 id="draft-title">{formName}</h2>
-        <label className="draft__open">
-          <span className="label">Open a lead</span>
-          <select
-            // Shows the open lead, so the choice is seen to have taken.
-            value={known.some(({ id }) => id === active) ? (active ?? "") : ""}
-            disabled={closed || known.length === 0}
-            onChange={(event) => {
-              if (event.target.value) {
-                clearNotice();
-                dispatch({ type: "open-lead", leadId: event.target.value });
+        {!fromLedger(stage) && (
+          <label className="draft__open">
+            <span className="label">Open a lead</span>
+            <select
+              // Shows the open lead, so the choice is seen to have taken.
+              value={
+                known.some(({ id }) => id === active) ? (active ?? "") : ""
               }
-            }}
-          >
-            <option value="">
-              {known.length === 0
-                ? `No ${words(leadType)} retrieved yet`
-                : `Choose ${article} ${words(leadType)}`}
-            </option>
-            {known.map(({ id, label }) => (
-              <option key={id} value={id}>
-                {label}
+              disabled={closed || known.length === 0}
+              onChange={(event) => {
+                if (event.target.value) {
+                  clearNotice();
+                  dispatch({ type: "open-lead", leadId: event.target.value });
+                }
+              }}
+            >
+              <option value="">
+                {known.length === 0
+                  ? `No ${words(leadType)} retrieved yet`
+                  : `Choose ${article} ${words(leadType)}`}
               </option>
-            ))}
-          </select>
-        </label>
+              {known.map(({ id, label }) => (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </header>
 
-      {opened.length > 0 && (
+      {!fromLedger(stage) && opened.length > 0 && (
         <div className="tabs" role="tablist" aria-label="Leads">
           {opened.map((id) => {
             const out = stageState.drafts[id]?.ruledOut;
@@ -191,7 +202,9 @@ export function DraftPanel() {
         </div>
       )}
 
-      {!draft || !review ? (
+      {fromLedger(stage) ? (
+        <DecisionForm known={known} />
+      ) : !draft || !review ? (
         <div className="draft__empty">
           <ol className="draft__steps">
             <li>
@@ -489,6 +502,14 @@ export function DraftPanel() {
         {notice?.kind === "refused" && (
           <p className="note note--warn">{notice.text}</p>
         )}
+        {notice?.kind === "returned" && (
+          <ReturnedForm
+            returned={notice.returned}
+            fieldCheck={cost(
+              fieldCheckCost(env, state, notice.returned.leadId),
+            )}
+          />
+        )}
         {notice?.kind === "shortfall" && (
           <div className="note note--bad">
             <p>
@@ -516,9 +537,182 @@ export function DraftPanel() {
                   : " · no time spent"}
             </p>
             <p>{notice.dispatch.text}</p>
+            <EvidenceChain dispatch={notice.dispatch} />
           </div>
         )}
       </div>
     </section>
+  );
+}
+
+/**
+ * The form at a stage the archive checks (SDD 3.2). The player chooses a
+ * record for each box and submits. The archive then looks through every
+ * response for evidence, so the form shows no status before that.
+ */
+function DecisionForm({
+  known,
+}: {
+  known: readonly { id: string; label: string }[];
+}) {
+  const { env, state, stage, stageState, dispatch, clearNotice } =
+    useWorkspace();
+  const types = bindingTypes(stage);
+  const lead = leadBinding(stage);
+  const leadType = types[lead] ?? "";
+  const travel = stage.solution.type === "destination";
+  const formName = travel ? "travel order" : "deduction";
+  const closed = state.status === "complete" || state.clock === "ended";
+  const timed = state.clock === "active";
+  const active = stageState.activeLead;
+  const draft = active
+    ? (stageState.drafts[active] ?? emptyDraft(active))
+    : null;
+  const others = solutionBindings(stage).filter(([name]) => name !== lead);
+  const refutable = Object.values(stage.leadOutcomes ?? {}).some(
+    (o) => o.refutation,
+  );
+  const cost = (n: number) =>
+    state.clock === "none" ? "" : ` (${timed && n > 0 ? hours(n) : "free"})`;
+  const named = others
+    .filter(([name]) => types[name] === "Country")
+    .map(([name]) => draft?.bindings[name])
+    .find((code) => code);
+  const journey =
+    named && named !== stage.location
+      ? travelHours(env.world, stage.location, named)
+      : proceedCost(env, state);
+  const options = (type: string) =>
+    knownRecords(state, type)
+      .map((id) => ({ id, label: labelOf(refOf(type, id), state.ledger) }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  const box = (name: string) => stage.labels?.[name] ?? words(name);
+
+  return (
+    <div className="draft__body decision">
+      <p className="draft__claims-intro">
+        Choose a record for each box. When you submit the {formName}, the
+        archive looks through every response you have received for facts that
+        prove each of these claims about the records you chose:
+      </p>
+      <ul className="claims claims--preview">
+        {stage.claims.map((claim) => (
+          <li key={claim.id}>{claim.prompt}</li>
+        ))}
+      </ul>
+
+      <label className="draft__name">
+        <span className="label">{box(lead)}</span>
+        <select
+          value={known.some(({ id }) => id === active) ? (active ?? "") : ""}
+          disabled={closed || known.length === 0}
+          onChange={(event) => {
+            if (event.target.value) {
+              clearNotice();
+              dispatch({ type: "open-lead", leadId: event.target.value });
+            }
+          }}
+        >
+          <option value="">
+            {known.length === 0
+              ? `No ${words(leadType)} retrieved yet`
+              : "Not yet chosen"}
+          </option>
+          {known.map(({ id, label }) => (
+            <option key={id} value={id}>
+              {label}
+              {stageState.drafts[id]?.ruledOut ? " (ruled out)" : ""}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {others.map(([name]) => {
+        const type = types[name] ?? "";
+        const list = options(type);
+        return (
+          <label key={name} className="draft__name">
+            <span className="label">{box(name)}</span>
+            <select
+              value={draft?.bindings[name] ?? ""}
+              disabled={closed || !draft || draft.ruledOut}
+              onChange={(event) => {
+                if (!draft) return;
+                clearNotice();
+                dispatch({
+                  type: "name",
+                  leadId: draft.leadId,
+                  binding: name,
+                  value: event.target.value,
+                });
+              }}
+            >
+              <option value="">
+                {list.length === 0
+                  ? `No ${words(type)} retrieved yet`
+                  : "Not yet chosen"}
+              </option>
+              {list.map(({ id, label }) => (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+        );
+      })}
+
+      {draft?.ruledOut && (
+        <p className="draft__status">
+          <span className="chip chip--bad">Ruled out</span> You have ruled out{" "}
+          {labelOf(refOf(leadType, draft.leadId), state.ledger)}. Choose another{" "}
+          {words(leadType)} for “{box(lead)}”.
+        </p>
+      )}
+
+      <div className="draft__actions">
+        {refutable && (
+          <button
+            type="button"
+            className="button"
+            disabled={closed || !draft || draft.ruledOut}
+            onClick={() =>
+              draft && dispatch({ type: "rule-out", leadId: draft.leadId })
+            }
+          >
+            Rule out this {words(leadType)} (free)
+          </button>
+        )}
+        {travel && stage.paperwork === "terminal" ? (
+          <p className="draft__status" data-testid="terminal-order">
+            At your clearance, you file this travel order from the terminal.
+            Transmit a mutation with <code>fileTravelOrder</code>. Give{" "}
+            <code>following</code> the reference of the {words(leadType)} you
+            are following
+            {draft ? (
+              <>
+                , <code>{draft.leadId}</code>
+              </>
+            ) : null}
+            , and give <code>to</code> the country&apos;s name. The archive
+            checks the claims above when it receives the order.
+            {timed &&
+              journey > 0 &&
+              ` The order costs one hour to transmit, and the journey takes ${hours(journey)} more.`}
+          </p>
+        ) : (
+          <button
+            type="button"
+            className="button button--primary"
+            disabled={closed || !draft || draft.ruledOut}
+            onClick={() =>
+              draft && dispatch({ type: "proceed", leadId: draft.leadId })
+            }
+          >
+            {travel ? `Travel${cost(journey)}` : "Submit deduction"}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }

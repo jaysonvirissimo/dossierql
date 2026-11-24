@@ -17,12 +17,13 @@ export type Concept = (typeof CONCEPTS)[number];
 
 /** The casework mechanics of SDD 3.15, in the order the course meets them. */
 export const MECHANICS = [
-  "citing",
+  "conclusion",
   "travel-order",
   "deduction",
   "clock",
   "ruling-out",
   "field-check",
+  "citing",
 ] as const;
 export type Mechanic = (typeof MECHANICS)[number];
 
@@ -91,6 +92,12 @@ export interface Stage {
    * a mutation, and the findings panel shows no button for it (SDD 6).
    */
   paperwork?: "terminal";
+  /**
+   * `cited`: the player cites each fact into the form by hand, for a puzzle
+   * whose lesson is which record to trust. Otherwise the archive checks the
+   * player's conclusion against every fact in the ledger (SDD 3.2).
+   */
+  evidence?: "cited";
   objective: string;
   briefing: string;
   clues: Clue[];
@@ -191,7 +198,7 @@ export interface Kata {
   payoff: string;
   /**
    * What the debrief of a case at this kata's level says when the
-   * transmissions that supplied the cited facts lack the technique (SDD
+   * transmissions that supplied the accepted evidence lack the technique (SDD
    * 3.10): `unused` after a case, `placement` after a placement pass.
    */
   debrief: { unused: string; placement: string };

@@ -51,14 +51,16 @@ stages:
       that you request the one you need.
 
       Two of the three sightings are of somebody else, and in this
-      case you can strike them off. Open a sighting as a lead and
-      cite a fact that contradicts one of the claims about it. The
-      form marks that claim as contradicted and offers to rule the
-      lead out. Ruling out a lead costs no time.
+      case you can strike them off. Choose a sighting on the form and
+      press Rule out. The archive then looks through your responses
+      for a fact that contradicts one of the claims about that
+      sighting. If it finds one, the sighting is ruled out, and the
+      form shows the facts that contradict the claim. Ruling out a
+      sighting costs no time.
 
       The sighting shows which name the guest gave. NIGHTJAR's file
-      lists the operative's cover names. To check whether the name
-      from the sighting is on the list, cite the name given and the
+      lists the operative's cover names. The archive can tell that a
+      name is missing from the list only if your response holds the
       complete list of cover names.
 
     clues:

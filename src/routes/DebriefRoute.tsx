@@ -54,6 +54,10 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
     : undefined;
   // The next case that practises what this one taught, with new data.
   const index = course.missions.indexOf(mission);
+  // The word mutation is a term only from the clearance that introduces it.
+  const mutationsKnown =
+    mission.clearance >=
+    (course.glossary.find((g) => g.id === "mutation")?.clearance ?? Infinity);
   const followUp = course.missions
     .slice(index + 1)
     .find(
@@ -62,7 +66,7 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
         availability(m, course.missions, standing) === "available" &&
         !standing.completions[m.id],
     );
-  // What the transmissions behind the cited facts show of the level's
+  // What the transmissions behind the accepted evidence show of the level's
   // technique (SDD 3.10). This never changes the outcome or the promotion.
   const reading = readTechnique(mission, state, course);
   const promoted = mission.kind === "assessment" && completion?.passed === true;
@@ -210,9 +214,14 @@ export function DebriefRoute({ missionId }: { missionId: string }) {
               reference solution is one economical way, not the only way. If you
               typed a request on one line, it is laid out here over several
               lines so that it is easier to read. The word <code>query</code> at
-              the start of a request is optional. The word <code>mutation</code>{" "}
-              is not, because without it the archive reads the request as a
-              query.
+              the start of a request is optional.
+              {mutationsKnown && (
+                <>
+                  {" "}
+                  The word <code>mutation</code> is not, because without it the
+                  archive reads the request as a query.
+                </>
+              )}
             </p>
           </section>
 

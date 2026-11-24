@@ -58,8 +58,8 @@ If either is wrong, stop and report it. Do not try to fix it.
   Cmd+A), and type your query. The editor closes brackets and quotes for you
   as you type, so read the editor back before sending.
 - Send with the Transmit button. Read the Results panel.
-- Use the Cite buttons in the results to attach findings to the draft, and
-  the draft panel to name your conclusion and submit it.
+- Use the form in the draft panel to choose your conclusion and submit it.
+  The archive checks the form against every response you have received.
 
 ## Report
 
@@ -72,8 +72,8 @@ Return a report with these sections:
 3. **Steps**: a numbered list. For each step: what you did, and the on-screen
    material that justified it (panel and wording). Mark any step that relied
    on outside knowledge.
-4. **Evidence table**: for each claim in each draft, which finding you cited
-   and which transmission it came from.
+4. **Evidence table**: for each claim on each accepted form, which facts the
+   evidence chain listed and which transmission each came from.
 5. **Friction**: anything that was unclear, misleading, broken, or that you
    had to try more than once, with where it happened and what would have
    helped. Include any text on screen that did not match what the game

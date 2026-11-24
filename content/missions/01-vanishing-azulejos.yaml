@@ -38,7 +38,7 @@ debrief:
 stages:
   manifests:
     location: PT
-    introduces: citing
+    introduces: conclusion
     objective: Identify the shipment whose contents cannot be the tiles.
 
     briefing: |
@@ -52,12 +52,18 @@ stages:
       the manifest says a crate holds something other than tiles,
       that is evidence enough.
 
-      The Deduction form makes a claim about one shipment. The
-      shipment you make the claim about is your lead. In Results,
-      find the row that proves the claim. Press Cite beside that
-      row. When the button shows a shipment's ID, Cite opens that
-      shipment's draft and adds the fact as a [citation](glossary:citation).
-      When the claim shows Supported, press Submit deduction.
+      The Deduction form makes one claim about one shipment. You
+      choose that shipment in the form's box and press Submit
+      deduction. The archive then looks through every response you
+      have received for facts that prove the claim about the
+      shipment you chose. If none of your responses proves it, the
+      form comes back to you, even when your choice is right. When
+      the archive accepts the deduction, it lists the facts it used,
+      each with the transmission it came back in. That list is an
+      [evidence chain](glossary:evidence-chain).
+
+      Transmit a query that shows each shipment's manifest. Then
+      choose the shipment to set aside, and submit the deduction.
 
     clues:
       - text: >
@@ -105,7 +111,7 @@ stages:
       type: deduction
       shipment: LIS-0486
     labels:
-      shipment: Shipment
+      shipment: Shipment to set aside
 
     claims:
       - id: not-ceramic
@@ -153,8 +159,10 @@ stages:
       shares no such border. Set that crate aside.
 
       Use the manifests to find the two ceramic shipments. The
-      claim on this form is about the border, so cite the route
-      evidence for the shipment you set aside.
+      claim on this form is about the border. For the archive to
+      accept it, your responses have to connect the shipment you
+      set aside to the country it is going to, and show which
+      countries border that country.
 
     clues:
       - text: >
@@ -178,8 +186,11 @@ stages:
               id
               manifest
               # This query is unfinished. Add the field that says
-              # where each shipment is going. The Documentation tab
-              # lists the fields a shipment has.
+              # where each shipment is going. The claim on the form
+              # is about the country the shipment is going to, and
+              # that country's borders, so the archive needs your
+              # response to reach them. The Documentation tab lists
+              # the fields each record has.
             }
           }
         }
@@ -189,8 +200,9 @@ stages:
         For each of the two ceramic shipments, find the country it is
         going to. Then find the countries that share a border with that
         country. One of the two countries has no border with Namibia.
-        A country with no land borders comes back with an empty list,
-        and you can cite an empty list like any other row.
+        A country with no land borders comes back with an empty list.
+        An empty list is evidence too: it shows that the country
+        borders no other country.
       concept: >
         A shipment's destination is a record, not a single value. A
         field that holds a record needs braces after it, with the
@@ -206,7 +218,7 @@ stages:
       type: deduction
       shipment: LIS-0522
     labels:
-      shipment: Shipment
+      shipment: Shipment to set aside
 
     claims:
       - id: no-road
@@ -267,12 +279,13 @@ stages:
       One crate is left, and customs will send you after it. The
       Travel order makes two claims about that shipment. One claim
       is about the contents and one is about the route. Your
-      earlier responses in Results already hold the evidence for both.
+      earlier responses in Results already hold the evidence for
+      both claims, so this stage needs no new query. The archive
+      checks both claims when you press Travel.
 
-      Cite the facts about the remaining shipment. The form matches
-      each citation to the claim it supports. Choose the receiving
-      country to record your answer. When both claims show Supported,
-      press Travel.
+      Choose the remaining shipment in the Shipment to hold box.
+      Choose the country receiving it in the box below. Then press
+      Travel.
 
     clues:
       - text: >
@@ -298,15 +311,15 @@ stages:
         travel order.
       concept: >
         This stage needs no new query. Your last response is still in
-        the Results panel. Find the remaining shipment in it. Press Cite
-        on that shipment's manifest row for the first claim. Then find
-        the borders row under that shipment's destination and country,
-        and press Cite on the borders row for the second claim.
+        the Results panel. Find the remaining shipment in it, and
+        choose that shipment on the form. Then look under that
+        shipment's destination for the country the city is in, and
+        choose that country on the form.
       schema: >
         The facts came from Shipment.manifest, Shipment.destination,
         City.country, and Country.borders.
       skeleton: |
-        Rows to cite under the remaining shipment:
+        Rows to read under the remaining shipment:
         manifest
         destination, then country, then borders
 
@@ -315,7 +328,7 @@ stages:
       shipment: LIS-0417
       country: AO
     labels:
-      shipment: Shipment
+      shipment: Shipment to hold
       country: Country receiving the shipment
 
     claims:

@@ -24,7 +24,7 @@ import {
 } from "../engine/clearance.ts";
 import { citationAt, factsAlong, type CitedRow } from "../engine/cite.ts";
 import { computeBudget } from "../engine/clock.ts";
-import { reviewDraft } from "../engine/draft.ts";
+import { fromLedger, reviewDraft } from "../engine/draft.ts";
 import { levelKata } from "../engine/debrief.ts";
 import { attemptKata } from "../engine/kata.ts";
 import { couldMatch, matchSet, type Bindings } from "../engine/match.ts";
@@ -1017,6 +1017,10 @@ function citeSupported(
   claimIds: readonly string[],
   named: Bindings,
 ): MissionState {
+  // Where the archive checks the form, the player only opens the lead.
+  if (fromLedger(stage)) {
+    return act(env, state, { type: "open-lead", leadId }).state;
+  }
   const lead = leadBinding(stage);
   const facts = Object.values(state.ledger).map((e) => e.fact);
   const controls = citeControls(state, stage, String(leadId));
@@ -1122,6 +1126,8 @@ function checkCitations(
   state: MissionState,
   report: Report,
 ): void {
+  // Nothing is cited by hand where the archive checks the form.
+  if (fromLedger(stage)) return;
   const solution = Object.fromEntries(solutionBindings(stage));
   const lead = leadBinding(stage);
   const leadId = String(solution[lead]);
@@ -1283,7 +1289,20 @@ function checkSolvable(
         matchSet(s.facts, truth, only),
       );
       const bound = (set && matchSet(set.facts, truth, only)) ?? only;
+      // Where the archive checks the form, the player who is offered the
+      // check has retrieved the evidence for one claim and not the rest.
       let trial = state;
+      if (fromLedger(stage) && set) {
+        const keys = new Set(
+          instantiate(set.facts, bound).filter((key) => state.ledger[key]),
+        );
+        trial = {
+          ...state,
+          ledger: Object.fromEntries(
+            Object.entries(state.ledger).filter(([key]) => keys.has(key)),
+          ),
+        };
+      }
       for (const [name] of solutionBindings(stage)) {
         const value = bound[name];
         if (name !== lead && value !== undefined) {
@@ -1518,7 +1537,7 @@ function stageChain(mission: Mission): [string, Stage][] {
 /** The casework mechanics a stage uses, read from what it authors. */
 export function mechanicsUsed(mission: Mission, stage: Stage): Mechanic[] {
   const outcomes = Object.values(stage.leadOutcomes ?? {});
-  const used: Mechanic[] = ["citing"];
+  const used: Mechanic[] = [fromLedger(stage) ? "conclusion" : "citing"];
   if (stage.solution.type === "destination") used.push("travel-order");
   else if (solutionBindings(stage).length > 1) used.push("deduction");
   if (mission.clock) used.push("clock");

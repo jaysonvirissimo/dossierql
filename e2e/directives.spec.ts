@@ -106,11 +106,6 @@ test("clearance 10 leaves heavy detail out of a standing query with a directive"
   await openTool(page, "Findings");
   const leads = draft(page).getByRole("combobox");
   await leads.selectOption({ label: "Duarte Sequeira" });
-  await press(page.getByRole("button", { name: /^Cite remark/ }).first());
-  await press(page.getByRole("button", { name: /^Cite officer/ }).first());
-  await expect(
-    draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(1);
   await press(draft(page).getByRole("button", { name: "Submit deduction" }));
   await expect(
     page.getByText(/Duarte Sequeira lent the inner room/).first(),

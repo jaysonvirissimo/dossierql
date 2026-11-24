@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 import {
-  draft,
+  choose,
   expectClean,
   openCase,
   press,
-  record,
   send,
+  submit,
   watchPage,
   type PageWatch,
 } from "./helpers.ts";
@@ -31,9 +31,9 @@ const DAR = `query {
   }
 }`;
 
-// An alias in a comment, and an uncited transmission with aliases, do not
-// count as the technique.
-const ALIASED_UNCITED = `query {
+// An alias in a comment, and a transmission with aliases that no form rests
+// on, do not count as the technique.
+const ALIASED_UNUSED = `query {
   # a: city(name: "Mombasa")
   a: country(name: "Kenya") { name }
   b: country(name: "Mozambique") { name }
@@ -43,27 +43,17 @@ test("a placement passed without its level's technique says so, and keeps the pr
   page,
 }) => {
   await openCase(page, "bound-ledgers");
-  await send(page, ALIASED_UNCITED);
+  await send(page, ALIASED_UNUSED);
   await send(page, DAR);
 
-  const shipment = record(page, "DAR-0158");
-  await press(shipment.getByRole("button", { name: /^Cite (.* → )?finding,/ }));
-  await expect(
-    draft(page).getByRole("tab", { name: "DAR-0158" }),
-  ).toHaveAttribute("aria-selected", "true");
-  await press(
-    shipment.getByRole("button", { name: /^Cite (.* → )?organization,/ }),
-  );
-  await expect(
-    draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(2);
-  await press(draft(page).getByRole("button", { name: "Submit deduction" }));
+  await choose(page, "Shipment", "DAR-0158");
+  await submit(page);
 
   await expect(
     page.getByText(/Placement passed. You now hold clearance 4/),
   ).toBeVisible();
   await expect(page.getByTestId("technique-note")).toHaveText(
-    "The promotion stands. You passed this placement without an alias: each transmission that supplied the facts you cited started from one record, such as one city or one operative. This level teaches aliases, which let one transmission start from several records.",
+    "The promotion stands. You passed this placement without an alias: each transmission that supplied the evidence for your forms started from one record, such as one city or one operative. This level teaches aliases, which let one transmission start from several records.",
   );
   await expect(page.locator(".shell-bar__rank")).toHaveText("Clearance 4");
 

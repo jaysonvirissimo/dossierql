@@ -10,7 +10,14 @@ import { mergeFact, type Fact } from "../graphql/facts.ts";
 import type { RawRecord, Store } from "../graphql/store.ts";
 import type { CompletionMode, ProgressEvent } from "./clearance.ts";
 import { computeBudget, COSTS, travelHours } from "./clock.ts";
-import { emptyDraft, reviewDraft, type Draft } from "./draft.ts";
+import {
+  emptyDraft,
+  fromLedger,
+  reviewDraft,
+  type ClaimStatus,
+  type Draft,
+  type DraftReview,
+} from "./draft.ts";
 import { paperwork } from "./paperwork.ts";
 
 export interface Env {
@@ -83,6 +90,45 @@ export interface Dispatch {
   leadId?: string;
   text: string;
   cost: number;
+  /**
+   * The facts the form rested on, claim by claim: for an accepted form the
+   * evidence of each claim, and for a lead ruled out the facts that
+   * contradict a claim (SDD 3.2).
+   */
+  evidence?: { claim: string; facts: string[] }[];
+}
+
+/** One claim of a form the archive returned, as it stood when returned. */
+export interface ReturnedClaim {
+  id: string;
+  prompt: string;
+  status: ClaimStatus;
+  /** The facts that support or contradict it, or that reach toward it. */
+  facts: string[];
+  /** Records the facts connect to the form's records, by binding. */
+  reached: Record<string, string>;
+  /** Records the facts show for a box, where the form gives another. */
+  shows: Record<string, string>;
+}
+
+/** A form the archive returned because a claim is not established. */
+export interface Returned {
+  leadId: string;
+  order: "travel order" | "deduction";
+  claims: ReturnedClaim[];
+  /** The lead can take a field check now (SDD 3.5). */
+  canFieldCheck: boolean;
+}
+
+/** What the archive has yet to establish, for a receipt. */
+export function returnedReasons(returned: Returned): string[] {
+  return returned.claims
+    .filter((c) => c.status !== "supported")
+    .map((c) =>
+      c.status === "refuted"
+        ? `Your responses contradict this claim: ${c.prompt}`
+        : `The archive has yet to establish this claim: ${c.prompt}`,
+    );
 }
 
 export interface StageState {
@@ -149,6 +195,7 @@ export type Notice =
   | { kind: "shortfall"; action: string; needed: number; left: number }
   | { kind: "refused"; text: string }
   | { kind: "rejected" }
+  | { kind: "returned"; returned: Returned }
   | { kind: "dispatch"; dispatch: Dispatch }
   | { kind: "expired" };
 
@@ -414,11 +461,13 @@ function doTransmit(env: Env, state: MissionState): Outcome {
         const reasons =
           notice?.kind === "refused"
             ? [notice.text]
-            : notice?.kind === "shortfall"
-              ? [
-                  `${notice.action} would take ${String(notice.needed)} hours, and ${String(notice.left)} are left.`,
-                ]
-              : [];
+            : notice?.kind === "returned"
+              ? returnedReasons(notice.returned)
+              : notice?.kind === "shortfall"
+                ? [
+                    `${notice.action} would take ${String(notice.needed)} hours, and ${String(notice.left)} are left.`,
+                  ]
+                : [];
         return {
           state: outcome.state,
           approved: journey !== undefined,
@@ -484,6 +533,26 @@ function doTransmit(env: Env, state: MissionState): Outcome {
   });
 }
 
+function returnedOf(
+  draft: Draft,
+  review: DraftReview,
+  order: Returned["order"],
+): Returned {
+  return {
+    leadId: draft.leadId,
+    order,
+    claims: review.claims.map((c) => ({
+      id: c.id,
+      prompt: c.prompt,
+      status: c.status,
+      facts: c.counted,
+      reached: c.reached,
+      shows: c.shows,
+    })),
+    canFieldCheck: review.canFieldCheck,
+  };
+}
+
 function addDispatch(
   state: MissionState,
   dispatch: Omit<Dispatch, "n" | "stageId">,
@@ -512,10 +581,20 @@ export function proceed(
     stage.solution.type === "destination" ? "travel order" : "deduction";
   if (draft.ruledOut) return refuse(state, "This lead is ruled out.");
   if (review.unnamed.length > 0) {
+    const boxes = review.unnamed
+      .map((name) => `“${stage.labels?.[name] ?? name}”`)
+      .join(" and ");
     return refuse(
       state,
-      `The ${order} is incomplete: a choice on the form is still blank.`,
+      `The ${order} is incomplete: a choice on the form is still blank. Choose a record for ${boxes}.`,
     );
+  }
+  if (!review.allSupported && fromLedger(stage)) {
+    return {
+      state,
+      notice: { kind: "returned", returned: returnedOf(draft, review, order) },
+      events: [],
+    };
   }
   if (!review.allSupported) {
     return refuse(
@@ -526,7 +605,9 @@ export function proceed(
   if (!review.correct) {
     return refuse(
       state,
-      `The ${order} is returned to you: the facts you cited do not prove its claims for the choices on the form.`,
+      fromLedger(stage)
+        ? `The ${order} is returned to you: your responses do not prove its claims for the choices on the form.`
+        : `The ${order} is returned to you: the facts you cited do not prove its claims for the choices on the form.`,
     );
   }
   const cost = proceedCost(env, state);
@@ -546,6 +627,7 @@ export function proceed(
       leadId,
       text,
       cost: paid.clock === "active" ? cost : 0,
+      evidence: review.claims.map((c) => ({ claim: c.id, facts: c.counted })),
     });
     if (next) {
       return {
@@ -624,8 +706,25 @@ export function act(env: Env, state: MissionState, action: Action): Outcome {
         ...state,
         pins: state.pins.filter((key) => key !== action.key),
       });
-    case "open-lead":
-      return none(withDraft(state, action.leadId, (d) => d));
+    case "open-lead": {
+      // On a form the archive checks, the player changes the lead in a box
+      // like any other, and the other boxes keep what they hold.
+      const now = current(state);
+      const from = now.activeLead ? now.drafts[now.activeLead] : undefined;
+      const lead = leadBinding(stage);
+      const carried = Object.fromEntries(
+        Object.entries(from?.bindings ?? {}).filter(([name]) => name !== lead),
+      );
+      return none(
+        withDraft(state, action.leadId, (d) =>
+          fromLedger(stage) &&
+          Object.keys(d.bindings).length === 0 &&
+          d.citations.length === 0
+            ? { ...d, bindings: carried }
+            : d,
+        ),
+      );
+    }
     case "name":
       return none(
         withDraft(state, action.leadId, (d) => ({
@@ -634,6 +733,8 @@ export function act(env: Env, state: MissionState, action: Action): Outcome {
         })),
       );
     case "cite": {
+      // Where the archive checks the form, nothing is cited by hand.
+      if (fromLedger(stage)) return none(state);
       // Only facts the player has retrieved can be cited.
       const keys = [...new Set(action.factKeys)].filter(
         (key) => state.ledger[key],
@@ -670,7 +771,9 @@ export function act(env: Env, state: MissionState, action: Action): Outcome {
       if (!review.canRuleOut) {
         return refuse(
           state,
-          "To rule out a lead, you must first cite a fact that contradicts one of the claims about that lead.",
+          fromLedger(stage)
+            ? "Your responses do not yet contradict a claim about this lead, so it cannot be ruled out."
+            : "To rule out a lead, you must first cite a fact that contradicts one of the claims about that lead.",
         );
       }
       const marked = withDraft(state, action.leadId, (d) => ({
@@ -684,6 +787,9 @@ export function act(env: Env, state: MissionState, action: Action): Outcome {
           stage.leadOutcomes?.[action.leadId]?.ruledOut ??
           "The lead is struck from the list.",
         cost: 0,
+        evidence: review.claims
+          .filter((c) => c.status === "refuted")
+          .map((c) => ({ claim: c.id, facts: c.counted })),
       });
       return {
         state: added.state,
@@ -698,7 +804,9 @@ export function act(env: Env, state: MissionState, action: Action): Outcome {
       if (!review.canFieldCheck || text === undefined) {
         return refuse(
           state,
-          "A field check is available when the lead has one supported claim and one claim that still needs evidence, and you have cited no fact that contradicts a claim.",
+          fromLedger(stage)
+            ? "A field check is available when your responses prove one claim about this lead, leave another unproved, and contradict none."
+            : "A field check is available when the lead has one supported claim and one claim that still needs evidence, and you have cited no fact that contradicts a claim.",
         );
       }
       const cost = fieldCheckCost(env, state, action.leadId);

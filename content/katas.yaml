@@ -53,14 +53,14 @@
     in front of its `country`. The clerk files one response instead of two.
   debrief:
     unused: >
-      Each transmission that supplied the facts you cited started from one
+      Each transmission that supplied the evidence for your forms started from one
       record, such as one city or one operative. One transmission can start
       from several records: ask for the same field once for each record,
       and put an alias of your own in front of each one. The reference
       solution beside your transmissions does this.
     placement: >
       The promotion stands. You passed this placement without an alias:
-      each transmission that supplied the facts you cited started from one
+      each transmission that supplied the evidence for your forms started from one
       record, such as one city or one operative. This level teaches
       aliases, which let one transmission start from several records.
 
@@ -138,14 +138,14 @@
     use a peso, and the two pesos are different currencies.
   debrief:
     unused: >
-      The transmissions that supplied the facts you cited wrote out the same
+      The transmissions that supplied the evidence for your forms wrote out the same
       list of fields in several places. That works. A fragment holds the
       list once, and each place that needs the list writes three dots and
       the fragment's name. To change the list later, you edit only the
       fragment. The reference solution beside your transmissions shows one.
     placement: >
       The promotion stands. You passed this placement without a fragment:
-      the transmissions that supplied the facts you cited wrote out the same
+      the transmissions that supplied the evidence for your forms wrote out the same
       list of fields in several places. This level teaches fragments, which
       hold such a list once.
 
@@ -210,7 +210,7 @@
     any city the archive holds by changing one value.
   debrief:
     unused: >
-      In each transmission that supplied the facts you cited, you typed a
+      In each transmission that supplied the evidence for your forms, you typed a
       city's name into the query. With a variable, you write a name such as
       `$city` in the query where the city's name was, and the reference
       solution beside your transmissions shows how to declare it. To ask
@@ -218,6 +218,6 @@
       panel below the editor.
     placement: >
       The promotion stands. You passed this placement without a variable:
-      in each transmission that supplied the facts you cited, you typed a
+      in each transmission that supplied the evidence for your forms, you typed a
       city's name into the query. This level teaches variables, which let
       you ask about another city without editing the query.

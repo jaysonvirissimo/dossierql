@@ -11,6 +11,7 @@ import { parseRef, refOf } from "../../graphql/store.ts";
 import { Prose } from "../Prose.tsx";
 import { SchemaDocs } from "../SchemaDocs.tsx";
 import { Clues } from "./Clues.tsx";
+import { EvidenceChain } from "./Evidence.tsx";
 import { useWorkspace } from "./context.ts";
 import {
   describeFact,
@@ -67,6 +68,7 @@ function CasePanel() {
                   {dispatch.cost > 0 ? ` · ${hours(dispatch.cost)}` : ""}
                 </span>
                 <Prose text={dispatch.text} />
+                <EvidenceChain dispatch={dispatch} />
               </li>
             ))}
           </ol>

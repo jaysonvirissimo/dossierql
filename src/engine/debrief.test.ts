@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { ConceptCard, Kata, Mission } from "../content/types.ts";
-import { citedTransmissions, levelConcept, readTechnique } from "./debrief.ts";
+import {
+  evidenceTransmissions,
+  levelConcept,
+  readTechnique,
+} from "./debrief.ts";
 import type { MissionState } from "./mission.ts";
 
 const concepts = [
@@ -36,7 +40,10 @@ const COMMENTED = `{
   operative(codename: "X") { codename }
 }`;
 
-/** A state whose transmissions each supplied one fact; `cited` lists them. */
+/**
+ * A state whose transmissions each supplied one fact; `cited` lists those an
+ * accepted form rested on.
+ */
 function state(operations: string[], cited: number[]): MissionState {
   const ledger = Object.fromEntries(
     operations.map((_, i) => [
@@ -47,26 +54,23 @@ function state(operations: string[], cited: number[]): MissionState {
   return {
     transmissions: operations.map((operation, i) => ({ n: i + 1, operation })),
     ledger,
-    stages: {
-      s: {
-        drafts: {
-          lead: {
-            citations: cited.map((n) => ({
-              id: `c${String(n)}`,
-              label: "",
-              factKeys: [`fact${String(n)}`],
-            })),
-          },
-        },
+    dispatches: [
+      {
+        n: 1,
+        stageId: "s",
+        kind: "resolved",
+        text: "",
+        cost: 0,
+        evidence: [{ claim: "c", facts: cited.map((n) => `fact${String(n)}`) }],
       },
-    },
+    ],
   } as unknown as MissionState;
 }
 
-describe("citedTransmissions", () => {
-  it("keeps only the transmissions that supplied a cited fact", () => {
+describe("evidenceTransmissions", () => {
+  it("keeps only the transmissions that supplied accepted evidence", () => {
     const s = state([ALIASED, SINGLE, SINGLE], [2, 3]);
-    expect(citedTransmissions(s).map((t) => t.n)).toEqual([2, 3]);
+    expect(evidenceTransmissions(s).map((t) => t.n)).toEqual([2, 3]);
   });
 });
 
@@ -81,14 +85,14 @@ describe("levelConcept", () => {
 });
 
 describe("readTechnique", () => {
-  it("counts a cited transmission that uses aliases", () => {
+  it("counts an evidence transmission that uses aliases", () => {
     expect(readTechnique(teaching, state([ALIASED], [1]), course)).toEqual({
       kata: katas[0],
       used: true,
     });
   });
 
-  it("does not count an uncited transmission, or a comment", () => {
+  it("does not count a transmission with no evidence, or a comment", () => {
     expect(
       readTechnique(assessment, state([ALIASED, SINGLE], [2]), course)?.used,
     ).toBe(false);

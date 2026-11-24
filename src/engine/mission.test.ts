@@ -576,7 +576,7 @@ describe("help", () => {
   });
 });
 
-describe("a case with no clock", () => {
+describe("a case with no clock, judged from the ledger", () => {
   const untimed = envFor("vanishing-azulejos");
   const stages = untimed.mission.stages;
   const go = (state: MissionState, ...actions: Action[]): MissionState =>
@@ -588,6 +588,12 @@ describe("a case with no clock", () => {
       { type: "edit", editor: stages[stageId]!.referenceSolution as string },
       { type: "transmit" },
     );
+  const choose = (leadId: string, binding: string, value: string): Action => ({
+    type: "name",
+    leadId,
+    binding,
+    value,
+  });
 
   it("prices nothing and cannot expire", () => {
     const start = open();
@@ -604,16 +610,43 @@ describe("a case with no clock", () => {
     expect(passed.state).toBe(helped);
   });
 
-  it("moves to the next stage in the same country without a journey", () => {
-    const cited = go(
-      send(open(), "manifests"),
-      cite("LIS-0486", "manifest", "Shipment:LIS-0486.manifest"),
+  it("returns a correct guess that no response proves", () => {
+    // The starter query turns up the three shipments, and not their papers.
+    const guessed = go(
+      open(),
+      { type: "transmit" },
+      { type: "open-lead", leadId: "LIS-0486" },
     );
-    const out = act(untimed, cited, { type: "proceed", leadId: "LIS-0486" });
+    const out = act(untimed, guessed, { type: "proceed", leadId: "LIS-0486" });
+    expect(out.state.stageId).toBe("manifests");
+    expect(out.state.dispatches).toHaveLength(0);
+    expect(out.notice).toMatchObject({
+      kind: "returned",
+      returned: {
+        leadId: "LIS-0486",
+        order: "deduction",
+        claims: [{ id: "not-ceramic", status: "open", facts: [] }],
+      },
+    });
+  });
+
+  it("accepts a proved conclusion with no citation, and keeps its evidence", () => {
+    const sent = go(send(open(), "manifests"), {
+      type: "open-lead",
+      leadId: "LIS-0486",
+    });
+    expect(sent.stages.manifests!.drafts["LIS-0486"]!.citations).toEqual([]);
+    const out = act(untimed, sent, { type: "proceed", leadId: "LIS-0486" });
     expect(out.state.stageId).toBe("routes");
     expect(out.notice).toMatchObject({
       kind: "dispatch",
-      dispatch: { kind: "accepted", cost: 0 },
+      dispatch: {
+        kind: "accepted",
+        cost: 0,
+        evidence: [
+          { claim: "not-ceramic", facts: ["Shipment:LIS-0486.manifest"] },
+        ],
+      },
     });
     expect(deskStages(untimed.mission, "travel-order")).toEqual([
       "manifests",
@@ -623,27 +656,69 @@ describe("a case with no clock", () => {
     expect(deskStages(untimed.mission, "luanda")).toEqual(["luanda"]);
   });
 
-  it("completes the travel order from facts already in the ledger, on time", () => {
+  it("returns a wrong crate with how far the responses reach", () => {
+    const state = go(
+      send(open(), "manifests"),
+      { type: "open-lead", leadId: "LIS-0486" },
+      { type: "proceed", leadId: "LIS-0486" },
+    );
+    const routes = go(send(state, "routes"), {
+      type: "open-lead",
+      leadId: "LIS-0417",
+    });
+    const out = act(untimed, routes, { type: "proceed", leadId: "LIS-0417" });
+    expect(out.state.stageId).toBe("routes");
+    expect(out.notice).toMatchObject({
+      kind: "returned",
+      returned: {
+        claims: [
+          {
+            id: "no-road",
+            status: "open",
+            reached: { city: "luanda", country: "AO" },
+          },
+        ],
+      },
+    });
+  });
+
+  it("completes the travel order from facts already in the ledger", () => {
     let state = go(
       send(open(), "manifests"),
-      cite("LIS-0486", "manifest", "Shipment:LIS-0486.manifest"),
+      { type: "open-lead", leadId: "LIS-0486" },
       { type: "proceed", leadId: "LIS-0486" },
     );
     state = go(
       send(state, "routes"),
-      cite("LIS-0522", "route", ...ROUTE_0522),
+      { type: "open-lead", leadId: "LIS-0522" },
       { type: "proceed", leadId: "LIS-0522" },
     );
     expect(state.stageId).toBe("travel-order");
     const sentSoFar = state.transmissions.length;
-    const travelled = act(
+
+    // The wrong country comes back, with the country the responses show.
+    const wrong = act(
       untimed,
       go(
         state,
-        cite("LIS-0417", "cargo", "Shipment:LIS-0417.manifest"),
-        cite("LIS-0417", "route", ...ROUTE_0417),
-        { type: "name", leadId: "LIS-0417", binding: "country", value: "AO" },
+        { type: "open-lead", leadId: "LIS-0417" },
+        choose("LIS-0417", "country", "CV"),
       ),
+      { type: "proceed", leadId: "LIS-0417" },
+    );
+    expect(wrong.notice).toMatchObject({
+      kind: "returned",
+      returned: {
+        claims: [
+          { id: "manifest", status: "supported" },
+          { id: "route", status: "open", shows: { country: "AO" } },
+        ],
+      },
+    });
+
+    const travelled = act(
+      untimed,
+      go(wrong.state, choose("LIS-0417", "country", "AO")),
       { type: "proceed", leadId: "LIS-0417" },
     );
     expect(travelled.state.stageId).toBe("luanda");
@@ -653,30 +728,38 @@ describe("a case with no clock", () => {
     });
     state = go(
       send(travelled.state, "luanda"),
-      cite(
-        "LUA-012",
-        "label",
-        "Shipment:LIS-0417.intake",
-        "IntakeRecord:INT-LUA-0417.consignee",
-        "Shipment:LIS-0417.transferOrders",
-        "TransferOrder:LUA-012.consignee",
-      ),
-      cite("LUA-012", "signer", "TransferOrder:LUA-012.authorizedBy"),
-      {
-        type: "name",
-        leadId: "LUA-012",
-        binding: "shipment",
-        value: "LIS-0417",
-      },
-      {
-        type: "name",
-        leadId: "LUA-012",
-        binding: "operative",
-        value: "NIGHTJAR",
-      },
+      { type: "open-lead", leadId: "LUA-012" },
+      choose("LUA-012", "shipment", "LIS-0417"),
+      choose("LUA-012", "operative", "NIGHTJAR"),
     );
     const out = act(untimed, state, { type: "proceed", leadId: "LUA-012" });
     expect(out.state.outcome).toEqual({ mode: "independent", late: false });
+  });
+
+  it("keeps the other choices when the lead changes", () => {
+    const desk: MissionState = {
+      ...send(open(), "routes"),
+      stageId: "travel-order",
+      stages: { "travel-order": open().stages.manifests! },
+    };
+    const state = go(
+      desk,
+      { type: "open-lead", leadId: "LIS-0522" },
+      choose("LIS-0522", "country", "AO"),
+      { type: "open-lead", leadId: "LIS-0417" },
+    );
+    expect(state.stages["travel-order"]!.drafts["LIS-0417"]!.bindings).toEqual({
+      country: "AO",
+    });
+  });
+
+  it("ignores a citation by hand", () => {
+    const sent = send(open(), "manifests");
+    const after = go(
+      sent,
+      cite("LIS-0486", "manifest", "Shipment:LIS-0486.manifest"),
+    );
+    expect(after).toBe(sent);
   });
 });
 
@@ -684,11 +767,11 @@ describe("ruling out in The Guest Register", () => {
   const guest = envFor("guest-register");
   const play = (state: MissionState, ...actions: Action[]) =>
     actions.reduce((s, action) => act(guest, s, action).state, state);
+  const begun = () => play(startMission(guest), { type: "begin" });
 
   it("rules out both wrong sightings from the reference query alone", () => {
     const sent = play(
-      startMission(guest),
-      { type: "begin" },
+      begun(),
       {
         type: "edit",
         editor: guest.mission.stages.luanda!.referenceSolution as string,
@@ -697,44 +780,43 @@ describe("ruling out in The Guest Register", () => {
     );
     const out = play(
       sent,
-      cite(
-        "SGT-027",
-        "name",
-        "Sighting:SGT-027.nameGiven",
-        "Operative:NIGHTJAR.coverNames",
-      ),
+      { type: "open-lead", leadId: "SGT-027" },
       { type: "rule-out", leadId: "SGT-027" },
-      cite(
-        "SGT-034",
-        "language",
-        "Sighting:SGT-034.city",
-        "City:maputo.country",
-        "Country:MZ.languages",
-      ),
+      { type: "open-lead", leadId: "SGT-034" },
       { type: "rule-out", leadId: "SGT-034" },
     );
     const drafts = out.stages.luanda!.drafts;
     expect(drafts["SGT-027"]?.ruledOut).toBe(true);
     expect(drafts["SGT-034"]?.ruledOut).toBe(true);
+    const struck = out.dispatches.filter((d) => d.kind === "ruled-out");
+    expect(struck.every((d) => (d.evidence?.[0]?.facts.length ?? 0) > 0)).toBe(
+      true,
+    );
+  });
+
+  it("refuses to rule out a lead that no response contradicts", () => {
+    const out = act(guest, begun(), { type: "rule-out", leadId: "SGT-027" });
+    expect(out.notice).toMatchObject({
+      kind: "refused",
+      text: expect.stringContaining("do not yet contradict") as string,
+    });
   });
 });
 
 describe("field check in The Quiet Consignee", () => {
   const callao = envFor("quiet-consignee");
-  const stage = callao.mission.stages.callao!;
   const play = (state: MissionState, ...actions: Action[]) =>
     actions.reduce((s, action) => act(callao, s, action).state, state);
   const send = (state: MissionState, editor: string) =>
     play(state, { type: "edit", editor }, { type: "transmit" });
 
   it("offers a check on the right company before the intake record is seen", () => {
-    const looked = send(
-      play(startMission(callao), { type: "begin" }),
-      'query { company(name: "Meridian Freight") { name director { codename } } }',
-    );
-    const cited = play(
-      looked,
-      cite("PE-MERIDIAN-FRT", "director", "Company:PE-MERIDIAN-FRT.director"),
+    const looked = play(
+      send(
+        play(startMission(callao), { type: "begin" }),
+        'query { company(name: "Meridian Freight") { name director { codename } } }',
+      ),
+      { type: "open-lead", leadId: "PE-MERIDIAN-FRT" },
       {
         type: "name",
         leadId: "PE-MERIDIAN-FRT",
@@ -742,60 +824,36 @@ describe("field check in The Quiet Consignee", () => {
         value: "PEWTER_SWIFT",
       },
     );
-    const draft = cited.stages.callao!.drafts["PE-MERIDIAN-FRT"]!;
-    const review = reviewDraft(stage, draft, cited.ledger);
-    expect(review.claims.map((c) => c.status)).toEqual(["open", "supported"]);
-    expect(review.canFieldCheck).toBe(true);
-    expect(fieldCheckCost(callao, cited, "PE-MERIDIAN-FRT")).toBe(2);
+    const returned = act(callao, looked, {
+      type: "proceed",
+      leadId: "PE-MERIDIAN-FRT",
+    });
+    expect(returned.notice).toMatchObject({
+      kind: "returned",
+      returned: { canFieldCheck: true },
+    });
+    expect(returned.state.hoursLeft).toBe(looked.hoursLeft);
+    expect(fieldCheckCost(callao, looked, "PE-MERIDIAN-FRT")).toBe(2);
 
-    const checked = act(callao, cited, {
+    const checked = act(callao, looked, {
       type: "field-check",
       leadId: "PE-MERIDIAN-FRT",
     });
     expect(checked.notice?.kind).toBe("dispatch");
-    expect(checked.state.hoursLeft).toBe(cited.hoursLeft - 2);
+    expect(checked.state.hoursLeft).toBe(looked.hoursLeft - 2);
     expect(checked.state.stageId).toBe("callao");
     expect(checked.state.status).not.toBe("complete");
 
     // The dispatch points to the intake record, which settles the claim.
-    const found = play(
-      send(
-        checked.state,
-        'query { shipment(id: "VAL-0733") { intake { consignee { name } } } }',
-      ),
-      cite(
-        "PE-MERIDIAN-FRT",
-        "consignee",
-        "Shipment:VAL-0733.intake",
-        "IntakeRecord:INT-CAL-0733.consignee",
-      ),
+    const found = send(
+      checked.state,
+      'query { shipment(id: "VAL-0733") { intake { consignee { name } } } }',
     );
-    const after = reviewDraft(
-      stage,
-      found.stages.callao!.drafts["PE-MERIDIAN-FRT"]!,
-      found.ledger,
-    );
-    expect(after.allSupported).toBe(true);
-    expect(after.canProceed).toBe(true);
-  });
-
-  it("says which record the cited facts show while a box is blank", () => {
-    const cited = play(
-      send(
-        play(startMission(callao), { type: "begin" }),
-        'query { company(name: "Meridian Freight") { name director { codename } } }',
-      ),
-      cite("PE-MERIDIAN-FRT", "director", "Company:PE-MERIDIAN-FRT.director"),
-    );
-    const draft = cited.stages.callao!.drafts["PE-MERIDIAN-FRT"]!;
-    const waiting = reviewDraft(stage, draft, cited.ledger).claims[1]!;
-    expect(waiting.status).toBe("open");
-    expect(waiting.unnamed).toEqual(["operative"]);
-    expect(waiting.shows).toEqual({ operative: "PEWTER_SWIFT" });
-
-    // A claim with no complete evidence shows nothing.
-    const bare = reviewDraft(stage, { ...draft, citations: [] }, cited.ledger);
-    expect(bare.claims[1]!.shows).toEqual({});
+    const done = act(callao, found, {
+      type: "proceed",
+      leadId: "PE-MERIDIAN-FRT",
+    });
+    expect(done.notice?.kind).toBe("dispatch");
   });
 });
 
@@ -876,11 +934,7 @@ describe("paperwork filed as a mutation in The Messengers' Fares", () => {
   });
 
   it("returns a travel order without evidence, and charges only the transmission", () => {
-    const start = play(
-      atStation(),
-      { type: "edit", editor: claims },
-      { type: "transmit" },
-    );
+    const start = atStation();
     const state = play(
       start,
       { type: "edit", editor: order },
@@ -888,7 +942,7 @@ describe("paperwork filed as a mutation in The Messengers' Fares", () => {
     );
     const receipt = received(state).fileTravelOrder;
     expect(receipt.approved).toBe(false);
-    expect(receipt.reasons[0]).toMatch(/claim still needs evidence/);
+    expect(receipt.reasons[0]).toMatch(/The archive has yet to establish/);
     expect(state.stageId).toBe("sud-express");
     expect(start.hoursLeft - state.hoursLeft).toBe(COSTS.transmission);
   });
@@ -899,18 +953,6 @@ describe("paperwork filed as a mutation in The Messengers' Fares", () => {
       { type: "edit", editor: claims },
       { type: "transmit" },
       { type: "open-lead", leadId: "JRN-0405" },
-      {
-        type: "cite",
-        leadId: "JRN-0405",
-        label: "Envelope",
-        factKeys: ["Voucher:VCH-0405.journey", "Voucher:VCH-0405.remark"],
-      },
-      {
-        type: "cite",
-        leadId: "JRN-0405",
-        label: "Destination",
-        factKeys: ["Voucher:VCH-0405.to", "City:madrid.country"],
-      },
     );
     const before = state.hoursLeft;
     const control = act(

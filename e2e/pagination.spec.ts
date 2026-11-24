@@ -63,11 +63,6 @@ test("clearance 9 reads a watch book too long to read whole, a page at a time", 
   );
   const leads = draft(page).getByRole("combobox");
   await leads.selectOption({ label: "Henrique Lobo" });
-  await press(page.getByRole("button", { name: /^Cite note/ }).first());
-  await press(page.getByRole("button", { name: /^Cite officer/ }).first());
-  await expect(
-    draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(1);
   await press(draft(page).getByRole("button", { name: "Submit deduction" }));
   await expect(
     page.getByText(/Henrique Lobo kept the corridor as duty officer/).first(),

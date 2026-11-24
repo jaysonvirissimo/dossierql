@@ -62,10 +62,6 @@ test("clearance 7 reads a file of mixed documents through an interface", async (
   const leads = draft(page).getByRole("combobox");
   await expect(leads.getByRole("option", { name: "MIN-0088" })).toBeEnabled();
   await leads.selectOption({ label: "MIN-0088" });
-  await press(page.getByRole("button", { name: /^Cite stamp/ }).first());
-  await expect(
-    draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(1);
   await press(draft(page).getByRole("button", { name: "Submit deduction" }));
   await expect(
     page.getByText(/The First Desk entered minute MIN-0088/).first(),

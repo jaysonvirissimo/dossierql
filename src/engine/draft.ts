@@ -11,6 +11,7 @@ import {
   fillSet,
   meets,
   mostTogether,
+  reach,
   type Bindings,
 } from "./match.ts";
 
@@ -59,6 +60,12 @@ export interface ClaimReview {
    * none.
    */
   shows: Record<string, string>;
+  /**
+   * For an open claim judged from the ledger: the records the facts already
+   * connect to the records on the form, by binding. Empty when they connect
+   * to none.
+   */
+  reached: Record<string, string>;
 }
 
 export interface DraftReview {
@@ -96,6 +103,25 @@ function keysOf(facts: readonly Fact[]): string[] {
   return [...new Set(facts.map((fact) => fact.key))];
 }
 
+/** Whether the archive judges the stage from the whole ledger (SDD 3.2). */
+export function fromLedger(stage: Stage): boolean {
+  return stage.evidence !== "cited";
+}
+
+/**
+ * The facts a draft is judged on: every fact in the ledger, or, at a stage
+ * where the player cites by hand, the facts the draft cites.
+ */
+export function evidenceFacts(
+  stage: Stage,
+  draft: Draft,
+  ledger: Readonly<Record<string, { fact: Fact }>>,
+): Fact[] {
+  return fromLedger(stage)
+    ? Object.values(ledger).map((entry) => entry.fact)
+    : citedFacts(draft, ledger);
+}
+
 export function citedFacts(
   draft: Draft,
   ledger: Readonly<Record<string, { fact: Fact }>>,
@@ -107,6 +133,49 @@ export function citedFacts(
 }
 
 /**
+ * An open claim, judged from the whole ledger. Only facts that connect to the
+ * records on the form count: the furthest any evidence set reaches from them.
+ * When the facts complete a set for the lead with other records than the ones
+ * on the form, `shows` gives those records (SDD 3.2).
+ */
+function ledgerOpen(
+  claim: Stage["claims"][number],
+  facts: readonly Fact[],
+  fixed: Readonly<Record<string, string>>,
+  leadOnly: Bindings,
+  unnamed: string[],
+  shows: Record<string, string>,
+): ClaimReview {
+  let best = reach([], facts, fixed);
+  let found = shows;
+  for (const set of claim.evidenceSets) {
+    const got = reach(set.facts, facts, fixed);
+    if (got.facts.length > best.facts.length) best = got;
+    if (Object.keys(found).length > 0) continue;
+    const free = fillSet(set.facts, facts, leadOnly);
+    if (!free) continue;
+    found = Object.fromEntries(
+      Object.entries(free.bindings).filter(
+        ([name, value]) =>
+          name in fixed && name in free.bindings && fixed[name] !== value,
+      ),
+    );
+  }
+  return {
+    id: claim.id,
+    prompt: claim.prompt,
+    status: "open",
+    unnamed,
+    counted: keysOf(best.facts),
+    gap: "none",
+    shows: found,
+    reached: Object.fromEntries(
+      Object.entries(best.bindings).filter(([name]) => !(name in fixed)),
+    ),
+  };
+}
+
+/**
  * Reads a draft against its stage: which claims the citations support, which
  * are refuted, and what the player may do next. Reviewing costs nothing.
  */
@@ -115,7 +184,8 @@ export function reviewDraft(
   draft: Draft,
   ledger: Readonly<Record<string, { fact: Fact }>>,
 ): DraftReview {
-  const facts = citedFacts(draft, ledger);
+  const ledgerMode = fromLedger(stage);
+  const facts = evidenceFacts(stage, draft, ledger);
   const lead = leadBinding(stage);
   const named = solutionBindings(stage).map(([name]) => name);
   const fixed: Record<string, string> = { [lead]: draft.leadId };
@@ -140,6 +210,7 @@ export function reviewDraft(
         counted: keysOf(refuting?.facts ?? []),
         gap: "none",
         shows: {},
+        reached: {},
       };
     }
     let unnamed: string[] = [];
@@ -174,9 +245,12 @@ export function reviewDraft(
           counted: keysOf(filled.facts),
           gap: "none",
           shows: {},
+          reached: {},
         };
       }
     }
+    if (ledgerMode)
+      return ledgerOpen(claim, facts, fixed, leadOnly, unnamed, shows);
     const counted = facts.filter((fact) =>
       claim.evidenceSets.some((set) =>
         set.facts.some((pattern) => meets(pattern, fact, leadOnly)),
@@ -202,6 +276,7 @@ export function reviewDraft(
       counted: keysOf(counted),
       gap,
       shows,
+      reached: {},
     };
   });
 
@@ -209,12 +284,16 @@ export function reviewDraft(
     ...stage.claims.flatMap((c) => c.evidenceSets.flatMap((s) => s.facts)),
     ...(refutation?.facts ?? []),
   ];
-  const unrelated = draft.citations
-    .filter((citation) => {
-      const own = facts.filter((f) => citation.factKeys.includes(f.key));
-      return !own.some((f) => patterns.some((p) => couldMatch(p, f, leadOnly)));
-    })
-    .map((c) => c.id);
+  const unrelated = ledgerMode
+    ? []
+    : draft.citations
+        .filter((citation) => {
+          const own = facts.filter((f) => citation.factKeys.includes(f.key));
+          return !own.some((f) =>
+            patterns.some((p) => couldMatch(p, f, leadOnly)),
+          );
+        })
+        .map((c) => c.id);
 
   const unnamed = named.filter((name) => fixed[name] === undefined);
   const allSupported = claims.every((c) => c.status === "supported");

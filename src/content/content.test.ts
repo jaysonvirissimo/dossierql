@@ -184,10 +184,12 @@ describe("validation fails the build when", () => {
   });
 
   it("a refutation cannot be cited in the draft of the lead it rules out", () => {
-    // True in the data, but its Cite control enters SABLE_IBIS's draft.
+    // True in the data, but its Cite control enters SABLE_IBIS's draft, at
+    // a stage where the player cites by hand.
     expect(
       codes(
         mutated("three-couriers", (m) => {
+          m.stages.zanzibar!.evidence = "cited";
           m.stages.zanzibar!.leadOutcomes!.TIN_FALCON!.refutation!.facts.push({
             entity: "Operative:SABLE_IBIS",
             field: "codename",
@@ -196,6 +198,16 @@ describe("validation fails the build when", () => {
         }),
       ),
     ).toContain("citations");
+  });
+
+  it("a stage cites by hand before any stage introduces citing", () => {
+    expect(
+      codes(
+        mutated("three-couriers", (m) => {
+          m.stages.zanzibar!.evidence = "cited";
+        }),
+      ),
+    ).toContain("pacing");
   });
 
   it("the reference solution does not yield the evidence", () => {

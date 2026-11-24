@@ -61,10 +61,6 @@ test("clearance 8 reads a log of unrelated records through a union", async ({
   const leads = draft(page).getByRole("combobox");
   await expect(leads.getByRole("option", { name: "TEL-0039" })).toBeEnabled();
   await leads.selectOption({ label: "TEL-0039" });
-  await press(page.getByRole("button", { name: /^Cite text/ }).last());
-  await expect(
-    draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(1);
   await press(draft(page).getByRole("button", { name: "Submit deduction" }));
   await expect(
     page.getByText(/The post copied telegram TEL-0039/).first(),

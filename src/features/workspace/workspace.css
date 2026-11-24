@@ -856,3 +856,44 @@
   cursor: pointer;
   padding: 0.15rem 0;
 }
+
+/* The evidence an accepted form rested on, and a form the archive returned. */
+.evidence-chain {
+  margin-top: var(--space-2);
+  font-size: 0.9375rem;
+}
+
+.evidence-chain__claims {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.evidence-chain__prompt {
+  font-weight: 600;
+}
+
+.evidence-chain__facts {
+  margin-left: var(--space-3);
+  list-style: disc;
+}
+
+.evidence-chain__facts li,
+.returned .claim__facts li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.returned {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.decision {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}

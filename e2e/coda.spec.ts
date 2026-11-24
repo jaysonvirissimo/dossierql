@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 import {
-  draft,
+  choose,
   expectClean,
   openCase,
   press,
-  record,
   seedCompleted,
   send,
+  submit,
   TO_CAMPAIGN_END,
   TO_CLEARANCE_5,
   watchPage,
@@ -63,43 +63,11 @@ test("the coda ends the campaign without a promotion", async ({ page }) => {
   await openCase(page, "the-receipt");
   await send(page, RECEIPT);
 
-  // The Parallax Circle's transfer of the crate.
-  const transfer = record(page, "LUA-012");
-  await press(
-    transfer.getByRole("button", {
-      name: "Cite cleared by → name, into the draft for Fourth Desk",
-    }),
-  );
-  await expect(
-    draft(page).getByRole("tab", { name: "Fourth Desk" }),
-  ).toHaveAttribute("aria-selected", "true");
-  await press(transfer.getByRole("button", { name: "Cite consignee → name" }));
-
-  // The travel order to Luanda.
-  const travel = record(page, "TRV-101");
-  for (const name of [
-    "Cite from → name",
-    "Cite to → name",
-    "Cite issued by → name, into the draft for Fourth Desk",
-  ]) {
-    await press(travel.getByRole("button", { name }));
-  }
-
-  // The two serial numbers, in one register.
-  for (const path of [
-    "release order → register entry → serial",
-    "release order → register entry → office → name",
-    "loss report → serial",
-    "loss report → office → name",
-  ]) {
-    const name = new RegExp(`^Cite ${path}(,|$)`);
-    await press(page.getByRole("button", { name }));
-  }
-
-  await expect(
-    draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(3);
-  await press(draft(page).getByRole("button", { name: "Submit deduction" }));
+  // The transfer, the travel order and the two serial numbers all came back
+  // in one response. The archive finds the evidence for all three claims.
+  await expect(page.getByRole("button", { name: /^Cite/ })).toHaveCount(0);
+  await choose(page, "Office", "fourth-desk");
+  await submit(page);
 
   await expect(
     page.getByRole("heading", { name: "File closed" }),

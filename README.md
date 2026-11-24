@@ -2,8 +2,8 @@
 
 A browser game that teaches GraphQL through espionage casework. You are an
 intelligence analyst with a terminal onto the agency's archive. Every case is
-solved by querying it, citing what came back, and drawing a conclusion the
-evidence supports.
+solved by querying it and submitting a conclusion, which the archive accepts
+only if the facts your queries brought back prove it.
 
 Play it at <https://virissimo.info/dossierql/>.
 
@@ -72,6 +72,11 @@ the text a player reads.
   the record, so an alias changes the path and not the fact. A record reached
   through an interface or a union keeps the type it was filed as, so its
   facts belong to that type.
+- **The archive checks each form.** A form holds the player's choices and
+  nothing else. When it is submitted, `reviewDraft` in `src/engine/draft.ts`
+  looks through every fact in the ledger for a connected chain that proves
+  each claim about the chosen records. A stage marked `evidence: cited`
+  makes the player cite each fact by hand instead.
 - **The engine is one reducer.** `act(env, state, action)` in
   `src/engine/mission.ts` holds every rule of an investigation. The interface
   only dispatches actions and renders state.

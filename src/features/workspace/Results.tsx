@@ -4,6 +4,7 @@ import { useGame } from "../../app/GameProvider.tsx";
 import type { ResultError, TransmissionRecord } from "../../engine/mission.ts";
 import { annotate } from "../../feedback/annotate.ts";
 import { WEIGHT_LIMIT, WEIGHT_LIMITED_FROM } from "../../graphql/weight.ts";
+import { fromLedger } from "../../engine/draft.ts";
 import { useWorkspace } from "./context.ts";
 import { IntrospectionResult, introspectionRoots } from "./Introspection.tsx";
 import { bindingTypes, leadBinding } from "../../content/types.ts";
@@ -105,7 +106,8 @@ function Findings({
 
   const actions = (path: (string | number)[], name: string): ReactNode => {
     const key = factAt.get(pathKey(path));
-    if (!key) return null;
+    // Where the archive checks the form, a row is read, not cited.
+    if (!key || fromLedger(stage)) return null;
     const finding = findingAt(
       record,
       path,
@@ -485,8 +487,8 @@ function Findings({
       {meta.size > 0 && (
         <p className="findings__legend" data-testid="introspection-legend">
           Introspection describes the archive, not its records, so it holds no
-          evidence and nothing in it can be cited. Each type is listed with its
-          fields, one line to a field.
+          evidence. No form can rest on it. Each type is listed with its fields,
+          one line to a field.
           {JSON.stringify(record.data).includes('"ofType"') && (
             <>
               {" "}
@@ -501,8 +503,10 @@ function Findings({
         <p className="findings__legend">
           Each column is one record and each row is one field, so each cell is
           one fact. A shaded cell is a field that the query did not ask for on
-          that record. Cite the cells that prove a claim. A citation includes
-          the fields above the cell in the same column.
+          that record.{" "}
+          {fromLedger(stage)
+            ? "The archive keeps every cell as a fact, and checks your form against those facts when you submit it."
+            : "Cite the cells that prove a claim. A citation includes the fields above the cell in the same column."}
         </p>
       ) : (
         <>
@@ -512,17 +516,28 @@ function Findings({
               side tab shows them in columns, with one row for each field.
             </p>
           )}
-          <p className="findings__legend">
-            Each row is one fact. Cite the rows that prove a claim. When you
-            cite a row that is nested under other rows, the citation also
-            includes the rows it is nested under, so one citation can count as
-            several facts. If the facts you need sit beside each other, cite
-            each row. The number beside a citation in the draft is how many
-            facts it includes.
-          </p>
+          {fromLedger(stage) ? (
+            <p className="findings__legend">
+              Each row is one fact. The archive keeps every fact that comes back
+              to you, from every response. When you submit a form, the archive
+              looks through all of those facts for the evidence.
+            </p>
+          ) : (
+            <p className="findings__legend">
+              Each row is one fact. Cite the rows that prove a claim. When you
+              cite a row that is nested under other rows, the citation also
+              includes the rows it is nested under, so one citation can count as
+              several facts. If the facts you need sit beside each other, cite
+              each row. The number beside a citation in the draft is how many
+              facts it includes.
+            </p>
+          )}
         </>
       )}
-      <p className="findings__legend" hidden={onlyIntrospection}>
+      <p
+        className="findings__legend"
+        hidden={onlyIntrospection || fromLedger(stage)}
+      >
         A Cite button shows which {words(leadType)} gets the citation. For facts
         that belong to no particular {words(leadType)}, the button uses the
         draft you have open. If the button says only Cite, open a lead first.

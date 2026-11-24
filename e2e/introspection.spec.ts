@@ -119,13 +119,8 @@ test("the second campaign opens at clearance 6 with an undocumented cabinet", as
   const leads = draft(page).getByRole("combobox");
   await expect(leads).toBeEnabled();
   await expect(leads.getByRole("option", { name: "DKT-0417" })).toBeEnabled();
+  await leads.selectOption({ label: "DKT-0417" });
 
-  await press(
-    page.getByRole("button", { name: /^Cite shipment → id/ }).first(),
-  );
-  await expect(
-    draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(1);
   await press(draft(page).getByRole("button", { name: "Submit deduction" }));
   await expect(
     page.getByText(/Docket DKT-0417 is open on your desk/).first(),

@@ -42,6 +42,7 @@ debrief:
 stages:
   lisbon:
     location: PT
+    evidence: cited
     objective: Identify the shipment carrying the tiles and its destination.
 
     briefing: |
@@ -212,6 +213,7 @@ stages:
 
   luanda:
     location: AO
+    evidence: cited
     objective: Identify who authorized the crate's transfer to the replacement consignee.
 
     briefing: |

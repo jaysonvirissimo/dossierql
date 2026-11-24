@@ -41,7 +41,7 @@ debrief:
     The fare on the Sud Express is 412.5, written without quotation
     marks. The travel order to Spain is a mutation of its own,
     `fileTravelOrder(following: "JRN-0405", to: "Spain")`, filed after
-    the evidence for it was cited. In Madrid one mutation files the
+    the receipts had brought back the evidence for it. In Madrid one mutation files the
     claims for both cars that met the train. Every claim that you filed
     stays in the archive under the serial on its receipt, and
     `claim(serial:)` reads it again.
@@ -354,14 +354,14 @@ stages:
       Each voucher's `to` gives the city where the journey ended.
 
       At your clearance, the travel order is paperwork too, and you file
-      it from the terminal rather than from the findings panel. First open
-      a draft for the journey and cite the evidence on it. Then transmit a
+      it from the terminal rather than from the findings panel. Transmit a
       mutation with the field `fileTravelOrder`. Its argument `following`
-      takes the reference of the journey on your draft, and `to` takes the
-      name of the country. Ask for `approved`, `reasons`, and `hours` on
-      the receipt. The draft offers a button that chooses the
-      country. You can leave it, because the order chooses the country on
-      the draft from `to`. An approved order sends you on the journey, and takes its hours from the clock, as an order from the
+      takes the reference of the journey, and `to` takes the name of the
+      country. Ask for `approved`, `reasons`, and `hours` on the receipt.
+      The archive checks the order against every response you have
+      received, as it checks a form, and the receipt's `reasons` say what
+      it has yet to establish. An approved order sends you on the
+      journey, and takes its hours from the clock, as an order from the
       findings panel does.
 
       File the travel order that follows the envelope to the country
@@ -391,7 +391,7 @@ stages:
         envelope. Its to gives the city where the journey ended.
       concept: >
         Write amount: 412.5 with the point and no quotation marks. When
-        the evidence is cited, transmit mutation { fileTravelOrder(following:
+        a receipt has brought back the evidence, transmit mutation { fileTravelOrder(following:
         "JRN-0405", to: "…") { approved reasons } } with the country's
         name after to.
       schema: >

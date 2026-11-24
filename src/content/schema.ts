@@ -35,6 +35,7 @@ const stage = z.strictObject({
   introduces: z.enum(MECHANICS).optional(),
   step: z.string().optional(),
   paperwork: z.literal("terminal").optional(),
+  evidence: z.literal("cited").optional(),
   objective: text,
   briefing: text,
   clues: z

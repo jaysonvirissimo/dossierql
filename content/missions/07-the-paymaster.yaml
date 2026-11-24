@@ -181,7 +181,7 @@ stages:
         location: CH
         fieldCheck: |
           Zurich knows the name. The bank asks for a travel order
-          with every claim cited before it opens a drawer.
+          with every claim proved before it opens a drawer.
 
     resolved: |
       Travel order approved. Zurich receives you with a ledger

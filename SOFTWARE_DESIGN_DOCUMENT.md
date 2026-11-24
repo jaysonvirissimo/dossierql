@@ -117,8 +117,8 @@ This section describes how the game plays and how it teaches. Later sections des
 1. Receive a classified mission briefing.
 2. Query the intelligence terminal.
 3. Read the results and compare leads. Every fact returned is recorded as evidence.
-4. Cite relevant findings from the results. Compare what each lead explains and what it leaves open.
-5. Rule out a lead, submit a deduction, travel, or apply for a warrant using the evidence you gathered.
+4. Compare what each lead explains and what it leaves open.
+5. Choose the records your conclusion is about, then rule out a lead, submit a deduction, travel, or apply for a warrant. The archive checks the conclusion against every fact your queries have returned.
 6. Read the dispatch or decision that follows, then follow the next lead.
 7. Repeat until the mission is resolved, then read the debrief.
 
@@ -128,11 +128,17 @@ The player's conclusions must rest on what their queries returned.
 
 The game records every fact that appears in a query result in an **evidence ledger**. A fact is a field value of an entity, or a relationship between two entities. A fact can appear in multiple responses and keeps its identity across queries.
 
-Players can cite a finding in the open draft directly from the results or the ledger. They can also pin evidence in the ledger to keep it at hand. Result rows offer Cite alone, so that the one action a case requires is the only one beside each finding. A single citation can carry a connected chain of facts. When the player cites a row from deep inside a response, the citation starts at the first fact on the path that can support a claim for that lead. If the path contains no supporting fact, the citation can start at a fact that contradicts a claim for the lead. The citation includes the rest of the path down to the row the player cited. When a lead is ruled out because a list does not contain something, the player cites the whole list, because a row inside the list cannot show what is missing from it. One click therefore never leaves out the link between a finding and the record it was found under, such as the link between a sighting and the city where it was filed. A fact on the path that is evidence about a different lead is not carried, so that citing one lead's row never cites what the response says of another lead. The Cite control shows which lead's draft the citation will enter. A row beneath a lead enters that lead's draft. A row that is evidence about the lead whose draft is open enters the open draft wherever the row sits in the response. For example, a list of associates that a clue refers to enters the draft of whichever listed associate the player has open. A row that is neither beneath a lead nor evidence about one, such as the name of a country, enters the open draft too. The control does not say whether such a row bears on a claim, because that would show the player which rows are evidence. The draft says so once the row is cited. A row whose field returned nothing offers no Cite, because no claim can rest on a missing value. The control is labelled with the row's own fields, from the record the row sits in, so that rows of the same shape read the same. The facts the citation carries are listed once it is cited. A lead is named by what the player's queries returned about it, such as its name or codename. A lead that no query has identified yet is numbered among the leads of its type, as in "operative 1, not yet identified". The archive's filing key is never shown. In the Lisbon opening, **Cite cargo** attaches the manifest and **Cite route** attaches the shipment → city → country → border chain. Each fact in a citation remains inspectable and links back to its source response. The player chooses which findings to attach and can remove them.
+A form holds the player's conclusion and nothing else. The player chooses a record for each box on the form, such as the crate to set aside, the shipment to hold and the country to send the hold to, or the operative who signed an order, and submits it. The archive then looks through the whole evidence ledger, every fact any query of the mission has returned, for a complete evidence set for each claim about the chosen records. The player never attaches a fact by hand, because finding the fact is the work, and pressing a button beside it teaches nothing about GraphQL. Only retrieved facts count, so a correct choice that no response proves comes back exactly as a wrong one does. The form shows its claims in plain language and no status until it is submitted. A mark beside each claim, judged live over the whole ledger, would let a player find the answer by choosing each lead in turn and watching the marks. Result rows carry no controls, and a fact can still be pinned in the ledger to keep it at hand.
 
-Deduction, travel, and warrant forms present the claims the player must support in plain language. A stage defines at least two sufficient sets of facts for each claim, reached through different records, so that no claim depends on the player finding one particular field. A claim is supported when its citations contain any one complete set. Extra citations are allowed. Facts in a set must refer to the lead under consideration. For example, a shipment's destination and the destination country's border must form a connected chain.
+When the archive accepts a form, the dispatch shows the **evidence chain** of each claim: the facts of the complete set it found, in order, each with a button that opens the transmission that first returned it. The Case tool keeps each chain with its dispatch for the rest of the mission. A lead that is ruled out keeps, with its dispatch, the facts that contradict its claim.
 
-The draft shows which claims the citations support and which still need evidence. Under each claim it lists the cited facts that count toward that claim. When a claim is partly supported, the draft says which of two things is wrong: the cited facts do not connect to each other, or they connect and a fact is still missing. Where the form also asks the player to choose a record, such as a destination country, the draft says so when the cited facts connect to each other and do not lead to the record chosen. When the player has not yet made that choice and the cited facts already complete an evidence set, the claim reads "Needs a choice" rather than "Needs evidence". The draft then says which record the facts show and offers a button that chooses it. The facts are the player's own, so this gives nothing away. If they show a wrong record, the button chooses that record, and submitting is refused as usual. The draft does not say which fact is missing, because that would give away the evidence route. Hints do that, at their price (Section 3.9). Unrelated citations receive feedback before any time is spent. A cited refutation identifies the claim and its conflicting evidence. An absent entry can refute a claim about a list only when the player retrieved the complete list without an error. A deduction is accepted when the conclusion is correct and all required claims are supported. Travel that advances the investigation meets the same standard. A field check can investigate a lead whose case is still incomplete (Section 3.5).
+When the archive returns a form, it says of each claim whether the player's responses establish it, and costs nothing. Under a claim not yet established, it lists the records that the player's responses already connect to the records on the form, as in "Your responses connect LIS-0417 to Luanda and Angola." When the responses would complete the claim for the chosen lead with a different record in another box, such as another destination country, the returned form says which record the responses show and offers a button that chooses it. Everything a returned form says comes from the player's own responses, so it gives away no answer the player has not retrieved. It never says which field is missing or which query to write, because that would give away the evidence route; hints do that, at their price (Section 3.9). A form with a blank box is refused before the archive looks for evidence. A refused or returned form has always been free, and the budgets assume it. Whether a returned form should cost hours once a clock runs, as a rejected warrant does (Section 3.4), is provisional and waits on the sessions with beginners (Section 10.1).
+
+**Citing by hand** is kept for a puzzle whose lesson is deciding which record to trust, such as two reports that conflict (Section 3.6). There, choosing the source is the skill being taught, and the archive must not choose it for the player. A stage declares it with `evidence: cited`, and no case in the course does yet. At such a stage, result rows offer Cite, the draft is judged on the cited facts alone, and the draft shows each claim's status as the player cites. The rest of this paragraph and the third paragraph below describe that mode. At a stage that cites by hand, players cite a finding in the open draft directly from the results or the ledger. They can also pin evidence in the ledger to keep it at hand. Result rows offer Cite alone, so that the one action a case requires is the only one beside each finding. A single citation can carry a connected chain of facts. When the player cites a row from deep inside a response, the citation starts at the first fact on the path that can support a claim for that lead. If the path contains no supporting fact, the citation can start at a fact that contradicts a claim for the lead. The citation includes the rest of the path down to the row the player cited. When a lead is ruled out because a list does not contain something, the player cites the whole list, because a row inside the list cannot show what is missing from it. One click therefore never leaves out the link between a finding and the record it was found under, such as the link between a sighting and the city where it was filed. A fact on the path that is evidence about a different lead is not carried, so that citing one lead's row never cites what the response says of another lead. The Cite control shows which lead's draft the citation will enter. A row beneath a lead enters that lead's draft. A row that is evidence about the lead whose draft is open enters the open draft wherever the row sits in the response. For example, a list of associates that a clue refers to enters the draft of whichever listed associate the player has open. A row that is neither beneath a lead nor evidence about one, such as the name of a country, enters the open draft too. The control does not say whether such a row bears on a claim, because that would show the player which rows are evidence. The draft says so once the row is cited. A row whose field returned nothing offers no Cite, because no claim can rest on a missing value. The control is labelled with the row's own fields, from the record the row sits in, so that rows of the same shape read the same. The facts the citation carries are listed once it is cited. A lead is named by what the player's queries returned about it, such as its name or codename. A lead that no query has identified yet is numbered among the leads of its type, as in "operative 1, not yet identified". The archive's filing key is never shown. In the Lisbon opening, **Cite cargo** attaches the manifest and **Cite route** attaches the shipment → city → country → border chain. Each fact in a citation remains inspectable and links back to its source response. The player chooses which findings to attach and can remove them.
+
+Deduction, travel, and warrant forms present the claims the player must support in plain language. A stage defines at least two sufficient sets of facts for each claim, reached through different records, so that no claim depends on the player finding one particular field. A claim is supported when its citations contain any one complete set. Extra citations are allowed. Facts in a set must refer to the lead under consideration. For example, a shipment's destination and the destination country's border must form a connected chain. A binding stands for the same record wherever it appears, so the archive finds a set only where the facts lead from one chosen record to the next.
+
+At a stage that cites by hand, the draft shows which claims the citations support and which still need evidence. Under each claim it lists the cited facts that count toward that claim. When a claim is partly supported, the draft says which of two things is wrong: the cited facts do not connect to each other, or they connect and a fact is still missing. Where the form also asks the player to choose a record, such as a destination country, the draft says so when the cited facts connect to each other and do not lead to the record chosen. When the player has not yet made that choice and the cited facts already complete an evidence set, the claim reads "Needs a choice" rather than "Needs evidence". The draft then says which record the facts show and offers a button that chooses it. The facts are the player's own, so this gives nothing away. If they show a wrong record, the button chooses that record, and submitting is refused as usual. The draft does not say which fact is missing, because that would give away the evidence route. Hints do that, at their price (Section 3.9). Unrelated citations receive feedback before any time is spent. A cited refutation identifies the claim and its conflicting evidence. In either mode, an absent entry can refute a claim about a list only when the player retrieved the complete list without an error. A deduction is accepted when the conclusion is correct and all required claims are supported. Travel that advances the investigation meets the same standard. A field check can investigate a lead whose case is still incomplete (Section 3.5).
 
 Every puzzle should depend on fictional intelligence data, such as shipments, aliases, and transactions, that no player can know in advance. Real geography then narrows the possibilities. For example, an intercepted shipment leads to a city, and the city's country must satisfy a geographical clue.
 
@@ -169,7 +175,7 @@ Travel is counted once, because a journey cannot be made more or less economical
 The clock must not discourage experimentation:
 
 - Queries that fail validation are returned by the records clerk before transmission and cost nothing.
-- Browsing schema documentation and the evidence ledger, drafting citations, and ruling out a lead with retrieved evidence are free.
+- Browsing schema documentation and the evidence ledger, choosing records on a form, a form the archive returns, and ruling out a lead with retrieved evidence are free.
 - Budgets leave room for exploration, most of all in the onboarding missions.
 - The first case, training drills (Section 3.14), katas (Section 3.11), and a campaign's coda (Section 2.3) have no clock.
 
@@ -194,15 +200,15 @@ There is no numeric score in the MVP, and request weight does not become one. Th
 
 ### 3.4 Warrants
 
-Missions that end with an arrest require a warrant. The player names an operative and cites evidence for each claim the warrant makes, such as an alias link or presence at the scene.
+Missions that end with an arrest require a warrant. The player identifies an operative on the form, and the archive looks in the ledger for evidence of each claim the warrant makes, such as an alias link or presence at the scene. Deductions and travel orders already work this way (Section 3.2), so a warrant brings no new way of handling evidence.
 
-The bureaucracy returns missing or unrelated citations for correction. Once a warrant is submitted, a rejection costs time. Warrants are introduced after destination missions, once the player is comfortable gathering evidence. They arrive after the MVP (Section 11).
+The bureaucracy returns a warrant whose blank boxes need filling, at no cost. Once a warrant is submitted, a rejection costs time. Warrants are introduced after destination missions, once the player is comfortable gathering evidence. They arrive after the MVP (Section 11).
 
 ### 3.5 Failure and Dead Ends
 
-Give players a credible reason to investigate a wrong lead and let them examine leads in any order. A player who cites a refutation can mark that lead **Ruled out** without spending mission hours. File a short dispatch that acknowledges what made the lead plausible and points to the fact that rules it out. Keep the lead and its citations available for review.
+Give players a credible reason to investigate a wrong lead and let them examine leads in any order. A player can mark a lead **Ruled out**, without spending mission hours, when the facts the player has retrieved contradict one of its claims. At a stage that authors a refutation, the form offers Rule out for the chosen lead. The archive looks through the ledger for the refutation, and refuses at no cost when nothing the player has retrieved contradicts the lead. File a short dispatch that acknowledges what made the lead plausible and points to the fact that rules it out. Keep the lead, marked ruled out, and the facts that contradict it available for review.
 
-Before travel, show the cost and any claims that still need evidence. When a mission offers a **field check**, a player with at least one supported claim, at least one claim that still needs evidence, and no cited refutation can choose to spend the quoted travel hours on a provisional lead. A claim with complete citations and an empty answer box needs a form choice. Once the draft has all its evidence, show the required choices and withhold the field check. The field check returns a dispatch and leaves the player at the same stage with their evidence intact. A wrong lead gets a dead-end dispatch that explains the gap. A viable lead can receive a provisional acknowledgement. These dispatches point back to the archive so the player can verify the lead with GraphQL.
+Before travel, show the cost and any claims that still need evidence. When a mission offers a **field check**, the archive offers it on a returned form whose lead has at least one established claim, at least one claim not yet established, and nothing that contradicts it. The player can then spend the quoted travel hours on the provisional lead. A form with a blank box is refused before it is judged, so it never offers a field check. The field check returns a dispatch and leaves the player at the same stage with their evidence and their choices intact. A wrong lead gets a dead-end dispatch that explains the gap. A viable lead can receive a provisional acknowledgement. These dispatches point back to the archive so the player can verify the lead with GraphQL.
 
 Ruling out and field checks are casework mechanics, and each arrives in its own case (Section 3.15). Ruling out first appears in *The Guest Register* and field checks in *The Quiet Consignee*. A case before those does not author a refutation or a field check, and its wrong leads are simply leads whose claims cannot be supported.
 
@@ -353,7 +359,7 @@ Every mission ends with a debrief containing:
 - The real geographical fact the mission turned on.
 - A concept card for the tradecraft manual when the player earns one.
 
-When the debrief comments on the player's technique, it reads the parsed query, never the typed text, so that a comment or a string cannot count as use of a feature. It reads only the transmissions that supplied the facts the player cited, in any draft, and a single one of them that shows the technique is enough. The level of a teaching case is the concept it teaches, and the level of an assessment is the concept card of its clearance. The reading is looser than a kata's check, because it describes and does not judge: an alias counts as in the kata, any fragment spread in two places counts, and one argument taken from a variable counts beside literal ones. When none of the transmissions shows the technique, the debrief says so with the note of the level's kata, or with its placement note after a placement pass, which ends by saying that the promotion stands. The comment describes what the player did and never changes whether the case is solved. Where the level has a kata and the player holds its clearance, the debrief links to it.
+When the debrief comments on the player's technique, it reads the parsed query, never the typed text, so that a comment or a string cannot count as use of a feature. It reads only the transmissions that supplied the facts of an accepted form's evidence chains, and a single one of them that shows the technique is enough. A transmission no accepted form rested on is not read. The level of a teaching case is the concept it teaches, and the level of an assessment is the concept card of its clearance. The reading is looser than a kata's check, because it describes and does not judge: an alias counts as in the kata, any fragment spread in two places counts, and one argument taken from a variable counts beside literal ones. When none of the transmissions shows the technique, the debrief says so with the note of the level's kata, or with its placement note after a placement pass, which ends by saying that the promotion stands. The comment describes what the player did and never changes whether the case is solved. Where the level has a kata and the player holds its clearance, the debrief links to it.
 
 The tradecraft manual has two parts. Its glossary defines every term the game uses and is available from the start, because a definition is reference material. Its concept cards are earned, one per concept, by completing the mission that teaches the concept or by placement (Section 3.8). They summarize what the player has learned to do. Each teaching mission's debrief links to the next available case that practises that concept with new data.
 
@@ -411,12 +417,13 @@ A **casework mechanic** is a part of the game that the player has to learn in or
 
 | Casework mechanic | What the player meets | First appears |
 |---|---|---|
-| Citing | A lead, one claim, and citing a finding into the form | *The Vanishing Azulejos*, stage 1 |
+| Conclusion | A lead, one claim, choosing the lead on the form, and the archive checking the choice against the ledger | *The Vanishing Azulejos*, stage 1 |
 | Travel order | Two claims on one form, choosing the destination, and travelling | *The Vanishing Azulejos*, stage 3 |
 | Deduction over several records | A form that asks the player to identify more than one record | *The Vanishing Azulejos*, stage 4 |
 | The clock | Hours, a deadline, and a price on hints and on the solution reveal | *The Borrowed Chronometer* |
-| Ruling out | Citing a fact that contradicts a claim, and marking the lead ruled out | *The Guest Register* |
+| Ruling out | Marking a lead ruled out once a retrieved fact contradicts one of its claims | *The Guest Register* |
 | Field check | Spending hours to test a lead whose case is incomplete | *The Quiet Consignee* |
+| Citing by hand | Choosing which retrieved fact a claim rests on, where the lesson is which record to trust (Section 3.2) | No case yet |
 
 The course follows these rules:
 
@@ -435,12 +442,12 @@ A player who skips ahead by placement (Section 3.8) meets every mechanic of the 
 
 | Stage | Objective | New GraphQL step | New casework mechanic |
 |---|---|---|---|
-| 1. Lisbon, the manifests | Identify the crate that cannot be the tiles. One of the three manifests describes slate. | None. The query asks for a field on each record in a list, as the drills did. | Citing |
+| 1. Lisbon, the manifests | Identify the crate that cannot be the tiles. One of the three manifests describes slate. | None. The query asks for a field on each record in a list, as the drills did. | Conclusion. A correct guess that no response proves comes back, so the player learns at once that the archive wants proof. |
 | 2. Lisbon, the routes | Identify the ceramic crate going to a country that does not border Namibia. One of the two ceramic shipments is bound for an island. | Nested selections: from a shipment to its destination, that city's country, and that country's borders | None |
 | 3. Lisbon, the travel order | Send the hold to the country that receives the remaining crate. | None. The evidence is already in the ledger. | Travel order |
 | 4. Luanda | Identify who signed the transfer order that matches the replacement label. | Two records opened side by side under one shipment | Deduction over several records |
 
-Stages 1 to 3 take place at one desk in Lisbon. Stages in the same country share their results: the responses stay in the results panel when the next stage opens, and a lead can be opened from any of them. This is what lets stage 3 be completed with no new query. A form that is accepted without a journey is acknowledged with a dispatch marked as accepted, and the results panel is cleared only when the player travels.
+Stages 1 to 3 take place at one desk in Lisbon. Stages in the same country share their results: the responses stay in the results panel when the next stage opens, and a lead can be opened from any of them. Stage 1 is where the player first meets a form the archive checks: the starter query asks only for each shipment's `id`, so a player who submits before adding `manifest` sees the form come back with its claim not yet established. This is what lets stage 3 be completed with no new query. A form that is accepted without a journey is acknowledged with a dispatch marked as accepted, and the results panel is cleared only when the player travels.
 
 Stages 1 and 2 each ask for one claim about one crate, so the player's first two forms hold a single claim. The two crates set aside in those stages are not ruled out with the ruling-out mechanic, which does not exist yet for this player. Each is the answer to its own stage.
 
@@ -640,6 +647,8 @@ A mission declares what it teaches, what it practises, what it requires, and the
 
 A clue's `constraint` is the machine-readable form of the clue. Each entry is a path of schema fields that starts from a binding, followed by the value the path must reach: a literal, a record, or another path. A path that passes through a list is satisfied when any member of the list matches. A path written with `!` after it must not reach the value, so `$shipment.manifest!` followed by a description selects the shipments whose manifest says something else. The first case uses this form for the two crates it sets aside, each of which is identified by the clue it fails. Validation evaluates the constraints against the data itself, not against the ledger, and tries every record of the right type for each binding the constraints use. Exactly one assignment may satisfy every constraint of the stage, and it must agree with the `solution` (Section 5.5). A part of the solution that no constraint binds, such as the signer in Luanda, must follow from the stage's evidence sets.
 
+A stage's `labels` give the words on each box of its form, keyed by solution binding, such as "Shipment to set aside". A stage may declare `evidence: cited` for a puzzle whose lesson is which record to trust (Section 3.2); every other stage is judged from the ledger.
+
 This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four stages and no clock.
 
     id: vanishing-azulejos
@@ -663,16 +672,17 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
         with NIGHTJAR's name circled.
       stampOnTime: HOLD ISSUED
       comparison: >
-        The first query in Lisbon asked for one field, `manifest`, on each
-        shipment in a list. The reference solution for the second question
+        The reference solution's first query in Lisbon asks for one field,
+        `manifest`, on each shipment in a list. The reference solution for the second question
         opens each shipment's destination, then that city's country, then that
         country's borders, all in one request. Each pair of braces follows a
         link to the next record, and the whole route comes back in a single
         transmission. The travel order needed no query, because both of its
         claims rest on facts those two responses had already returned. In
         Luanda, the reference solution nests again. Inside each arriving
-        shipment it opens the depot's intake record and both transfer orders,
-        and inside each order it opens the operative who signed it. The label
+        shipment it opens the depot's intake record and the shipment's
+        transfer orders, and inside each order it opens the operative who
+        signed it. The label
         and the two orders come back side by side.
       geography: >
         Angola borders Namibia along the Cunene and Okavango rivers. Cabo
@@ -681,7 +691,7 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
     stages:
       manifests:
         location: PT
-        introduces: citing
+        introduces: conclusion
         objective: Identify the shipment whose contents cannot be the tiles.
 
         briefing: |
@@ -690,13 +700,23 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
           declared as samples left the port that morning. Customs
           cannot hold all three, and asks you to set aside one crate
           at a time. Start with any crate that does not hold tiles.
+          Customs takes each shipment's papers at their word. The
+          papers list the contents as the shipment's `manifest`. If
+          the manifest says a crate holds something other than tiles,
+          that is evidence enough.
 
-          The Deduction form makes a claim about one shipment. The
-          shipment you make the claim about is your lead. In Results,
-          find the row that proves the claim. Press Cite beside that
-          row. When the button shows a shipment's ID, Cite opens that
-          shipment's draft and adds the fact as a [citation](glossary:citation).
-          When the claim shows Supported, press Submit deduction.
+          The Deduction form makes one claim about one shipment. You
+          choose that shipment in the form's box and press Submit
+          deduction. The archive then looks through every response you
+          have received for facts that prove the claim about the
+          shipment you chose. If none of your responses proves it, the
+          form comes back to you, even when your choice is right. When
+          the archive accepts the deduction, it lists the facts it used,
+          each with the transmission it came back in. That list is an
+          [evidence chain](glossary:evidence-chain).
+
+          Transmit a query that shows each shipment's manifest. Then
+          choose the shipment to set aside, and submit the deduction.
 
         clues:
           - text: >
@@ -716,6 +736,8 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
               city(name: "Lisbon") {
                 departingShipments {
                   id
+                  # A line that starts with # is a note for you. The archive
+                  # ignores it, so you can leave it in or delete it.
                   # This query is unfinished. Add the field that says what
                   # each shipment contains. The Documentation tab lists the
                   # fields a shipment has.
@@ -742,7 +764,7 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
           type: deduction
           shipment: LIS-0486
         labels:
-          shipment: Shipment
+          shipment: Shipment to set aside
 
         claims:
           - id: not-ceramic
@@ -790,8 +812,10 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
           shares no such border. Set that crate aside.
 
           Use the manifests to find the two ceramic shipments. The
-          claim on this form is about the border, so cite the route
-          evidence for the shipment you set aside.
+          claim on this form is about the border. For the archive to
+          accept it, your responses have to connect the shipment you
+          set aside to the country it is going to, and show which
+          countries border that country.
 
         clues:
           - text: >
@@ -815,8 +839,11 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
                   id
                   manifest
                   # This query is unfinished. Add the field that says
-                  # where each shipment is going. The Documentation tab
-                  # lists the fields a shipment has.
+                  # where each shipment is going. The claim on the form
+                  # is about the country the shipment is going to, and
+                  # that country's borders, so the archive needs your
+                  # response to reach them. The Documentation tab lists
+                  # the fields each record has.
                 }
               }
             }
@@ -826,8 +853,9 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
             For each of the two ceramic shipments, find the country it is
             going to. Then find the countries that share a border with that
             country. One of the two countries has no border with Namibia.
-            A country with no land borders comes back with an empty list,
-            and you can cite an empty list like any other row.
+            A country with no land borders comes back with an empty list.
+            An empty list is evidence too: it shows that the country
+            borders no other country.
           concept: >
             A shipment's destination is a record, not a single value. A
             field that holds a record needs braces after it, with the
@@ -843,7 +871,7 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
           type: deduction
           shipment: LIS-0522
         labels:
-          shipment: Shipment
+          shipment: Shipment to set aside
 
         claims:
           - id: no-road
@@ -904,12 +932,13 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
           One crate is left, and customs will send you after it. The
           Travel order makes two claims about that shipment. One claim
           is about the contents and one is about the route. Your
-          earlier responses in Results already hold the evidence for both.
+          earlier responses in Results already hold the evidence for
+          both claims, so this stage needs no new query. The archive
+          checks both claims when you press Travel.
 
-          Cite the facts about the remaining shipment. The form matches
-          each citation to the claim it supports. Choose the receiving
-          country to record your answer. When both claims show Supported,
-          press Travel.
+          Choose the remaining shipment in the Shipment to hold box.
+          Choose the country receiving it in the box below. Then press
+          Travel.
 
         clues:
           - text: >
@@ -935,15 +964,15 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
             travel order.
           concept: >
             This stage needs no new query. Your last response is still in
-            the Results panel. Find the remaining shipment in it. Press Cite
-            on that shipment's manifest row for the first claim. Then find
-            the borders row under that shipment's destination and country,
-            and press Cite on the borders row for the second claim.
+            the Results panel. Find the remaining shipment in it, and
+            choose that shipment on the form. Then look under that
+            shipment's destination for the country the city is in, and
+            choose that country on the form.
           schema: >
             The facts came from Shipment.manifest, Shipment.destination,
             City.country, and Country.borders.
           skeleton: |
-            Rows to cite under the remaining shipment:
+            Rows to read under the remaining shipment:
             manifest
             destination, then country, then borders
 
@@ -952,7 +981,7 @@ This example is *The Vanishing Azulejos* as Section 3.15 lays it out, with four 
           shipment: LIS-0417
           country: AO
         labels:
-          shipment: Shipment
+          shipment: Shipment to hold
           country: Country receiving the shipment
 
         claims:
@@ -1162,16 +1191,16 @@ A build-time validation process should check:
 - **World data:** Every border is recorded from both sides, and every city belongs to a country.
 - **Reachability:** Every stage can be reached and every mission has a terminal outcome.
 - Verify that the clues for each stage identify exactly one solution among the candidates in the data. Where a stage has wrong leads that can be ruled out, each clue must also leave at least one wrong lead plausible on its own. In Luanda, only one order for the crate names the consignee on the logged label. Where reports conflict, the corroborating data settles the conflict.
-- Verify that every claim has at least two supporting evidence sets and that no supporting set contains another. Each authored set must be retrievable at the mission's clearance. The tests accept complete sets with extra citations and reject incomplete sets or facts from unrelated leads unless the cited facts form another complete set.
-- Verify that each authored refutation is retrievable at the mission's clearance and refutes the named claim for that lead. A field check must be reachable with a supported claim and an unverified claim, must charge the quoted cost, and must leave the stage open. A viable lead stays open after its field check.
-- **Citations:** Every evidence set that the stage's reference solution retrieves can be assembled by Cite controls on its response, in the draft of the lead the set is about, and no Cite control leaves out a fact of the set that lies on the path to its row. The same holds for each lead's refutation, in that lead's draft, when the reference solution retrieves it. A row beneath a fact of the refutation must carry that fact, unless the row is evidence for a claim and its citation is built for that claim (Section 3.2). The solvability and field-check steps cite through the same controls. This checks the citations the interface builds, not only the facts the engine accepts. A reference solution retrieves one set for each claim and need not retrieve the alternatives, so the check does not reach an alternative set that only a different query returns.
-- **Pacing:** The rules of Section 3.15 hold. Validation works out which mechanics a stage uses from what the stage authors: a clock on its mission, a refutation, a field check, a travel solution, and a deduction that identifies more than one record. Every stage uses citing. It fails when a stage uses a mechanic that neither it nor an earlier stage in the course introduces, when a mission after the first introduces more than one, when two stages introduce the same mechanic, and when a stage declares a mechanic it does not use. The format gives a stage one `introduces` entry, so a stage cannot introduce two.
+- Verify that every claim has at least two supporting evidence sets and that no supporting set contains another. Each authored set must be retrievable at the mission's clearance. The tests accept complete sets with extra facts and reject incomplete sets or facts from unrelated leads unless the facts form another complete set. Because a form is judged on every retrieved fact, the check that the evidence would not equally support another record matters most: it is what keeps a ledger full of facts about every lead from proving a wrong choice.
+- Verify that each authored refutation is retrievable at the mission's clearance and refutes the named claim for that lead. A field check must be reachable with a supported claim and an unverified claim, must charge the quoted cost, and must leave the stage open. At a stage judged from the ledger, validation tries the field check with a ledger that holds only the facts of the supported claim's set, as a player has who has retrieved that evidence and nothing more. A viable lead stays open after its field check.
+- **Citations:** At a stage that cites by hand, every evidence set that the stage's reference solution retrieves can be assembled by Cite controls on its response, in the draft of the lead the set is about, and no Cite control leaves out a fact of the set that lies on the path to its row. The same holds for each lead's refutation, in that lead's draft, when the reference solution retrieves it. A row beneath a fact of the refutation must carry that fact, unless the row is evidence for a claim and its citation is built for that claim (Section 3.2). The solvability and field-check steps cite through the same controls. This checks the citations the interface builds, not only the facts the engine accepts. A reference solution retrieves one set for each claim and need not retrieve the alternatives, so the check does not reach an alternative set that only a different query returns.
+- **Pacing:** The rules of Section 3.15 hold. Validation works out which mechanics a stage uses from what the stage authors: a clock on its mission, a refutation, a field check, a travel solution, and a deduction that identifies more than one record. Every stage uses a conclusion, or citing by hand where it declares `evidence: cited`. It fails when a stage uses a mechanic that neither it nor an earlier stage in the course introduces, when a mission after the first introduces more than one, when two stages introduce the same mechanic, and when a stage declares a mechanic it does not use. The format gives a stage one `introduces` entry, so a stage cannot introduce two.
 - **Solvability:** The reference solution executes without error and yields the required evidence. A record classified above the mission's clearance is a partial result the case is written around (Section 3.8), and its error is not counted as one. The time it spends sets the mission's budget (Section 3.3).
 - **Request weight:** Every reference solution fits under the weight limit. In the mission that teaches pagination, the logs requested whole exceed the limit, and the reference solution pages through them under it. In the mission that teaches directives, at least one request of the reference solution would exceed the limit with its `@include` and `@skip` taken out.
 - **Curriculum order:** A mission requires only concepts taught at or below its clearance, and its reference solution uses the concept it claims to teach. A reference solution uses interfaces when it opens a field that returns an interface, and unions when it opens a field that returns a union, and it must then declare the concept.
 - **Steps:** From clearance 6, each stage declares the step of Section 3.7 it introduces, if any. A stage introduces at most one step or concept, so the first stage of a teaching mission, which introduces the concept, declares none. The step is one the coverage table lists at the mission's clearance, only a teaching mission introduces one, the stage's reference solution uses it, a later mission's reference solution practises it, and no reference solution uses it before the stage that introduces it. Mission text uses the step's glossary term only from its clearance. Validation recognises a step from the parsed reference solution, never from its text. One step shows only in a response: a null that travels up from a classified entry is recognised from what the archive returns to the reference solution. A teaching mission from clearance 6 has at most four stages.
 - **Course shape:** The rules of Section 3.7 hold. Every taught concept is practised later, every clearance level ends with an assessment mission, and every mission file in the content directory is part of the course. A coda is left out of these rules about levels and out of the check that the course order promotes the player to each mission's clearance. It has one stage, no clock, teaches nothing, introduces no mechanic, and is the only coda and the last mission of its campaign, at the clearance of the campaign's last case.
-- **Paperwork:** A stage that declares `paperwork: terminal` has a destination, and its reference solution files the travel order with `fileTravelOrder`. Validation transmits that mutation after it cites the evidence, and the order must be approved.
+- **Paperwork:** A stage that declares `paperwork: terminal` has a destination, and its reference solution files the travel order with `fileTravelOrder`. Validation transmits that mutation after the reference solution has retrieved the evidence, and the order must be approved.
 - **Starter queries:** A stage's starter query does not, unchanged, yield the required evidence.
 - **Training drills:** Each drill's reference transmits without error at clearance 1 and returns the expected facts, and its starter query does not.
 - **Katas:** Each kata's clearance is that of its concept's card. Its reference, sent with its reference variables, transmits without error at that clearance, returns the expected facts, and has the structure of the kata's technique (Section 3.11). Its starter, sent with its starting variables, does not pass. Every case at a kata's level has a reference solution that shows the kata's technique as the debrief reads it (Section 3.10), so the debrief never faults a player for doing what the reference does.
@@ -1293,22 +1322,23 @@ Actions:
 
 - Transmit a query. This spends time while the clock is active and adds facts to the evidence ledger.
 - Pin or unpin evidence.
-- Add or remove a citation in the draft for a particular lead.
-- Rule out a lead by citing its refutation. This is free.
+- Choose a record for a box on the form, the lead among them. Choosing another lead keeps the records in the other boxes.
+- Rule out the chosen lead when the ledger holds its refutation. This is free.
+- At a stage that cites by hand, add or remove a citation in the draft for a particular lead.
 - Examine a dossier, report, or the schema documentation. This is free.
 - Request a hint.
 - View the stage's solution.
-- Travel to a destination with fully supported claims, or order a field check where the mission offers one.
-- Submit a deduction with citations.
-- Apply for a warrant with citations.
+- Travel to a destination whose claims the ledger establishes, or order a field check where a returned form offers one.
+- Submit a deduction. The engine returns it with a review of each claim, or accepts it with the evidence chain of each claim.
+- Apply for a warrant.
 - Open a standing watch, which is a subscription, or close it. Opening one is a transmission.
 - Let the deadline pass, or restart the investigation.
 
-Travel and deductions are available as controls in the interface from the first mission, and warrants from the first mission that ends in an arrest. Once the player reaches the clearance level that teaches mutations, the same actions can also be performed through the terminal, and missions at that level ask for the paperwork to be filed that way. Both routes call the same engine actions. From clearance 11 a travel order can be filed with `fileTravelOrder(following:, to:)`. `following` gives the lead whose draft the order is filed from, and `to` gives the country, which the order chooses on the draft. The citations stay on the draft, where the player made them. A stage that declares `paperwork: terminal` shows no travel button in the findings panel. The panel says that the order is filed from the terminal, and what the journey will cost. Deductions keep their control at every clearance, until a later level gives them a mutation.
+Travel and deductions are available as controls in the interface from the first mission, and warrants from the first mission that ends in an arrest. Once the player reaches the clearance level that teaches mutations, the same actions can also be performed through the terminal, and missions at that level ask for the paperwork to be filed that way. Both routes call the same engine actions. From clearance 11 a travel order can be filed with `fileTravelOrder(following:, to:)`. `following` gives the lead, and `to` gives the country, which the order chooses on the form. The archive judges the order from the ledger, as it judges the travel control's, and a receipt that is not approved gives, in `reasons`, each claim the archive has yet to establish. A stage that declares `paperwork: terminal` shows no travel button in the findings panel. The panel says that the order is filed from the terminal, and what the journey will cost. Deductions keep their control at every clearance, until a later level gives them a mutation.
 
 **Query validation and puzzle validation must remain distinct.** A syntactically valid query does not necessarily solve a puzzle, and multiple different queries may support the same correct deduction.
 
-Missions evaluate the player's conclusion and the evidence cited for it. They never require an exact query string. Only katas judge a query's abstract syntax tree (Section 3.11). The debrief reads it to describe the player's technique and for nothing else (Section 3.10).
+Missions evaluate the player's conclusion and the retrieved evidence for it. They never require an exact query string. Only katas judge a query's abstract syntax tree (Section 3.11). The debrief reads it to describe the player's technique and for nothing else (Section 3.10).
 
 ## 7. Component Design
 
@@ -1381,11 +1411,11 @@ The screens support the gameplay loop described in Section 3.1.
 
 **Mission Briefing:** Classified narrative introduction, objectives, and initial intelligence.
 
-The **Intelligence Terminal** shows the editor and the latest results side by side, with the objective, current location, and deadline event in view. Players can switch between leads, inspect the response, and attach a finding to the open draft. When a response holds several records of one type, such as three dossiers fetched under aliases or the shipments in a list, a Side by side tab beside the findings shows them in columns with one row for each field, and a field that a record lacks stays visibly blank and shaded. A cell is cited as the matching row of the findings is, into the same draft. Records fit in columns when each field holds a single value, a short list that reads on one line, a nested record, or a list of exactly one record; a list of several records stays stacked, and that list can itself be shown in columns. The findings say when a response has a Side by side view. The view arranges what the player retrieved. It never marks which record fits a clue, because that comparison is the player's work. Each response is labelled, above its tabs, with the variables it was sent with, and a response sent with none has no label. From clearance 6, a second label states the request's weight (Section 3.3), and the raw response shows it under `extensions`. An introspection result has a compact view of its own. It holds no facts and offers no Cite, and it says so. A long list of types is folded to one line a type, with the number of its fields, and each field takes one line with its type. A type reference reads layer by layer, outermost first, as in `NON_NULL → LIST → NON_NULL → OBJECT TransferOrder`, so that the layers stay the player's to read. A record that a query asked only for its `__typename` is headed by that type. The same error made in several places is shown once, with every place it was made. When the clerk returns a request unprocessed, the results say that the findings beneath are from the last transmission the archive answered, and not from the returned request. Above the clues of each stage, a sentence says that each clue is a fact about the record the stage asks the player to identify. Keep raw GraphQL results, schema documentation for the clearance in force, error annotations, and hints available. After expiry, the clock shows what happened and whether the investigation is continuing untimed.
+The **Intelligence Terminal** shows the editor and the latest results side by side, with the objective, current location, and deadline event in view. Players can switch between leads and inspect the response. When a response holds several records of one type, such as three dossiers fetched under aliases or the shipments in a list, a Side by side tab beside the findings shows them in columns with one row for each field, and a field that a record lacks stays visibly blank and shaded. At a stage that cites by hand, a cell is cited as the matching row of the findings is, into the same draft. Records fit in columns when each field holds a single value, a short list that reads on one line, a nested record, or a list of exactly one record; a list of several records stays stacked, and that list can itself be shown in columns. The findings say when a response has a Side by side view. The view arranges what the player retrieved. It never marks which record fits a clue, because that comparison is the player's work. Each response is labelled, above its tabs, with the variables it was sent with, and a response sent with none has no label. From clearance 6, a second label states the request's weight (Section 3.3), and the raw response shows it under `extensions`. An introspection result has a compact view of its own. It holds no facts, so no form can rest on it, and it says so. A long list of types is folded to one line a type, with the number of its fields, and each field takes one line with its type. A type reference reads layer by layer, outermost first, as in `NON_NULL → LIST → NON_NULL → OBJECT TransferOrder`, so that the layers stay the player's to read. A record that a query asked only for its `__typename` is headed by that type. The same error made in several places is shown once, with every place it was made. When the clerk returns a request unprocessed, the results say that the findings beneath are from the last transmission the archive answered, and not from the returned request. Above the clues of each stage, a sentence says that each clue is a fact about the record the stage asks the player to identify. Keep raw GraphQL results, schema documentation for the clearance in force, error annotations, and hints available. After expiry, the clock shows what happened and whether the investigation is continuing untimed.
 
 The terminal offers optional **Vim keybindings** through a labelled switch beside the editor. The switch is off by default; the same switch is in Settings. The player can change it at any time without losing the editor's text. It applies to every code editor in the game, including the variables panel, which is a code editor like the query editor and also transmits with the shortcut. While it is on, the editor shows the current Vim mode as text. The choice is a preference (Section 7.4), so it holds from one stage, mission, and visit to the next whether it was left on or off, until the player changes it. The transmit shortcut works in every Vim mode, and a keyboard user can always move focus out of the editor. The editor closes each brace, parenthesis, and quotation mark as it is opened. A player who types a closing brace on its own line, when every brace is already closed, steps over the brace the editor added, and the blank line is removed. Suggestions appear as the player types, and none is chosen until the player picks one, so Enter always starts a new line. The clerk's note on a closing brace too many says that the editor adds closing braces.
 
-The **Evidence Board** holds the evidence ledger and pinned facts, with links back to their query results. The travel, deduction, and warrant drafts show plain-language claims and their citations. Keep the active draft beside the terminal results, and keep each lead's citations separate when switching between leads. Ruled-out leads remain available for review.
+The **Evidence Board** holds the evidence ledger and pinned facts, with links back to their query results. The travel, deduction, and warrant forms show plain-language claims and a box for each record the conclusion is about. Keep the form beside the terminal results. A returned form shows the review of each claim, and an accepted one shows its evidence chains, each fact linked to its source transmission. Ruled-out leads remain available for review.
 
 **World Map:** Visualizes geographical locations and supports travel decisions, showing the time each journey would cost.
 
@@ -1416,12 +1446,12 @@ Testing should prioritize deterministic game behavior and content correctness.
 
 Suggested coverage:
 
-- **Unit tests** cover GraphQL resolvers, mission transitions, evidence recording and source links, and claim evaluation. Verify that a grouped citation attaches only retrieved facts with their source paths. Check that reviewing a draft or ruling out a lead costs no time, that list refutations require complete results, and that a confirmed field check spends the quoted cost without advancing the stage. Verify that a final-hour action resolves before expiry, a solution reveal is free after expiry, and clearance is derived correctly from completions, including placement with the solution reveal, without it, and after a reveal in an earlier attempt.
+- **Unit tests** cover GraphQL resolvers, mission transitions, evidence recording and source links, and claim evaluation. Verify that a form is judged only on retrieved facts, that a correct choice no response proves is returned, and that an accepted form records its evidence chains. At a stage that cites by hand, verify that a grouped citation attaches only retrieved facts with their source paths. Check that reviewing a draft or ruling out a lead costs no time, that list refutations require complete results, and that a confirmed field check spends the quoted cost without advancing the stage. Verify that a final-hour action resolves before expiry, a solution reveal is free after expiry, and clearance is derived correctly from completions, including placement with the solution reveal, without it, and after a reveal in an earlier attempt.
 - **Schema tests:** Each clearance level exposes exactly its intended types and fields, including through introspection. Classified records return partial data with errors. A placement attempt runs against the schema of the clearance in force. Once request weight is implemented, weight is reported from clearance 6 and enforced from clearance 9, a refused request spends no time and records no facts, and a request under the limit costs one hour whatever it weighs.
 - **Content tests:** The validation checks of Section 5.5, run against every mission. These recompute what a mission asserts from the data and do not trust the authored answer.
 - **Integration tests:** Execute representative GraphQL operations against actual game data.
 - **Persistence tests:** Saved data from an older format version, a changed mission, and unavailable storage are each handled as Section 7.4 describes. The Vim keybindings preference survives a reload, a change of mission, and a progress reset, both when on and when off.
-- **End-to-end tests** play the Azulejos case with the editor, results, and draft accessible by keyboard at 1024 pixels. Cite one finding for the first stage's single claim, then cite a nested row for the second stage and verify that the claim lists the facts the citation carried and that each links to its source. Complete the travel order from evidence already in the ledger and reach Luanda. Reload and confirm that the stage, the evidence, and the drafts survived. Use the replacement label to identify the signer. Verify that no clock is shown and that a hint costs nothing. A second test plays a later case with a clock: rule out one wrong lead for free, confirm a field check on a different lead with an unverified claim, and let a deadline end an attempt.
+- **End-to-end tests** play the Azulejos case with the editor, results, and draft accessible by keyboard at 1024 pixels. Submit the right crate for the first stage before any response proves it, and verify that it comes back. Transmit the manifests and submit again, and verify that it is accepted with no Cite control on the page and that its evidence chain links to its source. In the second stage, verify that the evidence chain lists the three facts of the route. Complete the travel order from evidence already in the ledger and reach Luanda. Reload and confirm that the stage, the evidence, and the drafts survived. Use the replacement label to identify the signer. Verify that no clock is shown and that a hint costs nothing. A second test plays a later case with a clock: rule out one wrong lead for free, confirm a field check offered by the returned form of a different lead with an unverified claim, and let a deadline end an attempt.
 
 Every authored mission must include a reference solution. Continuous integration plays each mission using its reference solution, computes the mission's budget from the time spent, and fails if the mission cannot be completed.
 
@@ -1628,6 +1658,19 @@ Mutations have no kata yet (Section 3.11). The initial bundle stays under its bu
 
 **Success criterion:** A player who has never written a mutation can file an expense claim and cite its receipt, file several claims in one request under aliases, write a decimal number, and file a travel order from the terminal, each in a stage that introduces nothing else.
 
+### Milestone 12 — Forms the Archive Checks
+
+Pressing Cite on a row the player has already found teaches nothing about GraphQL, and most of a case's clicks were routine citations. This milestone replaces them with warrant-style decisions (Section 3.2). It is built and proved on *The Vanishing Azulejos* and applied to every case.
+
+- Judge every form from the whole evidence ledger. The player chooses the records on the form and submits it, and the engine looks for a complete, connected evidence set for each claim about the chosen records.
+- Show no claim status before submission. A returned form says which claims the responses establish and how far they reach toward the rest, and never which field or query is missing. A returned form costs nothing.
+- Keep the evidence chain of each accepted form with its dispatch, each fact linked to the transmission that first returned it.
+- Rule out a lead and offer a field check from the ledger. Let the debrief read the transmissions behind accepted evidence.
+- Keep citing by hand behind `evidence: cited`, for a puzzle whose lesson is which record to trust. The casework mechanic "Citing" of 1.0 becomes "Conclusion".
+- Rewrite the opening's briefings, and every passage that told the player to cite.
+
+**Success criterion:** In the opening, a correct guess that no response proves is returned, a supported conclusion advances with no citation, and a reader who does not know the answer can say what a returned form wants without being told which query to write.
+
 ### After 1.0
 
 Where this document says that a feature arrives after the MVP, and Milestones 5 to 11 do not list it, the feature arrives after 1.0.
@@ -1674,15 +1717,17 @@ The **Mission Clock** counts the game hours until the deadline event. Its budget
 
 **Evidence Set:** A group of facts that together support a claim. Every claim has at least two.
 
-**Citation** links one or more retrieved facts to a claim in a draft.
+**Evidence chain:** The facts that prove a claim about the records on a form, each leading to the next, as the archive found them in the ledger.
+
+**Citation** links one or more retrieved facts to a claim in a draft, at a stage that cites by hand.
 
 **Refutation** is a set of retrieved facts that disprove a claim for a particular lead.
 
 **Field Check** is a paid investigation of a provisional lead that returns a dispatch while the stage stays open.
 
-A **Deduction** is a conclusion the player submits with citations.
+A **Deduction** is a conclusion the player submits, which the archive accepts when the ledger proves its claims.
 
-**Warrant:** An application to arrest a named operative, supported by cited evidence.
+**Warrant:** An application to arrest an identified operative, accepted when the ledger proves its claims.
 
 **Clearance:** The player's rank, earned by passing assessment missions. It determines the missions available and the schema visible.
 
@@ -1740,7 +1785,7 @@ A **Deduction** is a conclusion the player submits with citations.
 
 **Coda:** One short, untimed stage that ends a campaign's arc. It follows the last case and is not counted among the cases.
 
-**Casework Mechanic:** A part of the game that the player has to learn in order to act, such as citing, the clock, or ruling out. Each is introduced in a stage of its own (Section 3.15).
+**Casework Mechanic:** A part of the game that the player has to learn in order to act, such as the conclusion, the clock, or ruling out. Each is introduced in a stage of its own (Section 3.15).
 
 **Training Drill:** A short, untimed exercise offered before the first case, passed by retrieving the facts it asks for.
 

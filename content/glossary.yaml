@@ -74,16 +74,20 @@
   term: evidence
   clearance: 1
   definition: >
-    A fact that one of your queries returned. You can cite only facts that
-    you have retrieved.
-- id: citation
-  term: citation
+    A fact that one of your queries returned. When you submit a travel
+    order or a deduction, the archive looks for evidence among the facts
+    you have retrieved, and only among those.
+- id: evidence-chain
+  term: evidence chain
   clearance: 1
-  matches: [citations, cite]
+  matches: [evidence chains]
   definition: >
-    A fact that you attach to a claim on a travel order or a deduction
-    form, to show that the claim is true. You cite a fact with the Cite
-    button beside it in the results of a query.
+    The facts that prove a claim about a record, each one leading to the
+    next. For a shipment going to a country with no land border, the chain
+    runs from the shipment to the city it is going to, from that city to its
+    country, and from that country to the list of its borders. When the
+    archive accepts a form, it shows the chain for each claim and the
+    transmission each fact came back in.
 - id: argument
   term: argument
   clearance: 2

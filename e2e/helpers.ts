@@ -178,6 +178,30 @@ export function draft(page: Page): Locator {
   return page.locator("section.draft");
 }
 
+/** Chooses a record, by its archive reference, in one box of the form. */
+export async function choose(
+  page: Page,
+  box: string,
+  value: string,
+): Promise<void> {
+  await draft(page)
+    .getByRole("combobox", { name: box, exact: true })
+    .selectOption(value);
+}
+
+/** Presses the form's button: Submit deduction, Travel, or Rule out. */
+export async function submit(
+  page: Page,
+  name: string | RegExp = "Submit deduction",
+): Promise<void> {
+  await press(
+    draft(page).getByRole("button", {
+      name,
+      ...(typeof name === "string" ? { exact: true } : {}),
+    }),
+  );
+}
+
 export async function openCase(page: Page, missionId: string): Promise<void> {
   await page.goto(`./#/mission/${missionId}`);
   await press(page.getByRole("button", { name: "Open the terminal" }));

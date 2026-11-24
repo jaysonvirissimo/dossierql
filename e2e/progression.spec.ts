@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
+  choose,
   clock,
   draft,
   expectClean,
@@ -8,6 +9,7 @@ import {
   press,
   record,
   send,
+  submit,
   watchPage,
   type PageWatch,
 } from "./helpers.ts";
@@ -64,32 +66,12 @@ test("a player who knows GraphQL is promoted by placement", async ({
   // The terminal runs against clearance 2: Company.director exists here.
   await send(page, CONSIGNEE);
   await expect(page.locator(".errors")).toHaveCount(0);
-  const consignee = page.locator(".finding").filter({
-    has: page.locator(":scope > .finding__row .finding__name", {
-      hasText: /^consignee$/,
-    }),
-  });
-  await press(
-    consignee
-      .locator(":scope > .finding__row")
-      .getByRole("button", { name: /^Cite (.* → )?consignee(,|$)/ }),
-  );
-  // A row that names a company opens the draft for that company.
-  await expect(
-    draft(page).getByRole("tab", { name: "Meridian Freight" }),
-  ).toHaveAttribute("aria-selected", "true");
-  await press(
-    consignee
-      .locator(".finding__nested")
-      .getByRole("button", { name: /^Cite (.* → )?director(,|$)/ }),
-  );
+  // The form offers the companies the response turned up, by their names.
   await draft(page)
-    .getByRole("combobox", { name: "Director" })
-    .selectOption("PEWTER_SWIFT");
-  await expect(
-    draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(2);
-  await press(draft(page).getByRole("button", { name: "Submit deduction" }));
+    .getByLabel("Receiving company")
+    .selectOption({ label: "Meridian Freight" });
+  await choose(page, "Director", "PEWTER_SWIFT");
+  await submit(page);
 
   await expect(page.getByTestId("stamp")).toHaveText("HELD");
   await expect(
@@ -126,38 +108,20 @@ test("a placement finished with the solution revealed does not promote", async (
   await press(page.getByRole("button", { name: /^View the solution/ }));
   await expect(page.getByTestId("reference-solution")).toBeVisible();
   await send(page, CONSIGNEE);
-  await page
-    .getByLabel("Open a lead")
-    .selectOption({ label: "Meridian Freight" });
-  // The list shows the lead that is open.
-  await expect(
-    page.getByLabel("Open a lead").locator("option:checked"),
-  ).toHaveText("Meridian Freight");
-  const consignee = page.locator(".finding").filter({
-    has: page.locator(":scope > .finding__row .finding__name", {
-      hasText: /^consignee$/,
-    }),
-  });
-  await press(
-    consignee
-      .locator(":scope > .finding__row")
-      .getByRole("button", { name: /^Cite (.* → )?consignee(,|$)/ }),
-  );
-  const fieldCheck = draft(page).getByRole("button", {
-    name: /Order a field check/,
-  });
-  await expect(fieldCheck).toBeVisible();
-  await press(
-    consignee
-      .locator(".finding__nested")
-      .getByRole("button", { name: /^Cite (.* → )?director(,|$)/ }),
-  );
-  await expect(draft(page)).toContainText("Needs a choice");
-  await expect(fieldCheck).toHaveCount(0);
   await draft(page)
-    .getByRole("combobox", { name: "Director" })
-    .selectOption("PEWTER_SWIFT");
-  await press(draft(page).getByRole("button", { name: "Submit deduction" }));
+    .getByLabel("Receiving company")
+    .selectOption({ label: "Meridian Freight" });
+  // The list shows the company that is chosen.
+  await expect(
+    draft(page).getByLabel("Receiving company").locator("option:checked"),
+  ).toHaveText("Meridian Freight");
+  // A blank box is refused before the archive looks for evidence.
+  await submit(page);
+  await expect(draft(page)).toContainText(
+    "a choice on the form is still blank",
+  );
+  await choose(page, "Director", "PEWTER_SWIFT");
+  await submit(page);
 
   await expect(page.getByText(/does not promote you/)).toBeVisible();
   await expect(page.locator(".shell-bar__rank")).toHaveText("Clearance 1");
@@ -188,6 +152,8 @@ test("a later case ends at its deadline and can be restarted", async ({
   ).toBeVisible();
 });
 
+// The query leaves out who directs each consignee, so one lead is left
+// half proved and can take a field check.
 const LEDGERS = `query {
   mombasa: city(name: "Mombasa") { ...crates }
   dar: city(name: "Dar es Salaam") { ...crates }
@@ -198,7 +164,7 @@ fragment crates on City {
     id
     manifest
     inspection { finding }
-    consignee { name director { codename organization { name } } }
+    consignee { name }
   }
 }`;
 
@@ -210,30 +176,27 @@ test("a case with a clock: rule out a lead, check another, and run out of time",
   await send(page, LEDGERS);
   await expect(clock(page)).toContainText("16 of 17 hours left");
 
-  // Rule out one wrong lead, free.
-  await press(
-    record(page, "MPM-0144").getByRole("button", {
-      name: /^Cite (.* → )?finding,/,
-    }),
-  );
-  await expect(
-    draft(page).getByRole("tab", { name: "MPM-0144" }),
-  ).toHaveAttribute("aria-selected", "true");
-  await expect(draft(page)).toContainText("Contradicted");
-  await press(draft(page).getByRole("button", { name: /Rule out this lead/ }));
+  // Rule out one wrong lead, free. The form shows the facts that rule it out.
+  await choose(page, "Shipment", "MPM-0144");
+  await submit(page, /^Rule out this shipment/);
   await expect(draft(page)).toContainText("the inspector has borrowed one");
   await expect(draft(page)).toContainText("no time spent");
-  await expect(clock(page)).toContainText("16 of 17 hours left");
-
-  // A different lead with one supported claim and one unverified: field check.
-  await press(
-    record(page, "MBA-0102").getByRole("button", {
-      name: /^Cite (.* → )?finding,/,
-    }),
+  await expect(draft(page).getByTestId("evidence-chain")).toContainText(
+    "contradict",
   );
+  await expect(clock(page)).toContainText("16 of 17 hours left");
   await expect(
-    draft(page).getByRole("tab", { name: "MBA-0102" }),
-  ).toHaveAttribute("aria-selected", "true");
+    draft(page).getByLabel("Shipment").locator("option", {
+      hasText: "MPM-0144 (ruled out)",
+    }),
+  ).toHaveCount(1);
+
+  // A different lead with one claim proved and one not: the form comes back
+  // with a field check, and coming back costs nothing.
+  await choose(page, "Shipment", "MBA-0102");
+  await submit(page);
+  await expect(page.getByTestId("returned")).toContainText("Established");
+  await expect(clock(page)).toContainText("16 of 17 hours left");
   const check = draft(page).getByRole("button", {
     name: /Order a field check/,
   });
@@ -273,28 +236,11 @@ test("aliases bring three files back in one transmission", async ({ page }) => {
 
   await openCase(page, "quiet-consignee");
   await send(page, CONSIGNEE);
-  await page
-    .getByLabel("Open a lead")
-    .selectOption({ label: "Meridian Freight" });
-  const consignee = page.locator(".finding").filter({
-    has: page.locator(":scope > .finding__row .finding__name", {
-      hasText: /^consignee$/,
-    }),
-  });
-  await press(
-    consignee
-      .locator(":scope > .finding__row")
-      .getByRole("button", { name: /^Cite (.* → )?consignee(,|$)/ }),
-  );
-  await press(
-    consignee
-      .locator(".finding__nested")
-      .getByRole("button", { name: /^Cite (.* → )?director(,|$)/ }),
-  );
   await draft(page)
-    .getByRole("combobox", { name: "Director" })
-    .selectOption("PEWTER_SWIFT");
-  await press(draft(page).getByRole("button", { name: "Submit deduction" }));
+    .getByLabel("Receiving company")
+    .selectOption({ label: "Meridian Freight" });
+  await choose(page, "Director", "PEWTER_SWIFT");
+  await submit(page);
   await expect(page.locator(".shell-bar__rank")).toHaveText("Clearance 3");
 
   await openCase(page, "three-couriers");
@@ -352,17 +298,9 @@ test("aliases bring three files back in one transmission", async ({ page }) => {
   await expect(location.locator("td").nth(1)).toHaveText(
     "Not asked for in this record",
   );
-  // A cell cites its fact as the row does in the Findings tab.
-  await page.getByLabel("Open a lead").selectOption({ label: "GREY_PETREL" });
-  await press(
-    table.getByRole("row", { name: /^organization / }).getByRole("button", {
-      name: "Cite organization, into the draft for GREY_PETREL",
-    }),
-  );
-  await expect(draft(page).locator(".citation")).toHaveCount(1);
-  await expect(
-    draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(1);
+  // A cell is read, not cited: the archive checks the form itself.
+  await expect(table.getByRole("button", { name: /^Cite/ })).toHaveCount(0);
+  await choose(page, "Courier", "GREY_PETREL");
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
   );

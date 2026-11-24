@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import {
+  choose,
   clock,
   draft,
   expectClean,
@@ -11,6 +12,7 @@ import {
   press,
   record,
   send,
+  submit,
   watchPage,
   type PageWatch,
 } from "./helpers.ts";
@@ -25,36 +27,11 @@ test.afterEach(() => {
   expectClean(watch);
 });
 
-async function cite(page: Page, shipment: string, row: string): Promise<void> {
-  await press(
-    record(page, shipment).getByRole("button", {
-      name: new RegExp(`^Cite (.* → )?${row},`),
-    }),
-  );
-}
-
 async function solveLuanda(page: Page): Promise<void> {
   await send(page, LUANDA);
-  const order = record(page, "LUA-012");
-  await press(order.getByRole("button", { name: /^Cite (.* → )?consignee,/ }));
-  await press(
-    order.getByRole("button", { name: /^Cite (.* → )?authorized by,/ }),
-  );
-  // The label the depot logged, cited into the order's open draft.
-  const intake = record(page, "LIS-0417")
-    .locator(":scope > .finding__fields > .finding")
-    .filter({ has: page.locator(".finding__name", { hasText: /^intake$/ }) });
-  await press(
-    intake.locator(".finding__nested").getByRole("button", {
-      name: /^Cite (.* → )?consignee,/,
-    }),
-  );
-  await draft(page)
-    .getByRole("combobox", { name: "For shipment" })
-    .selectOption("LIS-0417");
-  await draft(page)
-    .getByRole("combobox", { name: "Authorized by" })
-    .selectOption("NIGHTJAR");
+  await choose(page, "Transfer order", "LUA-012");
+  await choose(page, "For shipment", "LIS-0417");
+  await choose(page, "Authorized by", "NIGHTJAR");
 }
 
 test("the Azulejos case, by keyboard at 1024 pixels, with no clock", async ({
@@ -83,19 +60,33 @@ test("the Azulejos case, by keyboard at 1024 pixels, with no clock", async ({
   ).toBeVisible();
   await expect(page.getByText("No time was spent.")).toHaveCount(0);
 
-  // Stage 1: one finding, cited for the single claim on the form.
+  // Stage 1: the right crate, guessed before any response proves it,
+  // comes back to the player.
+  await send(page, MANIFESTS.replace("manifest", ""));
+  await choose(page, "Shipment to set aside", "LIS-0486");
+  await submit(page);
+  await expect(page.getByTestId("returned")).toContainText(
+    "Not yet established",
+  );
+  await expect(page.getByTestId("returned")).toContainText(
+    "Your responses hold no fact that proves this claim about LIS-0486.",
+  );
+  await expect(page.locator(".casebar")).toContainText("cannot be the tiles");
+
+  // Once the manifests come back, the same choice is accepted with no
+  // citation, and the form shows the evidence it rested on.
   await send(page, MANIFESTS);
-  await cite(page, "LIS-0486", "manifest");
-  await expect(
-    draft(page).getByRole("tab", { name: "LIS-0486" }),
-  ).toHaveAttribute("aria-selected", "true");
-  await expect(draft(page).locator(".claim")).toHaveCount(1);
-  await expect(
-    draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(1);
-  await press(draft(page).getByRole("button", { name: "Submit deduction" }));
+  await expect(page.getByRole("button", { name: /^Cite/ })).toHaveCount(0);
+  await submit(page);
   await expect(draft(page)).toContainText("offers to send a");
   await expect(draft(page)).not.toContainText("no time spent");
+  const chain = draft(page).getByTestId("evidence-chain");
+  await expect(chain).toContainText(
+    "The contents of this shipment are not ceramic.",
+  );
+  await expect(chain).toContainText("Blue slate squares");
+  await press(chain.getByRole("button", { name: "Source: transmission 2" }));
+  await expect(page.getByText("Transmission 2 of 2")).toBeVisible();
   await expect(page.locator(".casebar")).toContainText(
     "going to a country that does not border Namibia",
   );
@@ -117,61 +108,50 @@ test("the Azulejos case, by keyboard at 1024 pixels, with no clock", async ({
     page.getByRole("button", { name: "View the solution", exact: true }),
   ).toBeVisible();
 
-  // Stage 2: a nested row carries every fact on the way down to it.
+  // Stage 2: the wrong ceramic crate comes back with how far the responses
+  // reach. The island crate is accepted on a chain of three facts.
   await send(page, LISBON);
-  await cite(page, "LIS-0522", "borders");
-  await expect(
-    draft(page).getByRole("tab", { name: "LIS-0522" }),
-  ).toHaveAttribute("aria-selected", "true");
-  await expect(
-    draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(1);
-  await expect(
-    draft(page).locator(".claim[data-status=supported] .claim__facts li"),
-  ).toHaveCount(3);
-  await draft(page).locator(".citation summary").first().click();
-  await expect(
-    draft(page).getByRole("button", { name: "Source: transmission 2" }).first(),
-  ).toBeVisible();
-  await press(draft(page).getByRole("button", { name: "Submit deduction" }));
+  await choose(page, "Shipment to set aside", "LIS-0417");
+  await submit(page);
+  await expect(page.getByTestId("returned")).toContainText(
+    "Your responses connect LIS-0417 to Luanda and Angola.",
+  );
+  await choose(page, "Shipment to set aside", "LIS-0522");
+  await submit(page);
   await expect(draft(page)).toContainText("drive from an island");
+  await expect(
+    draft(page).locator(
+      "[data-testid=evidence-chain] .evidence-chain__facts li",
+    ),
+  ).toHaveCount(3);
 
   // Stage 3: the travel order, from evidence already on the desk.
   await expect(
     page.getByRole("heading", { name: "Travel order" }),
   ).toBeVisible();
-  await cite(page, "LIS-0417", "manifest");
-  await cite(page, "LIS-0417", "borders");
-  // The route is cited and the country box is blank: the claim waits on a
-  // choice, and the draft offers the country the cited facts show.
-  await expect(
-    draft(page).locator(".claim[data-status=open] .chip"),
-  ).toHaveText("Needs a choice");
-  await expect(draft(page).locator(".draft__status")).toContainText(
-    "Make the choice above",
+  await choose(page, "Shipment to hold", "LIS-0417");
+  await choose(page, "Country receiving the shipment", "CV");
+  await submit(page, "Travel");
+  // The wrong country comes back, and the form offers the one the
+  // responses show.
+  await expect(page.getByTestId("returned")).toContainText(
+    "Your responses show Angola for “Country receiving the shipment”, and the form gives Cabo Verde.",
   );
   await press(draft(page).getByRole("button", { name: "Choose Angola" }));
   await expect(
     draft(page).getByLabel("Country receiving the shipment"),
   ).toHaveValue("AO");
+  await submit(page, "Travel");
+  await expect(page.locator(".casebar")).toContainText("Angola");
+  // The chain for each claim: one manifest, and the three facts of the route.
   await expect(
-    draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(2);
-  // Each claim lists the cited facts that support it: one manifest, and the
-  // three facts of the route that a single citation carried.
-  await expect(
-    draft(page).locator(".claim[data-status=supported] .claim__facts li"),
+    draft(page).locator(
+      "[data-testid=evidence-chain] .evidence-chain__facts li",
+    ),
   ).toHaveCount(4);
-  await expect(draft(page).locator(".claim__facts").last()).toContainText(
+  await expect(draft(page).getByTestId("evidence-chain")).toContainText(
     "country Angola · borders",
   );
-  // Each Cite control shows the lead whose draft its citation enters.
-  await expect(
-    record(page, "LIS-0522").getByRole("button", { name: /^Cite id,/ }),
-  ).toHaveText("Cite for LIS-0522");
-
-  await press(draft(page).getByRole("button", { name: "Travel", exact: true }));
-  await expect(page.locator(".casebar")).toContainText("Angola");
   // A new country opens on a clean results panel, with Lisbon's kept.
   await expect(
     page.getByText("Nothing has been transmitted from here yet."),
@@ -187,6 +167,9 @@ test("the Azulejos case, by keyboard at 1024 pixels, with no clock", async ({
     /accepted · LIS-0486/i,
   );
   await expect(page.locator(".dispatches")).toContainText(/travel · LIS-0417/i);
+  await expect(
+    page.locator(".dispatches").getByTestId("evidence-chain"),
+  ).toHaveCount(3);
   await openTool(page, "Evidence");
   await expect(page.locator(".tools__panel")).toContainText(
     "Every fact your queries have returned",
@@ -194,10 +177,7 @@ test("the Azulejos case, by keyboard at 1024 pixels, with no clock", async ({
 
   // Luanda: the replacement label identifies the order, and so the signer.
   await solveLuanda(page);
-  await expect(
-    draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(2);
-  await press(draft(page).getByRole("button", { name: "Submit deduction" }));
+  await submit(page);
 
   await expect(
     page.getByRole("heading", { name: "Case resolved" }),
@@ -215,23 +195,24 @@ test("the Azulejos case, by keyboard at 1024 pixels, with no clock", async ({
   await expect(file).toContainText("Completed with hints");
 });
 
-test("a mid-case reload keeps the drafts of a stage that shares the desk", async ({
+test("a mid-case reload keeps the choices of a stage that shares the desk", async ({
   page,
 }) => {
   await openCase(page, "vanishing-azulejos");
   await send(page, MANIFESTS);
-  await cite(page, "LIS-0486", "manifest");
-  await press(draft(page).getByRole("button", { name: "Submit deduction" }));
+  await choose(page, "Shipment to set aside", "LIS-0486");
+  await submit(page);
   await send(page, LISBON);
-  await cite(page, "LIS-0522", "borders");
+  await choose(page, "Shipment to set aside", "LIS-0522");
 
   await page.reload();
   await expect(page.locator(".casebar")).toContainText(
     "going to a country that does not border Namibia",
   );
   await expect(record(page, "LIS-0522")).toBeVisible();
-  await expect(
-    draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(1);
-  await expect(draft(page).locator(".citation")).toHaveCount(1);
+  await expect(draft(page).getByLabel("Shipment to set aside")).toHaveValue(
+    "LIS-0522",
+  );
+  await submit(page);
+  await expect(draft(page)).toContainText("drive from an island");
 });

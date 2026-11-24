@@ -31,7 +31,7 @@ const CLAIM = (amount: string) => `mutation {
   }
 }`;
 
-test("clearance 11 files an expense claim with a mutation and cites its receipt", async ({
+test("clearance 11 files an expense claim with a mutation and rests a deduction on its receipt", async ({
   page,
 }) => {
   await seedCompleted(page, [...TO_CLEARANCE_11]);
@@ -83,16 +83,11 @@ test("clearance 11 files an expense claim with a mutation and cites its receipt"
   await openTool(page, "Findings");
   const leads = draft(page).getByRole("combobox");
   await leads.selectOption({ label: "Standing Committee, general account" });
-  await press(
-    page.getByRole("button", { name: /^Cite voucher → journey,/ }).last(),
-  );
-  await press(
-    page.getByRole("button", { name: /^Cite voucher → paid from,/ }).last(),
-  );
-  await expect(
-    draft(page).locator(".claim[data-status=supported]"),
-  ).toHaveCount(1);
+  // The receipt the mutation returned is the evidence.
   await press(draft(page).getByRole("button", { name: "Submit deduction" }));
+  await expect(draft(page).getByTestId("evidence-chain")).toContainText(
+    "paid from",
+  );
   await expect(
     page.getByText(/paid Fontes's fare to the counter/).first(),
   ).toBeVisible();

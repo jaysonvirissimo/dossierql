@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { FactPattern } from "../content/types.ts";
 import { factKey, type Fact, type FactValue } from "../graphql/facts.ts";
-import { fillSet, matchSet, meets, mostTogether } from "./match.ts";
+import { fillSet, matchSet, meets, mostTogether, reach } from "./match.ts";
 
 function fact(entity: string, field: string, value: FactValue): Fact {
   return { key: factKey(entity, field), entity, field, value };
@@ -102,5 +102,33 @@ describe("fillSet, meets and mostTogether", () => {
     // Each fact meets a pattern, but Praia is not where the shipment went.
     expect(mostTogether(route, scattered, lead)).toBe(1);
     expect(mostTogether(route, [], lead)).toBe(0);
+  });
+});
+
+describe("reach", () => {
+  it("follows the chain from the bound record as far as the facts go", () => {
+    const got = reach(route, luanda.slice(0, 2), { shipment: "LIS-0417" });
+    expect(got.bindings).toEqual({
+      shipment: "LIS-0417",
+      city: "luanda",
+      country: "AO",
+    });
+    expect(got.facts).toHaveLength(2);
+  });
+
+  it("counts no fact that does not connect to the bound record", () => {
+    const got = reach(route, luanda.slice(1), { shipment: "LIS-0417" });
+    expect(got.facts).toEqual([]);
+    expect(got.bindings).toEqual({ shipment: "LIS-0417" });
+  });
+
+  it("stops at a fact that does not meet its pattern", () => {
+    const noRoad = [
+      ...luanda.slice(0, 2),
+      fact("Country:AO", "borders", list(["Country:ZM"])),
+    ];
+    expect(reach(route, noRoad, { shipment: "LIS-0417" }).facts).toHaveLength(
+      2,
+    );
   });
 });
