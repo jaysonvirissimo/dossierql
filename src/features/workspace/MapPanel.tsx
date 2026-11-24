@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import map from "../../../data/map.json";
 import type { Country } from "../../content/types.ts";
 import { travelHours } from "../../engine/clock.ts";
@@ -16,6 +16,22 @@ interface Shape {
 const shapes = (map as { countries: Shape[] }).countries;
 const WIDTH = (map as { width: number }).width;
 const HEIGHT = (map as { height: number }).height;
+
+/** Sizes on screen, in pixels, whatever the width of the panel (SDD 8.2). */
+const PX = {
+  label: 13,
+  halo: 3,
+  leadPin: 5,
+  leadRing: 2,
+  here: 7,
+  pin: 3.5,
+  route: 2.5,
+} as const;
+
+/** A rough width for a name on the map, in pixels. No font is measured. */
+function labelWidth(text: string): number {
+  return text.length * PX.label * 0.6;
+}
 
 function project(lat: number, lon: number): { x: number; y: number } {
   return { x: ((lon + 180) / 360) * WIDTH, y: ((90 - lat) / 180) * HEIGHT };
@@ -82,15 +98,35 @@ export default function MapPanel() {
     const pad = 20;
     let w = Math.max(...xs) - Math.min(...xs) + pad * 2;
     let h = Math.max(...ys) - Math.min(...ys) + pad * 2;
-    // Keep the frame twice as wide as it is tall, and no smaller than a
-    // region of a few countries.
-    w = Math.max(w, h * 2, 160);
-    h = w / 2;
+    // Keep the frame half as wide again as it is tall, so that it has some
+    // height in the narrow panel, and no smaller than a region of a few
+    // countries.
+    w = Math.max(w, h * 1.5, 160);
+    h = w / 1.5;
     const cx = (Math.max(...xs) + Math.min(...xs)) / 2;
     const cy = (Math.max(...ys) + Math.min(...ys)) / 2;
     return { x: cx - w / 2, y: cy - h / 2, w, h };
   })();
-  const scale = box.w / WIDTH;
+  // The map units in one pixel on screen. Pins and names are sized from it,
+  // so that they read the same in the narrow panel as in a wide one. Until
+  // the map is laid out, a panel about 400 pixels wide is assumed.
+  const svg = useRef<SVGSVGElement>(null);
+  const [shown, setShown] = useState({ w: 400, h: 267 });
+  useLayoutEffect(() => {
+    const element = svg.current;
+    if (!element) return;
+    const measure = () => {
+      const { width, height } = element.getBoundingClientRect();
+      if (width > 0 && height > 0) setShown({ w: width, h: height });
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  // A map held to its greatest height shows the frame at the scale its
+  // height allows, with more of the region to each side.
+  const unit = Math.max(box.w / shown.w, box.h / shown.h);
   const leadCodes = new Set(leads.map((l) => l.country?.code));
   const others = journeys.filter((j) => !leadCodes.has(j.country.code));
   const journeyText = (country: string, h: number) =>
@@ -130,6 +166,7 @@ export default function MapPanel() {
           : ", with the time a journey there would take."}
       </p>
       <svg
+        ref={svg}
         className="map"
         viewBox={`${String(box.x)} ${String(box.y)} ${String(box.w)} ${String(box.h)}`}
         role="img"
@@ -163,6 +200,7 @@ export default function MapPanel() {
               x2={b.x}
               y2={b.y}
               pathLength={1}
+              strokeWidth={PX.route * unit}
               className={
                 fresh && route === latest
                   ? "map__route map__route--new"
@@ -178,7 +216,7 @@ export default function MapPanel() {
               key={country.code}
               cx={p.x}
               cy={p.y}
-              r={3 * Math.max(scale, 0.35)}
+              r={PX.pin * unit}
               className="map__pin"
             />
           );
@@ -186,6 +224,12 @@ export default function MapPanel() {
         {leads.map((lead) => {
           const p = leadPoint(lead);
           const struck = lead.status === "ruled-out";
+          const name = lead.city?.name ?? lead.country?.name ?? "";
+          const gap = (PX.leadPin + PX.leadRing + 3) * unit;
+          // A name that would run past the right edge is set to the left of
+          // its pin.
+          const left =
+            p.x + gap + labelWidth(name) * unit > box.x + box.w - 2 * unit;
           return (
             <g
               key={lead.id}
@@ -194,18 +238,19 @@ export default function MapPanel() {
               <circle
                 cx={p.x}
                 cy={p.y}
-                r={10 * scale}
+                r={PX.leadPin * unit}
                 className="map__pin--lead"
-                strokeWidth={4 * scale}
+                strokeWidth={PX.leadRing * unit}
               />
               <text
-                x={p.x + 14 * scale}
-                y={p.y + 8 * scale}
-                fontSize={26 * scale}
-                strokeWidth={6 * scale}
+                x={left ? p.x - gap : p.x + gap}
+                y={p.y + PX.label * 0.35 * unit}
+                textAnchor={left ? "end" : "start"}
+                fontSize={PX.label * unit}
+                strokeWidth={PX.halo * unit}
                 className="map__lead-name"
               >
-                {lead.city?.name ?? lead.country?.name}
+                {name}
               </text>
             </g>
           );
@@ -215,7 +260,8 @@ export default function MapPanel() {
             {...(({ x, y }) => ({ cx: x, cy: y }))(
               project(here.capitalLat, here.capitalLon),
             )}
-            r={4.5 * Math.max(scale, 0.35) * (leads.length > 0 ? 2.5 : 1)}
+            r={PX.here * unit}
+            strokeWidth={unit}
             className="map__pin map__pin--here"
           />
         )}

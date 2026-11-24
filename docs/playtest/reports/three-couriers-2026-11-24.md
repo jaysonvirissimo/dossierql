@@ -69,8 +69,12 @@ typed once, worked the first time, and found SABLE_IBIS.
    Chrome's tree the options are enabled, and a box is off only before
    there is anything to choose. `e2e/shell.spec.ts` now checks both, and the
    playtest prompts say what `disableable` means.
-9. **The map was cropped in the narrow panel.** _Logged._ The map is not the
-   subject of this milestone.
+9. **The map was cropped in the narrow panel.** _Fixed afterwards:_ the
+   frame did hold all three leads, but in the narrow tools panel at 1024
+   pixels the map was a strip 194 pixels tall with names about 9 pixels
+   high, because names and pins were sized in map units. They now keep one
+   size on screen, the frame for leads is taller, and `e2e/pursuit.spec.ts`
+   checks that each name is inside the map and can be read.
 10. **The deductions in stages 1 and 3 accept the form with rivals open, and
     the travel order does not.** _No change._ Only a stage that lists its
     `leads` waits for the others to be ruled out (SDD 3.5), and only the

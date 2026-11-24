@@ -71,6 +71,33 @@ test("the early pursuit identifies the courier, then catches up with him (SDD 3.
   await expect(leads.locator("li").nth(1)).toContainText(
     "The Lilongwe sighting, in Lilongwe, Malawi",
   );
+  // In the narrow tools panel the map still frames every lead by name, in
+  // type that can be read, and is tall enough to see the region.
+  const map = page.locator("svg.map");
+  await expect(map.locator("text")).toHaveCount(3);
+  const layout = await map.evaluate((svg) => {
+    const frame = svg.getBoundingClientRect();
+    return {
+      height: frame.height,
+      labels: [...svg.querySelectorAll("text")].map((text) => {
+        const box = text.getBoundingClientRect();
+        return {
+          name: text.textContent,
+          inside:
+            box.left >= frame.left &&
+            box.right <= frame.right &&
+            box.top >= frame.top &&
+            box.bottom <= frame.bottom,
+          height: box.height,
+        };
+      }),
+    };
+  });
+  expect(layout.height).toBeGreaterThanOrEqual(240);
+  for (const label of layout.labels) {
+    expect(label.inside, `${label.name ?? ""} is inside the map`).toBe(true);
+    expect(label.height, `${label.name ?? ""} can be read`).toBeGreaterThan(11);
+  }
 
   await send(page, TRAIL);
   await choose(page, "Sighting", "SGT-053");

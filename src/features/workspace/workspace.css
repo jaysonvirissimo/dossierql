@@ -898,7 +898,10 @@
 }
 
 .map {
+  display: block;
   width: 100%;
+  /* A wide panel shows more of the region rather than a taller map. */
+  max-height: 22rem;
   border: 1px solid var(--rule);
   border-radius: var(--radius);
 }
@@ -930,12 +933,10 @@
 .map__pin--here {
   fill: var(--rust);
   stroke: var(--paper-raised);
-  stroke-width: 1;
 }
 
 .map__route {
   stroke: var(--rust);
-  stroke-width: 2.5;
   stroke-linecap: round;
   stroke-dasharray: 0.02 0.015;
   fill: none;
