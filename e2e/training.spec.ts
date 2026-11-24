@@ -94,12 +94,14 @@ test("result rows offer neither Cite nor Pin, and name the links not yet opened"
     `query { city(name: "Lisbon") { departingShipments { id manifest } } }`,
   );
   const results = page.locator(".results");
-  await expect(
-    results.getByText(/Fields of this shipment that hold another record/),
-  ).toHaveCount(1);
-  await expect(
-    results.getByText(/Fields of this shipment that hold another record/),
-  ).toContainText("destination");
+  // One note after the records, not one inside each record.
+  const closed = results.getByTestId("unasked-links");
+  await expect(closed).toHaveCount(1);
+  await expect(closed).toContainText("Your query did not ask for these fields");
+  await expect(closed).toContainText(/shipment:.*destination/);
+  await expect(results.locator(".finding__record .findings__more")).toHaveCount(
+    0,
+  );
   await expect(results.getByRole("button", { name: /^Cite / })).toHaveCount(0);
   await expect(results.getByRole("button", { name: /^Pin / })).toHaveCount(0);
 });

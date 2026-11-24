@@ -59,8 +59,10 @@ typing.
 6. **Logged: two root fields first appear in the debrief.** The runner met
    the reference solution's pair of root fields only in the debrief, which
    explains it clearly. No change.
-7. **Logged: "Not yet opened on this city" reads as noise.** Pre-existing
-   wording in the findings; for the next review of the Results panel.
+7. **Fixed afterwards: "Not yet opened on this city" reads as noise.** The
+   note sat between each kind of record's heading and its fields. It is now
+   one note after the records, listing the unasked fields for each kind of
+   record.
 
 ## Caveats
 

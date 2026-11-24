@@ -1,5 +1,5 @@
 import { getNamedType, isAbstractType, isObjectType } from "graphql";
-import { Fragment, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useGame } from "../../app/GameProvider.tsx";
 import type { ResultError, TransmissionRecord } from "../../engine/mission.ts";
 import { annotate } from "../../feedback/annotate.ts";
@@ -183,10 +183,13 @@ function Findings({
 
   /**
    * The links on a record that the query did not follow. Naming them is how
-   * a player learns that a result can be opened further.
+   * a player learns that a result can be opened further. They are gathered
+   * while the records are drawn, and listed once after them, so that the
+   * note does not break up the facts (SDD 8.2).
    */
-  const mentioned = new Set<string>();
-  const unopened = (path: (string | number)[]): ReactNode => {
+  // One line for each kind of record, in the order the records are met.
+  const closed = new Map<string, string[]>();
+  const noteUnopened = (path: (string | number)[]): void => {
     const prefix = `${pathKey(path)}/`;
     const facts = record.facts
       .filter(
@@ -197,11 +200,11 @@ function Findings({
       .map((f) => state.ledger[f.key]?.fact)
       .filter((fact) => fact !== undefined);
     const entity = facts[0]?.entity;
-    if (!entity) return null;
+    if (!entity) return;
     const type = schemaFor(env.clearance).getType(
       entity.slice(0, entity.indexOf(":")),
     );
-    if (!isObjectType(type)) return null;
+    if (!isObjectType(type)) return;
     const asked = new Set(facts.map((fact) => fact.field));
     const links = Object.values(type.getFields())
       .filter(
@@ -211,33 +214,21 @@ function Findings({
           !asked.has(field.name),
       )
       .map((field) => field.name);
-    if (links.length === 0) return null;
-    // Said once for each kind of record, however many rows repeat it.
-    const line = `${entity.slice(0, entity.indexOf(":"))}: ${links.join(",")}`;
-    if (mentioned.has(line)) return null;
-    mentioned.add(line);
-    return (
-      <p className="finding__more">
-        Fields of this {typeWords(entity)} that hold another record, which your
-        query did not ask for:{" "}
-        {links.map((name, index) => (
-          <span key={name}>
-            {index > 0 && ", "}
-            <code>{name}</code>
-          </span>
-        ))}
-      </p>
+    // A field counts only if the query asked for it on no record of this
+    // kind: one city may be opened further than another.
+    const kind = typeWords(entity);
+    const before = closed.get(kind);
+    closed.set(
+      kind,
+      before ? before.filter((name) => links.includes(name)) : links,
     );
   };
+  const closedLines = () => [...closed].filter(([, links]) => links.length > 0);
 
   const render = (value: unknown, path: (string | number)[]): ReactNode => {
     if (!isRecord(value)) return null;
-    return (
-      <>
-        {unopened(path)}
-        {fields(value, path)}
-      </>
-    );
+    noteUnopened(path);
+    return fields(value, path);
   };
 
   /** The records as a group, if this view sets them in columns. */
@@ -277,17 +268,15 @@ function Findings({
     const rows = rowsOf(records);
     // The links not yet opened, said once for each kind of record. A row
     // holds a record when it is a nested record or a list of one record.
-    const notes = [
-      unopened(paths[0] ?? []),
-      ...rows.map((row) => {
-        const inner = row.kind === "list" ? [...row.path, 0] : row.path;
-        const first = records.findIndex((r) => {
-          const cell = cellAt(r, inner);
-          return cell.kind === "value" && isRecord(cell.value);
-        });
-        return first < 0 ? null : unopened([...(paths[first] ?? []), ...inner]);
-      }),
-    ].map((note, index) => <Fragment key={index}>{note}</Fragment>);
+    noteUnopened(paths[0] ?? []);
+    for (const row of rows) {
+      const inner = row.kind === "list" ? [...row.path, 0] : row.path;
+      const first = records.findIndex((r) => {
+        const cell = cellAt(r, inner);
+        return cell.kind === "value" && isRecord(cell.value);
+      });
+      if (first >= 0) noteUnopened([...(paths[first] ?? []), ...inner]);
+    }
     return (
       <>
         <div className="side-by-side__wrap">
@@ -369,7 +358,6 @@ function Findings({
             </tbody>
           </table>
         </div>
-        {notes}
       </>
     );
   };
@@ -500,6 +488,48 @@ function Findings({
         roots.map(([, value]) => value),
         rootPaths,
       );
+  // Drawn before the note below, which lists what the records left closed.
+  const body = rootGroup ? (
+    <section className="findings__root">
+      {table(
+        rootGroup,
+        rootPaths,
+        "Records returned",
+        roots.map(([key]) => key),
+      )}
+    </section>
+  ) : (
+    roots.map(([key, value]) => (
+      <section key={key} className="findings__root">
+        <h3 className="findings__title">{key}</h3>
+        {meta.has(key) ? (
+          <IntrospectionResult value={value} />
+        ) : value === null ? (
+          <p>
+            <em>No record matched.</em>
+          </p>
+        ) : Array.isArray(value) && rootList(key, value) ? (
+          rootList(key, value)
+        ) : Array.isArray(value) ? (
+          <ol className="finding__list">
+            {value.map((item, index) =>
+              isRecord(item) ? (
+                <li key={index} className="finding__record">
+                  <p className="finding__heading">
+                    <span className="label">{typeAt([key, index])}</span>{" "}
+                    {headingOf(item, index)}
+                  </p>
+                  {render(item, [key, index])}
+                </li>
+              ) : null,
+            )}
+          </ol>
+        ) : (
+          render(value, [key])
+        )}
+      </section>
+    ))
+  );
   return (
     <div className="findings">
       {meta.size > 0 && (
@@ -568,46 +598,28 @@ function Findings({
           {said}
         </p>
       )}
-      {rootGroup ? (
-        <section className="findings__root">
-          {table(
-            rootGroup,
-            rootPaths,
-            "Records returned",
-            roots.map(([key]) => key),
-          )}
-        </section>
-      ) : (
-        roots.map(([key, value]) => (
-          <section key={key} className="findings__root">
-            <h3 className="findings__title">{key}</h3>
-            {meta.has(key) ? (
-              <IntrospectionResult value={value} />
-            ) : value === null ? (
-              <p>
-                <em>No record matched.</em>
-              </p>
-            ) : Array.isArray(value) && rootList(key, value) ? (
-              rootList(key, value)
-            ) : Array.isArray(value) ? (
-              <ol className="finding__list">
-                {value.map((item, index) =>
-                  isRecord(item) ? (
-                    <li key={index} className="finding__record">
-                      <p className="finding__heading">
-                        <span className="label">{typeAt([key, index])}</span>{" "}
-                        {headingOf(item, index)}
-                      </p>
-                      {render(item, [key, index])}
-                    </li>
-                  ) : null,
-                )}
-              </ol>
-            ) : (
-              render(value, [key])
-            )}
-          </section>
-        ))
+      {body}
+      {closedLines().length > 0 && (
+        <div className="findings__more" data-testid="unasked-links">
+          <p>
+            Your query did not ask for these fields. Each one holds another
+            record, which you can open by asking for the field with its own
+            fields in braces.
+          </p>
+          <ul>
+            {closedLines().map(([type, links]) => (
+              <li key={type}>
+                <span className="findings__more-type">{type}:</span>{" "}
+                {links.map((name, index) => (
+                  <span key={name}>
+                    {index > 0 && ", "}
+                    <code>{name}</code>
+                  </span>
+                ))}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );

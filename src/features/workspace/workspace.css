@@ -519,10 +519,26 @@
   margin: 0 0 var(--space-1);
 }
 
-.finding__more {
+/* The fields the records left closed, listed once after them (SDD 8.2). */
+.findings__more {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--rule);
   font-size: 0.8125rem;
   color: var(--ink-soft);
+}
+
+.findings__more p {
   margin: 0 0 var(--space-1);
+}
+
+.findings__more ul {
+  margin: 0;
+  padding-left: var(--space-4);
+}
+
+.findings__more-type {
+  font-weight: 600;
 }
 
 /* Records of one type, side by side (SDD 8.2). */
