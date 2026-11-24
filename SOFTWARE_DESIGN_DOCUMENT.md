@@ -1529,7 +1529,7 @@ The **Evidence Board** holds the evidence ledger and pinned facts, with links ba
 
 **Debrief:** Displays the outcome, the comparison with the reference solution, the geographical fact, and the new concept card. A coda's debrief shows no promotion and no card. It says that the campaign ends there, and offers the training range beside the assignments desk.
 
-**Tradecraft Manual:** The glossary and the concept cards the player has earned, available for reference at any time.
+**Tradecraft Manual:** The glossary and the concept cards the player has earned, available for reference at any time. A link to a glossary entry opens the manual at that entry, with focus on it, and marks it as the entry asked for. Every other screen opens at its top.
 
 **Training Range:** The optional training drills (Section 3.14) and the katas (Section 3.11).
 
@@ -1855,7 +1855,7 @@ Built after the playtest:
 - At a returned form that offers a field check, set the check and another transmission side by side, each with its price, and show the same prices on the lead's card (Sections 3.5 and 8.2). Check that every field-check dispatch mentions a record that settles the doubt (Sections 5.5 and 5.6), and rewrite the 24 dispatches in *The Quiet Consignee* through *The Registrar's Return* that did not. The opening case stays untimed, and no mission's budget changes for this (Section 3.3).
 - Bring a short pursuit forward, before clearance 12 and without a warrant (Section 3.4). *Three Couriers* now identifies GREY_PETREL in its first stage, follows him by his sightings in its second, landing in Lusaka just after he has left the bank, and stops the payment in its third. A pursuit is a shape of case and introduces no mechanic (Section 3.15). The extra transmission raises the case's budget from 23 hours to 26. Lilongwe joins the world data.
 
-The agent playtests were run on the reworked *Three Couriers* on 2026-11-24, and their findings were fixed or logged in `docs/playtest/reports/three-couriers-2026-11-24.md`. The initial bundle stays under its budget of 100 kB, at 95.2 kB.
+The agent playtests were run on the reworked *Three Couriers* on 2026-11-24, and their findings were fixed or logged in `docs/playtest/reports/three-couriers-2026-11-24.md`. The initial bundle stays under its budget of 100 kB, at 96.7 kB, of which the desk's sounds (Section 8.1) take 1.5 kB.
 
 **Success criterion:** A first-time player can explain why they chose Zanzibar City, and can then write a lookup for a different cover name without a starter query.
 

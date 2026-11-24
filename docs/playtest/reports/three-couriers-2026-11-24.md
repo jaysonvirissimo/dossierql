@@ -55,9 +55,10 @@ typed once, worked the first time, and found SABLE_IBIS.
    3.4. The walkthrough found the one leg a chase, "softened by the M note".
 6. **The briefing said "see alias in the Glossary", and the link opens the
    Tradecraft manual.** _Fixed in this briefing._ It now says "read the entry
-   for alias". _Logged:_ the walkthrough landed at the top of the manual,
-   not at the entry. That is how every glossary link behaves, and it needs a
-   change to the manual route of its own.
+   for alias". _Fixed afterwards for every glossary link:_ the walkthrough
+   landed at the top of the manual, not at the entry, because the shell
+   scrolled each new screen to its top after the manual had scrolled to the
+   entry. The shell now leaves a manual entry where the manual put it.
 7. **The clerk quotes the engine's sentence above its own note for a field
    asked twice.** _Logged._ The note was clear and the walkthrough learned
    from it, so the order is left as it is.

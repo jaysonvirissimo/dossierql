@@ -137,6 +137,7 @@ export function App() {
   const game = useGame();
   const key = JSON.stringify(route);
   const first = useRef(true);
+  const manualEntry = route.name === "manual" ? route.entryId : undefined;
   useDeskSounds();
 
   useEffect(() => {
@@ -145,10 +146,13 @@ export function App() {
       first.current = false;
       return;
     }
+    // A link to a glossary entry lands on the entry: the manual has already
+    // scrolled to it and focused it, and this effect runs after the manual's.
+    if (manualEntry) return;
     // Moving to a new screen puts keyboard and screen reader users at its top.
     document.getElementById("screen")?.focus();
     window.scrollTo(0, 0);
-  }, [key, route.name]);
+  }, [key, route.name, manualEntry]);
 
   return (
     <>

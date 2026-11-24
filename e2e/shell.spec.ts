@@ -172,3 +172,13 @@ test("the game is playable when the browser refuses storage", async ({
   await send(page, LISBON);
   await expect(record(page, "LIS-0417")).toBeVisible();
 });
+
+test("a glossary link opens the manual at its entry", async ({ page }) => {
+  // A briefing's link is followed inside the game, not loaded afresh.
+  await page.goto("./#/mission/vanishing-azulejos");
+  await press(page.getByRole("link", { name: "evidence chain" }));
+  const entry = page.locator("#entry-evidence-chain");
+  await expect(entry).toHaveAttribute("data-current", "true");
+  await expect(entry).toBeFocused();
+  await expect(entry).toBeInViewport();
+});
