@@ -143,3 +143,40 @@ describe("the weight limit", () => {
     ).toBe(false);
   });
 });
+
+describe("request weight with directives", () => {
+  const at9 = (query: string, variables: Record<string, unknown> = {}) =>
+    requestWeight(schemaFor(9), store, parse(query), variables);
+  const ends = `origin { name } destination { name }`;
+
+  it("leaves out a field that @skip or @include drops, written as true or false", () => {
+    const query = (directive: string) =>
+      `{ shipment(id: "LIS-0417") { origin { name } destination ${directive} { name } } }`;
+    expect(at9(query(""))).toBe(3);
+    expect(at9(query(`@include(if: false)`))).toBe(2);
+    expect(at9(query(`@include(if: true)`))).toBe(3);
+    expect(at9(query(`@skip(if: true)`))).toBe(2);
+    expect(at9(query(`@skip(if: false)`))).toBe(3);
+  });
+
+  it("reads the condition from the variables sent, then from a default", () => {
+    const query = `query S($detail: Boolean!) { shipment(id: "LIS-0417") { ... @include(if: $detail) { ${ends} } } }`;
+    expect(at9(query, { detail: false })).toBe(1);
+    expect(at9(query, { detail: true })).toBe(3);
+    // A condition that cannot be read is counted, which errs high.
+    expect(at9(query)).toBe(3);
+    const fallback = `query S($detail: Boolean = false) { shipment(id: "LIS-0417") { ... @include(if: $detail) { ${ends} } } }`;
+    expect(at9(fallback)).toBe(1);
+    expect(at9(fallback, { detail: true })).toBe(3);
+  });
+
+  it("leaves out a fragment spread, and the fragments it spreads", () => {
+    const query = (directive: string) => `
+      { shipment(id: "LIS-0417") { ...Detail ${directive} } }
+      fragment Detail on Shipment { origin { name } ...Far }
+      fragment Far on Shipment { destination { name } }
+    `;
+    expect(at9(query(""))).toBe(3);
+    expect(at9(query(`@skip(if: true)`))).toBe(1);
+  });
+});

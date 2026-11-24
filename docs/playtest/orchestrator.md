@@ -67,6 +67,10 @@ start.
 | `novice-walkthrough.md`          | _The Corridor Book_                | `door-watch`           | 9         |
 | `clean-room-solve.md`            | _The Cipher Counter_               | `door-watch`           | 9         |
 | `novice-walkthrough.md`          | _The Cipher Counter_               | `door-watch`           | 9         |
+| `clean-room-solve.md`            | _The Inner Room_                   | `cipher-counter`       | 10        |
+| `novice-walkthrough.md`          | _The Inner Room_                   | `cipher-counter`       | 10        |
+| `clean-room-solve.md`            | _The Envelope Book_                | `cipher-counter`       | 10        |
+| `novice-walkthrough.md`          | _The Envelope Book_                | `cipher-counter`       | 10        |
 | `simulated-sessions.md`, round 1 | the drills and the first two cases | none                   | 1         |
 | `simulated-sessions.md`, round 2 | the path given in the prompt       | in the prompt          | 2         |
 
@@ -106,6 +110,14 @@ start.
   second, through The Door Watch, and you remember what their debriefs
   taught. You have never read a list one page at a time." For _The Cipher
   Counter_, add: "You have also played The Corridor Book."
+- **_The Inner Room_ and _The Envelope Book_.** They are the clearance 10
+  cases of the second campaign. Seed the completion of `cipher-counter`, and
+  for _The Envelope Book_ the completion of `inner-room` as well. For the
+  novice walkthrough of _The Inner Room_, set [PRIOR PLAY] to: "You have
+  played every case of the first campaign and every earlier case of the
+  second, through The Cipher Counter, and you remember what their debriefs
+  taught. You have never written a directive." For _The Envelope Book_,
+  add: "You have also played The Inner Room."
 - **The simulated rounds.** Run each round once for each persona, P1 to P4,
   in a fresh context each time. Start round 2 only after round 1's summary
   is written and its fixes are made. If round 1's fixes change the opening,

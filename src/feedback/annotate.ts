@@ -142,6 +142,57 @@ const RULES: Rule[] = [
       `The clerk cannot tell which record you want. The field needs a value for "${String(m[1])}", in parentheses after the field.`,
   },
   {
+    test: /^Unknown directive "@(\w+)"/,
+    note: (m) =>
+      `The archive knows nothing called "@${String(m[1])}". The word after an @ is a directive, and the archive knows only a few of them. The clerk suggests checking the spelling of the word after the @.`,
+  },
+  {
+    test: /^Directive "@(\w+)" may not be used on (\w+)\./,
+    note: (m) =>
+      m[1] === "include" || m[1] === "skip"
+        ? `"@${String(m[1])}" cannot stand here. It goes after a field, after a fragment spread, or after the three dots of an inline fragment, and the clerk suggests moving it to one of those places.`
+        : `"@${String(m[1])}" cannot stand at this place in a request.`,
+  },
+  {
+    test: /^The directive "@(\w+)" can only be used once at this location\./,
+    note: (m) =>
+      `"@${String(m[1])}" is written twice in the same place. One "@${String(m[1])}" in each place is enough, and the clerk suggests removing the other one.`,
+  },
+  {
+    test: /^Argument "@(\w+)\((\w+):\)" of type "([^"]+)" is required/,
+    note: (m) =>
+      `"@${String(m[1])}" needs a value for "${String(m[2])}", in parentheses after "@${String(m[1])}". The value is of type ${String(m[3])}: true, false, or a variable declared as ${String(m[3])}.`,
+  },
+  {
+    test: /^Unknown argument "(\w+)" on directive "@(\w+)"/,
+    note: (m) =>
+      m[2] === "include" || m[2] === "skip"
+        ? `"@${String(m[2])}" does not take "${String(m[1])}". The only argument that "@${String(m[2])}" takes is "if".`
+        : `"@${String(m[2])}" does not take "${String(m[1])}".`,
+  },
+  {
+    test: /^Variable "\$(\w+)" of type "([^"]+)" used in position expecting type "([^"]+)"/,
+    note: (m) =>
+      m[3] === `${String(m[2])}!`
+        ? `The request declares "$${String(m[1])}" as ${String(m[2])}, without the !, so "$${String(m[1])}" may be left out. The place where the request uses "$${String(m[1])}" needs a value that may not be left out, of type ${String(m[3])}. The clerk suggests declaring "$${String(m[1])}" with the type that this place expects, ! included.`
+        : `The request declares "$${String(m[1])}" as ${String(m[2])}, and the place where the request uses "$${String(m[1])}" expects ${String(m[3])}. The clerk suggests declaring "$${String(m[1])}" with the type that this place expects.`,
+  },
+  {
+    test: /^Variable "\$(\w+)" has invalid value: Expected a value of non-null type "([^"]+)" to be provided/,
+    note: (m) =>
+      `The request declares "$${String(m[1])}" as ${String(m[2])}, and no value came with the request. The ! means that "$${String(m[1])}" may not be left out. You type its value in the variables panel, as JSON.`,
+  },
+  {
+    test: /^Variable "\$(\w+)" has invalid value: Boolean cannot represent/,
+    note: (m) =>
+      `The value you typed for "$${String(m[1])}" in the variables panel is not true or false. In JSON, you write true and false without quotation marks.`,
+  },
+  {
+    test: /^Boolean cannot represent a non boolean value/,
+    note: () =>
+      "This place takes true or false, written without quotation marks. The clerk suggests removing the quotation marks around the value.",
+  },
+  {
     test: /^Variable "\$(\w+)" is not defined/,
     note: (m) =>
       `"$${String(m[1])}" is used but never declared. You declare a variable, with its type, in parentheses after the operation's name. The glossary entry for a variable shows how.`,
@@ -221,7 +272,7 @@ const RULES: Rule[] = [
   {
     test: /^The records clerk weighed this request at (\d+)\. The limit at your clearance is (\d+)\./,
     note: (m) =>
-      `The request could return up to ${String(m[1])} records, and the clerk copies out no more than ${String(m[2])} in one request. Nothing was transmitted, and it costs nothing. A list counts for every record it could hold. Where a field takes the argument first, the list counts only for the page size you give, as in first: 10.`,
+      `The request could return up to ${String(m[1])} records, and the clerk copies out no more than ${String(m[2])} in one request. Nothing was transmitted, and it costs nothing. A list counts for every record it could hold. Where a field takes the argument first, the list counts only for the page size you give, as in first: 10. Each record that you open inside a list counts once for every record in the list, so a field that the request leaves out makes the request lighter.`,
   },
   {
     test: /^(\w+)\.(\w+) has no entry "([^"]*)" to start after\./,

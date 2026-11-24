@@ -35,7 +35,7 @@ debrief:
     The reference solution writes one operation with the variable
     `$after: String`, and asks book WB-0116 for pages of 60 entries. It
     leaves the variable out for the first page. The second page holds
-    entry CRC-0096, which is classified, so `nodes` comes back as `null`
+    entry CRC-0096, which is classified above clearance 9, so `nodes` comes back as `null`
     and the error gives the entry's reference. The third request gives
     `{ "after": "CRC-0096" }`, and that page holds the counter's entries
     for the hour the instruction was handed in.

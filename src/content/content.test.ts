@@ -28,9 +28,9 @@ describe("the authored course", () => {
     expect(validateContent(raw)).toEqual([]);
   });
 
-  it("covers clearance 1 to 9 with a teaching mission and an assessment each", () => {
+  it("covers clearance 1 to 10 with a teaching mission and an assessment each", () => {
     const cases = raw.missions.filter((m) => m.kind !== "coda");
-    expect(cases).toHaveLength(18);
+    expect(cases).toHaveLength(20);
   });
 
   it("ends the first campaign with one coda", () => {
@@ -791,5 +791,87 @@ describe("request weight is checked against the limit", () => {
         }),
       ).join(" "),
     ).toMatch(/no reason to page/);
+  });
+});
+
+describe("the steps of clearance 10 are recognised", () => {
+  const uses = (id: string, query: string) =>
+    stepById(id)?.uses(parse(query)) ?? false;
+  const file = (inner: string, fragments = "") =>
+    `query D($detail: Boolean!) { paperFile(reference: "DAY-0112") { papers(first: 1) { nodes { ${inner} } } } } ${fragments}`;
+  const sheet = `minuteSheet { remark }`;
+
+  it("@skip, and not @include", () => {
+    expect(
+      uses("skip-directive", file(`minuteSheet @skip(if: $detail) { remark }`)),
+    ).toBe(true);
+    expect(
+      uses(
+        "skip-directive",
+        file(`minuteSheet @include(if: $detail) { remark }`),
+      ),
+    ).toBe(false);
+  });
+
+  it("a directive on a group of fields, and not on one field", () => {
+    expect(
+      uses(
+        "directive-on-fragment",
+        file(`... @include(if: $detail) { ${sheet} }`),
+      ),
+    ).toBe(true);
+    expect(
+      uses(
+        "directive-on-fragment",
+        file(
+          `...Sheet @include(if: $detail)`,
+          `fragment Sheet on Paper { ${sheet} }`,
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      uses(
+        "directive-on-fragment",
+        file(`minuteSheet @include(if: $detail) { remark }`),
+      ),
+    ).toBe(false);
+  });
+
+  it("a fragment that spreads another, and not two fragments side by side", () => {
+    expect(
+      uses(
+        "nested-fragment",
+        file(
+          `...Sheet`,
+          `fragment Sheet on Paper { minuteSheet { officer { ...Signer } } } fragment Signer on Officer { name }`,
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      uses(
+        "nested-fragment",
+        file(
+          `...Sheet minuteSheet { officer { ...Signer } }`,
+          `fragment Sheet on Paper { subject } fragment Signer on Officer { name }`,
+        ),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("the directives case has a reason to leave detail out", () => {
+  it("refuses a directives case whose requests would fit without directives", () => {
+    const light = `query D($detail: Boolean!) { paperFile(reference: "DAY-0112") { title @include(if: $detail) } }`;
+    const issues = validateContent(
+      mutated("inner-room", (m) => {
+        for (const stage of Object.values(m.stages)) {
+          const count = (stage.referenceSolution as string[]).length;
+          stage.referenceSolution = Array.from({ length: count }, () => light);
+        }
+      }),
+    )
+      .filter((issue) => issue.code === "weight")
+      .map((issue) => issue.message);
+    expect(issues.join(" ")).toMatch(/no reason to leave detail out/);
   });
 });

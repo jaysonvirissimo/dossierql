@@ -19,6 +19,9 @@ import {
 import { useMemo } from "react";
 import { isUndocumented, schemaFor } from "../graphql/schema.ts";
 
+/** The clearance from which the panel lists `@include` and `@skip` (SDD 3.7). */
+const DIRECTIVES_FROM = 10;
+
 type Entry =
   GraphQLObjectType | GraphQLInterfaceType | GraphQLUnionType | GraphQLEnumType;
 
@@ -264,6 +267,49 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
           )}
         </details>
       ))}
+      {clearance >= DIRECTIVES_FROM && (
+        <details className="doc" data-testid="directives">
+          <summary>
+            <code>Directives</code>
+            <span>
+              {" "}
+              · Words written after <code>@</code> that leave part of a request
+              out. You write a directive after a field, after a fragment spread,
+              or after the three dots of an inline fragment. A field that a
+              directive leaves out does not come back, and the records clerk
+              does not count it in the request&apos;s weight.
+            </span>
+          </summary>
+          <dl className="doc__fields">
+            <div className="doc__field">
+              <dt>
+                <code>@include(if: Boolean!)</code>
+              </dt>
+              <dd>
+                Sends the field only when <code>if</code> is <code>true</code>,
+                as in{" "}
+                <code>
+                  minuteSheet @include(if: $detail) {"{"} remark {"}"}
+                </code>
+                . When <code>if</code> is <code>false</code>, the field is left
+                out. The type of <code>if</code> is <code>Boolean!</code>, so a
+                variable that you write there is declared as{" "}
+                <code>Boolean!</code>, with the <code>!</code>.
+              </dd>
+            </div>
+            <div className="doc__field">
+              <dt>
+                <code>@skip(if: Boolean!)</code>
+              </dt>
+              <dd>
+                Leaves the field out when <code>if</code> is <code>true</code>,
+                and sends it when <code>if</code> is <code>false</code>. It is
+                the opposite of <code>@include</code>.
+              </dd>
+            </div>
+          </dl>
+        </details>
+      )}
     </div>
   );
 }

@@ -281,3 +281,17 @@
     book, the cursor of an entry is its `reference`, such as `COR-0060`.
     You write `entries(first: 10, after: "COR-0060")` to ask for the ten
     entries that come after entry COR-0060.
+- id: directive
+  term: directive
+  clearance: 10
+  matches: [directives]
+  definition: >
+    An instruction written after `@` that changes how the archive treats
+    part of a request. In `minuteSheet @include(if: $detail) { remark }`,
+    the directive `@include` asks for the minute sheet only when the
+    variable `$detail` is `true`. When `$detail` is `false`, the archive
+    leaves `minuteSheet` out of the result, and the records clerk leaves
+    it out of the request's weight. `@skip(if: $summary)` works the other
+    way round: it leaves the field out when `$summary` is `true`. The
+    value after `if` has the type `Boolean!`, so a variable that you write
+    there must be declared as `Boolean!`, with the `!`.

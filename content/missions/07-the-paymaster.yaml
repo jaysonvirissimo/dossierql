@@ -249,9 +249,8 @@ stages:
         of the auditor. One company has both in the Parallax Circle.
       concept: >
         The director and the auditor are both operatives, so one
-        fragment on Operative can serve both. A second fragment, on
-        Company, can hold the fields you want from each of the three
-        companies.
+        fragment on Operative can serve both. Spread it inside director
+        and inside auditor, for each of the three companies.
       schema: >
         Look at Company.director, Company.auditor, and
         Operative.organization.
@@ -343,20 +342,20 @@ stages:
     referenceSolution: |
       query {
         limmat: company(name: "Limmat Holdings") {
-          ...Books
+          name
+          director { ...Member }
+          auditor { ...Member }
         }
         uetliberg: company(name: "Uetliberg Trust") {
-          ...Books
+          name
+          director { ...Member }
+          auditor { ...Member }
         }
         glarus: company(name: "Glarus Assay Office") {
-          ...Books
+          name
+          director { ...Member }
+          auditor { ...Member }
         }
-      }
-
-      fragment Books on Company {
-        name
-        director { ...Member }
-        auditor { ...Member }
       }
 
       fragment Member on Operative {

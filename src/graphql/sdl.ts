@@ -52,6 +52,8 @@ export const SDL = /* GraphQL */ `
     interceptLog(reference: ID!): InterceptLog @clearance(level: 8)
     "One watch book, by the reference on its cover."
     watchBook(reference: ID!): WatchBook @clearance(level: 9)
+    "One file of papers, by the reference on its cover."
+    paperFile(reference: ID!): PaperFile @clearance(level: 10)
   }
 
   "A sovereign state."
@@ -574,6 +576,50 @@ export const SDL = /* GraphQL */ `
     "The pass the entry records, when someone showed one."
     pass: Pass
   }
+
+  "A file of papers: every paper that one office filed, in the order it filed them."
+  type PaperFile @clearance(level: 10) {
+    "The reference on the file's cover."
+    reference: ID!
+    "The office and the papers that the file holds, as written on its cover."
+    title: String!
+    "One page of the file's papers, in the order they were filed. first and after work as they do on a watch book's entries. The records clerk weighs a page by its page size: one for each paper, and one more for each record you open inside a paper. Without first, the clerk counts the page as the longest file of papers in the archive, which holds 120."
+    papers(first: Int, after: String): PaperPage!
+  }
+
+  "One page of a file of papers."
+  type PaperPage @clearance(level: 10) {
+    "The papers on the page."
+    nodes: [Paper!]
+    "Where the page ends, and whether the file goes on after it."
+    pageInfo: PageInfo!
+  }
+
+  "A paper in a file: a letter, a request, or an instruction, with the minute sheet pinned to it."
+  type Paper @clearance(level: 10) {
+    "The reference written on the paper. It is also the paper's cursor."
+    reference: ID!
+    "The hour the paper was filed, on the twenty-four-hour clock. Empty when the file does not record the hour."
+    hour: String
+    "What the paper is about, as the office wrote it on the file's list of papers."
+    subject: String!
+    "The office the paper came from. Empty when the paper does not say."
+    from: Office
+    "The minute sheet: every endorsement that an officer wrote on the paper, in the order they were written. Each endorsement on it is a record. The longest minute sheet in the archive holds ten endorsements, and the records clerk counts every minute sheet that you ask for as ten."
+    minuteSheet: [Endorsement!]!
+    "The papers pinned to this one. Each enclosure is a paper with a minute sheet of its own."
+    enclosures: [Paper!]!
+  }
+
+  "One endorsement on a minute sheet: a remark that an officer wrote on a paper, and initialled."
+  type Endorsement @clearance(level: 10) {
+    "The reference that the registry wrote beside the endorsement."
+    reference: ID!
+    "The remark, in the words of the officer who wrote it."
+    remark: String!
+    "The officer who wrote the endorsement. Empty when nobody can read the initials."
+    officer: Officer
+  }
 `;
 
-export const MAX_CLEARANCE = 9;
+export const MAX_CLEARANCE = 10;

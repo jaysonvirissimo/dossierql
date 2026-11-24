@@ -1,0 +1,676 @@
+id: inner-room
+title: The Inner Room
+campaign: fourth-desk
+order: 9
+clearance: 10
+kind: teaching
+teaches: directives
+practises: [nested-selections, arguments, variables, fragments, pagination]
+requires: [nested-selections, arguments, variables, fragments, pagination]
+summary: >
+  Somebody opened the door of the First Desk's inner room from inside, on
+  an afternoon when the head of the First Desk was away. The private office
+  files every paper that crosses its desk, and every paper carries a
+  minute sheet too heavy to ask for on every paper at once.
+motif: register
+clock:
+  countdown: The private office locks its files away for the night in {remaining}
+  expired: The private office has locked its files away for the night
+  onExpiry: end
+startingStage: day-file
+
+debrief:
+  onTime: |
+    Joaquim Teles, head of the First Desk, was in Luanda, and he had left
+    his inner room locked. Duarte Sequeira lent the room for the afternoon,
+    under a standing instruction that Teresa Valente had brought to the
+    private office by hand. She drew the key, waited in the inner room,
+    and opened the door to the holder of pass PS-0471 herself.
+
+    Teresa Valente is secretary to the Standing Committee. She brought
+    two more instructions with the one for the inner room: one for the
+    pass desk, and one for the counter of the Cipher Room, each for an
+    hour when its clerk is called away. None of the three was entered in
+    a register. The private secretary of the First Desk was carrying out
+    the Standing Committee's instructions, and the inquiry now asks who on
+    the Committee gave them.
+  stampOnTime: COMMITTEE IDENTIFIED
+  comparison: >
+    Within each stage, the reference solution changes only its
+    variables. In the day file it writes `@include(if: $detail)` after
+    `minuteSheet`. It sends `{ "detail": false }` to read the subject of
+    all 120 papers in one request, which weighs 121, and then
+    `{ "first": 2, "after": "DFP-0104", "detail": true }` to read the two
+    papers about the inner room in full. With a minute sheet on every
+    paper, the first request would weigh 2521. In the file of standing
+    instructions it writes `@skip(if: $summary)`, because counter-intelligence's
+    variable says what to leave out. In the third stage one `@include`
+    covers both `minuteSheet` and `enclosures`, and in the last stage the
+    fragment `Sheet` spreads the fragment `Signer`, so the fields of an
+    officer are written once for every minute sheet in the request.
+  geography: >
+    The Vasco da Gama Bridge crosses the estuary of the Tagus north-east
+    of Lisbon. It is about twelve kilometres long, and is one of the
+    longest bridges in Europe.
+
+stages:
+  day-file:
+    location: PT
+    objective: Identify the officer who lent the inner room of the First Desk for the afternoon.
+
+    briefing: |
+      You read this case at a desk in Lisbon. Entry COR-0202 in the
+      corridor book is no longer classified at your clearance. It says
+      that the door of the inner room was opened from inside, and that the
+      holder of pass PS-0471 went in. Somebody was waiting in the First
+      Desk's inner room that afternoon.
+
+      The First Desk's private office keeps a day file: every paper that
+      crossed its desk in one day, in the order the papers arrived. The
+      day file for that day is DAY-0112. The registry reads a day file
+      with a standing query, an operation that it keeps on a card and
+      sends again each time with new variables. The editor holds the
+      registry's standing query.
+
+      Look up `Paper` in the Documentation tab. Each paper has a
+      `minuteSheet`: the remarks that officers wrote on the paper, and
+      each remark is a record. The longest minute sheet in the archive
+      holds ten remarks, and the records clerk counts every minute sheet
+      that you ask for as ten, whatever it holds. The officer you open
+      on each remark is a record too, so the standing query counts each
+      paper as 21 records. The file holds 120 papers, so the standing
+      query weighs more than 200 and the clerk returns it unsent.
+
+      You need the minute sheet of only one or two papers. Write
+      `@include(if: $detail)` after `minuteSheet`, before its opening
+      brace. `@include` is a [directive](glossary:directive). It tells
+      the archive to send `minuteSheet` only when `$detail` is `true`.
+      Declare the variable beside the other two, as `$detail: Boolean!`.
+      The clerk does not count a field that the request leaves out.
+
+      In the variables panel, send `{ "detail": false }` first. The
+      response lists the subject of every paper, and no minute sheets.
+      Then send the same operation with `first`, `after`, and
+      `"detail": true`, to read the minute sheet of the paper you need.
+      `after` takes the reference of the paper just before the first paper
+      you want, and `first` takes the number of papers you want.
+
+      Identify the officer who lent the inner room of the First Desk for
+      the afternoon.
+
+    clues:
+      - text: >
+          The officer lent the inner room for the afternoon, as the
+          standing instruction for the room requires.
+        constraint:
+          $remark.remark: The inner room lent for the afternoon, as the standing instruction for the room requires.
+          $remark.officer: $officer
+
+    scaffold:
+      level: guided
+      starterQuery: |
+        query DayFile($first: Int, $after: String) {
+          paperFile(reference: "DAY-0112") {
+            papers(first: $first, after: $after) {
+              nodes {
+                reference
+                hour
+                subject
+                # Write @include(if: $detail) after minuteSheet, and
+                # declare $detail: Boolean! beside $first and $after.
+                minuteSheet {
+                  remark
+                  officer { name }
+                }
+              }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        Two officers wrote on the minute sheet of the paper about the inner
+        room. Only one of them was in Lisbon that day.
+      concept: >
+        Put @include(if: $detail) after minuteSheet, and declare $detail:
+        Boolean! in the parentheses after DayFile. Send detail as false to
+        find the paper, then as true, with first and after, to read its
+        minute sheet.
+      schema: >
+        Look at Query.paperFile, PaperFile.papers, Paper.minuteSheet, and
+        Endorsement.officer.
+      skeleton: |
+        minuteSheet @include(if: $detail) { remark officer { name } }
+
+    solution:
+      type: deduction
+      officer: duarte-sequeira
+    labels:
+      officer: Officer
+
+    claims:
+      - id: lent
+        prompt: This officer lent the inner room for the afternoon.
+        evidenceSets:
+          - facts:
+              - entity: Endorsement:$remark
+                field: remark
+                equals: The inner room lent for the afternoon, as the standing instruction for the room requires.
+              - entity: Endorsement:$remark
+                field: officer
+                equals: Officer:$officer
+          - facts:
+              - entity: Endorsement:END-0303
+                field: remark
+                equals: Key of the inner room drawn from the private office's safe, for the afternoon.
+              - entity: Endorsement:END-0303
+                field: officer
+                equals: Officer:$officer
+
+    leadOutcomes:
+      joaquim-teles:
+        refutation:
+          claim: lent
+          facts:
+            - entity: Endorsement:END-0301
+              field: remark
+              equals: Away in Luanda until the end of the week. The room stays locked until I am back.
+            - entity: Endorsement:END-0301
+              field: officer
+              equals: Officer:$officer
+        ruledOut: |
+          Joaquim Teles is head of the First Desk, and the inner room is
+          his. He was in Luanda that week, and he left the room locked
+          until he came back.
+
+    resolved: |
+      Deduction accepted. Duarte Sequeira lent the inner room for the
+      afternoon, and drew its key from the private office's safe, while
+      the head of the First Desk was in Luanda. He wrote that a standing
+      instruction for the room required it.
+
+    referenceSolution:
+      - |
+        query DayFile($first: Int, $after: String, $detail: Boolean!) {
+          paperFile(reference: "DAY-0112") {
+            papers(first: $first, after: $after) {
+              nodes {
+                reference
+                hour
+                subject
+                minuteSheet @include(if: $detail) { remark officer { name } }
+              }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+      - |
+        query DayFile($first: Int, $after: String, $detail: Boolean!) {
+          paperFile(reference: "DAY-0112") {
+            papers(first: $first, after: $after) {
+              nodes {
+                reference
+                hour
+                subject
+                minuteSheet @include(if: $detail) { remark officer { name } }
+              }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+    referenceVariables:
+      - { detail: false }
+      - { first: 2, after: DFP-0104, detail: true }
+
+    next: standing-file
+
+  standing-file:
+    location: PT
+    step: skip-directive
+    objective: Identify the officer who brought the standing instruction for the inner room to the private office.
+
+    briefing: |
+      Duarte Sequeira wrote that a standing instruction for the inner room
+      required him to lend it. The private office keeps its standing
+      instructions in a file of their own, SIF-0004, and each instruction
+      has a minute sheet. The file holds 40 instructions.
+
+      Counter-intelligence keeps a standing query of its own for files of
+      instructions, and the editor holds it. The query asks for no page
+      size, so the clerk counts its page as the longest file of papers in
+      the archive, 120 papers, although this file holds 40. Its variable is
+      `$summary: Boolean!`. Counter-intelligence sends
+      `{ "summary": true }` when it wants only the list of subjects, so
+      the minute sheets have to be left out when `summary` is `true`.
+      `@include` leaves a field out when the value of `if` is `false`,
+      which is the wrong way round for this variable.
+
+      Write `@skip(if: $summary)` after `minuteSheet`. The directive
+      `@skip` leaves a field out when the value of `if` is `true`, and
+      sends the field when the value of `if` is `false`. Send `{ "summary": true }` to find
+      the instruction for the inner room. Then send `"summary": false`,
+      with `first` and `after`, to read its minute sheet.
+
+      Identify the officer who brought the standing instruction for the
+      inner room to the private office.
+
+    clues:
+      - text: >
+          The officer brought the instruction by hand, to be kept in the
+          private office and not entered in the First Desk's register.
+        constraint:
+          $remark.remark: Brought by hand, to be kept in the private office and not entered in the First Desk's register.
+          $remark.officer: $officer
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query Instructions($first: Int, $after: String, $summary: Boolean!) {
+          paperFile(reference: "SIF-0004") {
+            papers(first: $first, after: $after) {
+              nodes {
+                reference
+                subject
+                # Write @skip(if: $summary) after minuteSheet.
+                minuteSheet {
+                  remark
+                  officer { name }
+                }
+              }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        Two officers wrote on the minute sheet of the instruction for the
+        inner room. One of them brought it, and the other one filed it.
+      concept: >
+        Put @skip(if: $summary) after minuteSheet. Send summary as true to
+        find the instruction, then as false, with first and after, to read
+        its minute sheet.
+      schema: >
+        Look at PaperFile.papers, Paper.subject, Paper.minuteSheet, and
+        Endorsement.remark.
+      skeleton: |
+        minuteSheet @skip(if: $summary) { remark officer { name } }
+
+    solution:
+      type: deduction
+      officer: teresa-valente
+    labels:
+      officer: Officer
+
+    claims:
+      - id: brought
+        prompt: This officer brought the standing instruction for the inner room to the private office.
+        evidenceSets:
+          - facts:
+              - entity: Endorsement:$remark
+                field: remark
+                equals: Brought by hand, to be kept in the private office and not entered in the First Desk's register.
+              - entity: Endorsement:$remark
+                field: officer
+                equals: Officer:$officer
+          - facts:
+              - entity: Endorsement:END-0405
+                field: remark
+                equals: Brought by hand, with the instruction for the inner room. To be shown to nobody at the Cipher Room.
+              - entity: Endorsement:END-0405
+                field: officer
+                equals: Officer:$officer
+
+    leadOutcomes:
+      duarte-sequeira:
+        refutation:
+          claim: brought
+          facts:
+            - entity: Endorsement:END-0402
+              field: remark
+              equals: Received from the officer who brought it, and filed. Not shown to the head of the First Desk.
+            - entity: Endorsement:END-0402
+              field: officer
+              equals: Officer:$officer
+        ruledOut: |
+          Duarte Sequeira received the instruction and filed it. He wrote
+          that another officer brought it, and that he did not show it to
+          the head of the First Desk.
+
+    resolved: |
+      Deduction accepted. Teresa Valente brought the standing instruction
+      for the inner room by hand. She brought two more with it: one for
+      the pass desk, and one for the counter of the Cipher Room, each for
+      an hour when its clerk is called away.
+
+    referenceSolution:
+      - |
+        query Instructions($first: Int, $after: String, $summary: Boolean!) {
+          paperFile(reference: "SIF-0004") {
+            papers(first: $first, after: $after) {
+              nodes {
+                reference
+                subject
+                minuteSheet @skip(if: $summary) { remark officer { name } }
+              }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+      - |
+        query Instructions($first: Int, $after: String, $summary: Boolean!) {
+          paperFile(reference: "SIF-0004") {
+            papers(first: $first, after: $after) {
+              nodes {
+                reference
+                subject
+                minuteSheet @skip(if: $summary) { remark officer { name } }
+              }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+    referenceVariables:
+      - { summary: true }
+      - { first: 3, after: SIN-0018, summary: false }
+
+    next: appointment
+
+  appointment:
+    location: PT
+    step: directive-on-fragment
+    objective: Identify the officer who received the holder of pass PS-0471 in the inner room.
+
+    briefing: |
+      Entry COR-0202 says that the door of the inner room was opened from
+      inside. In the day file DAY-0112, the paper about the inner room,
+      DFP-0105, has another paper pinned to it, and so has DFP-0106, the
+      paper about the room's key. Look up `Paper` in the Documentation
+      tab. The field `enclosures` lists the papers pinned to a paper, and
+      each enclosure has a minute sheet of its own. Enclosures are heavy
+      too, so you want them only on the requests where you want the
+      minute sheet.
+
+      You could write `@include(if: $detail)` after `minuteSheet` and
+      again after `enclosures`. Instead, you can group the two fields so
+      that one directive covers both. Write three dots and the directive,
+      with no type after the dots, and put the fields in braces after it:
+      `... @include(if: $detail) { minuteSheet { … } enclosures { … } }`.
+      The fields inside the braces belong to the paper itself, and the one
+      directive decides all of them. This is an
+      [inline fragment](glossary:inline-fragment) with no type.
+
+      Identify the officer who received the holder of pass PS-0471 in the
+      inner room.
+
+    clues:
+      - text: >
+          The officer received the visitor in the inner room at five, and
+          opened the door to him.
+        constraint:
+          $remark.remark: I received the visitor in the inner room at five, and opened the door to him myself.
+          $remark.officer: $officer
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query DayFile($first: Int, $after: String, $detail: Boolean!) {
+          paperFile(reference: "DAY-0112") {
+            papers(first: $first, after: $after) {
+              nodes {
+                reference
+                subject
+                # Put minuteSheet and enclosures together, inside
+                # ... @include(if: $detail) { }
+                minuteSheet {
+                  remark
+                  officer { name }
+                }
+                enclosures {
+                  subject
+                  minuteSheet {
+                    remark
+                    officer { name }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        The paper about the inner room has a note of the afternoon's
+        appointment pinned to it. Two officers wrote on that note.
+      concept: >
+        Inside nodes, write ... @include(if: $detail) followed by braces,
+        and put minuteSheet and enclosures inside those braces. Send detail
+        as true, with first and after.
+      schema: >
+        Look at Paper.enclosures, Paper.minuteSheet, Endorsement.remark,
+        and Endorsement.officer.
+      skeleton: |
+        ... @include(if: $detail) { minuteSheet { remark officer { name } } enclosures { subject minuteSheet { remark officer { name } } } }
+
+    solution:
+      type: deduction
+      officer: teresa-valente
+    labels:
+      officer: Officer
+
+    claims:
+      - id: received
+        prompt: This officer received the holder of pass PS-0471 in the inner room.
+        evidenceSets:
+          - facts:
+              - entity: Endorsement:$remark
+                field: remark
+                equals: I received the visitor in the inner room at five, and opened the door to him myself.
+              - entity: Endorsement:$remark
+                field: officer
+                equals: Officer:$officer
+          - facts:
+              - entity: Endorsement:END-0503
+                field: remark
+                equals: Key of the inner room received from the private secretary, and handed back at half past five.
+              - entity: Endorsement:END-0503
+                field: officer
+                equals: Officer:$officer
+
+    leadOutcomes:
+      duarte-sequeira:
+        refutation:
+          claim: received
+          facts:
+            - entity: Endorsement:END-0502
+              field: remark
+              equals: Took the visitor to the door of the inner room, and waited in the private office until he was brought out.
+            - entity: Endorsement:END-0502
+              field: officer
+              equals: Officer:$officer
+        ruledOut: |
+          Duarte Sequeira took the visitor as far as the door of the inner
+          room. He waited in the private office, and somebody inside opened
+          the door.
+
+    resolved: |
+      Deduction accepted. Teresa Valente had the key of the inner room for
+      the afternoon. She received the holder of pass PS-0471 in the room,
+      and opened the door to him herself. She is the officer who brought
+      the standing instructions to the private office.
+
+    referenceSolution:
+      - |
+        query DayFile($first: Int, $after: String, $detail: Boolean!) {
+          paperFile(reference: "DAY-0112") {
+            papers(first: $first, after: $after) {
+              nodes {
+                reference
+                subject
+                ... @include(if: $detail) {
+                  minuteSheet { remark officer { name } }
+                  enclosures { subject minuteSheet { remark officer { name } } }
+                }
+              }
+            }
+          }
+        }
+    referenceVariables:
+      - { first: 2, after: DFP-0104, detail: true }
+
+    next: committee
+
+  committee:
+    location: PT
+    step: nested-fragment
+    objective: Identify the office that Teresa Valente works for.
+
+    briefing: |
+      Teresa Valente wrote on the First Desk's papers, but no paper so far
+      says which office she works for. To find out, ask for
+      `office { name }` on each officer. The officers are in two places in
+      the request: in the minute sheet of each paper, and in the minute
+      sheet of each enclosure. You would write the officer's fields twice,
+      and the minute sheet's fields twice.
+
+      A fragment can spread another fragment. Write the officer's fields
+      once, as `fragment Signer on Officer { name post office { name } }`.
+      Then write the minute sheet once, as a fragment on `Paper` that
+      spreads `Signer` inside `officer`:
+      `fragment Sheet on Paper { minuteSheet { remark officer { ...Signer } } }`.
+      Spread `...Sheet` inside `nodes` and inside `enclosures`. In the
+      editor, `@include(if: $detail)` stands after `...Sheet`. A directive
+      after a fragment spread covers every field of the fragment, as the
+      three dots with no type did in the last stage. The `...Sheet`
+      inside `enclosures` needs no directive of its own, because the
+      directive on `enclosures` leaves out everything inside it. When you
+      add a field to `Signer`, it then comes back for every officer in
+      both places.
+
+      Identify the office that Teresa Valente works for.
+
+    clues:
+      - text: >
+          The office is the one that Teresa Valente works for.
+        constraint:
+          $officer.name: Teresa Valente
+          $officer.office: $office
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query DayFile($first: Int, $after: String, $detail: Boolean!) {
+          paperFile(reference: "DAY-0112") {
+            papers(first: $first, after: $after) {
+              nodes {
+                reference
+                subject
+                ...Sheet @include(if: $detail)
+                enclosures @include(if: $detail) {
+                  subject
+                  ...Sheet
+                }
+              }
+            }
+          }
+        }
+
+        fragment Sheet on Paper {
+          minuteSheet {
+            remark
+            # Write a fragment on Officer below, with the name, the
+            # post, and the name of the office. Spread it here.
+            officer { name }
+          }
+        }
+
+    hints:
+      nudge: >
+        Teresa Valente wrote on the note of the appointment and on the
+        receipt for the key. Ask for the office of the officer who wrote
+        each remark.
+      concept: >
+        Write fragment Signer on Officer with name, post, and office {
+        name }. Spread ...Signer inside officer, inside the fragment Sheet.
+      schema: >
+        Look at Endorsement.officer, Officer.post, Officer.office, and
+        Office.name.
+      skeleton: |
+        fragment Sheet on Paper { minuteSheet { remark officer { ...Signer } } }
+
+    solution:
+      type: deduction
+      office: standing-committee
+    labels:
+      office: Office
+
+    claims:
+      - id: works-for
+        prompt: Teresa Valente works for this office.
+        evidenceSets:
+          - facts:
+              - entity: Endorsement:END-0501
+                field: officer
+                equals: Officer:$officer
+              - entity: Officer:$officer
+                field: office
+                equals: Office:$office
+          - facts:
+              - entity: Endorsement:END-0503
+                field: officer
+                equals: Officer:$officer
+              - entity: Officer:$officer
+                field: office
+                equals: Office:$office
+
+    leadOutcomes:
+      first-desk:
+        refutation:
+          claim: works-for
+          facts:
+            - entity: Office:$office
+              field: officers
+              excludes: Officer:teresa-valente
+        ruledOut: |
+          Teresa Valente wrote on the First Desk's papers, but the First
+          Desk's list of its officers does not include her.
+
+    resolved: |
+      Deduction accepted. Teresa Valente is secretary to the Standing
+      Committee. The instructions for the inner room, the pass desk, and
+      the counter of the Cipher Room all came from the Standing Committee
+      by her hand, and none of them was entered in a register.
+
+    referenceSolution:
+      - |
+        query DayFile($first: Int, $after: String, $detail: Boolean!) {
+          paperFile(reference: "DAY-0112") {
+            papers(first: $first, after: $after) {
+              nodes {
+                reference
+                subject
+                ...Sheet @include(if: $detail)
+                enclosures @include(if: $detail) {
+                  subject
+                  ...Sheet
+                }
+              }
+            }
+          }
+        }
+
+        fragment Sheet on Paper {
+          minuteSheet {
+            remark
+            officer { ...Signer }
+          }
+        }
+
+        fragment Signer on Officer {
+          name
+          post
+          office { name }
+        }
+    referenceVariables:
+      - { first: 2, after: DFP-0104, detail: true }

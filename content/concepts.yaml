@@ -196,3 +196,32 @@
   payoff: >
     A list too heavy to release in one request is read in pages, each
     page starting where the one before it ended.
+- id: directives
+  title: Directives
+  clearance: 10
+  summary: >
+    A request can carry a field that it asks for only some of the time.
+    In the example, `@include(if: $detail)` after `minuteSheet` asks for
+    the minute sheet only when the variable `$detail` is `true`. Send the
+    request with `{ "detail": false }`, and the archive leaves the minute
+    sheet out, and the records clerk does not count it in the request's
+    weight. `@skip(if: $summary)` works the other way round: it leaves a
+    field out when `$summary` is `true`. You can also write a directive
+    after a fragment spread, or after three dots and no type, as in
+    `... @include(if: $detail) { … }`, to leave out a group of fields at
+    once.
+  example: |
+    query DayFile($first: Int, $after: String, $detail: Boolean!) {
+      paperFile(reference: "DAY-0112") {
+        papers(first: $first, after: $after) {
+          nodes {
+            reference
+            subject
+            minuteSheet @include(if: $detail) { remark officer { name } }
+          }
+        }
+      }
+    }
+  payoff: >
+    One operation reads a file quickly and then in full. You change a
+    variable, and you leave the query as it is.

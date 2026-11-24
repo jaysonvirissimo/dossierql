@@ -351,6 +351,12 @@ export function conceptsUsed(operation: string): Set<Concept> {
       if (node.alias) used.add("aliases");
     },
     FragmentSpread: () => void used.add("fragments"),
+    Directive: (node) => {
+      // @include and @skip leave part of a request out (SDD 3.7).
+      if (node.name.value === "include" || node.name.value === "skip") {
+        used.add("directives");
+      }
+    },
     VariableDefinition: () => void used.add("variables"),
   });
   if (usesIntrospection(document)) used.add("introspection");
@@ -457,6 +463,7 @@ const VOCABULARY = [
   "enum",
   "pagination",
   "cursor",
+  "directive",
 ];
 
 // ------------------------------------------------------------ the checks
@@ -1420,6 +1427,7 @@ function checkCurriculum(
     "interfaces",
     "unions",
     "pagination",
+    "directives",
   ] as const) {
     if (used.has(concept) && !declared.has(concept)) {
       report(
@@ -2138,6 +2146,16 @@ function checkKatas(catalog: Catalog, report: Report): void {
 
 /** Runs every check of SDD 5.5. Each finding is an error. */
 /** The same request with every page size and cursor taken out. */
+/** The request with every `@include` and `@skip` taken out. */
+function undirected(document: DocumentNode): DocumentNode {
+  return visit(document, {
+    Directive: (node) =>
+      node.name.value === "include" || node.name.value === "skip"
+        ? null
+        : undefined,
+  });
+}
+
 function unpaged(document: DocumentNode): DocumentNode {
   return visit(document, {
     Argument: (node) =>
@@ -2152,11 +2170,16 @@ function unpaged(document: DocumentNode): DocumentNode {
  * limit at the highest clearance a player can replay it at, since the limit
  * follows the clearance in force. In the mission that teaches pagination,
  * each paged request would exceed the limit without its page size: the
- * books are too long to read whole.
+ * books are too long to read whole. In the mission that teaches directives,
+ * at least one request would exceed the limit without its directives: the
+ * detail they leave out is too heavy to ask for on every record.
  */
 function checkWeight(catalog: Catalog, report: Report): void {
   const schema = schemaFor(MAX_CLEARANCE);
   for (const mission of catalog.missions) {
+    let heaviestUndirected = 0;
+    const teachesDirectives =
+      mission.kind === "teaching" && mission.teaches === "directives";
     for (const [id, stage] of Object.entries(mission.stages)) {
       const at = `${mission.id}.stages.${id}.referenceSolution`;
       for (const { operation, variables } of referenceOperations(stage)) {
@@ -2193,7 +2216,25 @@ function checkWeight(catalog: Catalog, report: Report): void {
             );
           }
         }
+        if (teachesDirectives && conceptsUsed(operation).has("directives")) {
+          heaviestUndirected = Math.max(
+            heaviestUndirected,
+            requestWeight(
+              schema,
+              catalog.store,
+              undirected(document),
+              variables ?? {},
+            ),
+          );
+        }
       }
+    }
+    if (teachesDirectives && heaviestUndirected <= WEIGHT_LIMIT) {
+      report(
+        `${mission.id}.stages`,
+        "weight",
+        `Without its directives, no request weighs more than ${String(WEIGHT_LIMIT)}: the player has no reason to leave detail out.`,
+      );
     }
   }
 }

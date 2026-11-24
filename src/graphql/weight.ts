@@ -4,6 +4,7 @@ import {
   isObjectType,
   isUnionType,
   Kind,
+  type DirectiveNode,
   type DocumentNode,
   type FieldNode,
   type GraphQLInterfaceType,
@@ -90,6 +91,35 @@ export function requestWeight(
     )?.defaultValue;
     return fallback?.kind === Kind.INT ? Number(fallback.value) : null;
   };
+  /**
+   * The value of a directive's `if`: written in the query, sent as a
+   * variable, or the variable's declared default. Null when it cannot be
+   * read, so that the selection is counted.
+   */
+  const condition = (directive: DirectiveNode): boolean | null => {
+    const value = directive.arguments?.find(
+      (a) => a.name.value === "if",
+    )?.value;
+    if (!value) return null;
+    if (value.kind === Kind.BOOLEAN) return value.value;
+    if (value.kind !== Kind.VARIABLE) return null;
+    const name = value.name.value;
+    const given = variables[name];
+    if (typeof given === "boolean") return given;
+    const fallback = declared.find(
+      (d) => d.variable.name.value === name,
+    )?.defaultValue;
+    return fallback?.kind === Kind.BOOLEAN ? fallback.value : null;
+  };
+  /** Whether `@skip` or `@include` leaves a selection out (SDD 3.3). */
+  const excluded = (directives: readonly DirectiveNode[] | undefined) =>
+    (directives ?? []).some((d) => {
+      const value = condition(d);
+      if (value === null) return false;
+      if (d.name.value === "skip") return value;
+      if (d.name.value === "include") return !value;
+      return false;
+    });
   const fragments = new Map(
     document.definitions.flatMap((d) =>
       d.kind === Kind.FRAGMENT_DEFINITION ? [[d.name.value, d] as const] : [],
@@ -106,6 +136,7 @@ export function requestWeight(
   ): number => {
     let total = 0;
     for (const selection of set.selections) {
+      if (excluded(selection.directives)) continue;
       if (selection.kind === Kind.FIELD) {
         const name = selection.name.value;
         if (name.startsWith("__")) continue;

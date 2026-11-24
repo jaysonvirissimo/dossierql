@@ -232,3 +232,75 @@ describe("annotate at clearance 9", () => {
     });
   }
 });
+
+describe("annotate at clearance 10", () => {
+  const { store } = buildCatalog(loadContent().raw);
+  const sent = (operation: string, variables?: Record<string, unknown>) =>
+    transmit(store, { operation, variables, clearance: 10 }).result.errors?.map(
+      (error) => annotate({ message: error.message }, true),
+    ) ?? [];
+  const sheet = (directive: string, declared = "($detail: Boolean!)") =>
+    `query D${declared} { paperFile(reference: "DAY-0112") { papers(first: 1) { nodes { reference minuteSheet ${directive} { remark } } } } }`;
+
+  const cases: [string, string[], RegExp][] = [
+    [
+      "an unknown directive",
+      sent(sheet("@inclde(if: $detail)"), { detail: true }),
+      /checking the spelling of the word after the @/,
+    ],
+    [
+      "a directive in the wrong place",
+      sent(
+        `query D($detail: Boolean!) @include(if: $detail) { paperFile(reference: "DAY-0112") { title } }`,
+        { detail: true },
+      ),
+      /after a field, after a fragment spread/,
+    ],
+    [
+      "a directive written twice",
+      sent(sheet("@skip(if: $detail) @skip(if: $detail)"), { detail: true }),
+      /written twice in the same place/,
+    ],
+    [
+      "a variable that may be left out where a value may not be",
+      sent(sheet("@include(if: $detail)", "($detail: Boolean)"), {
+        detail: true,
+      }),
+      /declares "\$detail" as Boolean, without the !.*Boolean!/,
+    ],
+    [
+      "a required variable left out",
+      sent(sheet("@include(if: $detail)"), {}),
+      /may not be left out\. You type its value in the variables panel/,
+    ],
+    [
+      "true written in quotation marks",
+      sent(sheet(`@include(if: "true")`, "")),
+      /true or false, written without quotation marks/,
+    ],
+    [
+      "true typed in quotation marks in the variables panel",
+      sent(sheet("@include(if: $detail)"), { detail: "true" }),
+      /not true or false/,
+    ],
+  ];
+
+  for (const [name, found, expected] of cases) {
+    it(`explains ${name}`, () => {
+      expect(found).toHaveLength(1);
+      expect(found[0]).toMatch(expected);
+      expect(found[0]).not.toMatch(FALLBACK);
+      expect(found[0]).not.toMatch(/[{}]/);
+      expect(styleIssues(found[0] ?? "")).toEqual([]);
+    });
+  }
+
+  it("explains a directive with no value for if, beside the unused variable", () => {
+    const found = sent(sheet("@include"), { detail: true });
+    expect(found.some((n) => /needs a value for "if"/.test(n))).toBe(true);
+    const wrong = sent(sheet("@include(when: $detail)"), { detail: true });
+    expect(
+      wrong.some((n) => /only argument that "@include" takes/.test(n)),
+    ).toBe(true);
+  });
+});

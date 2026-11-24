@@ -10,6 +10,7 @@ export const CONCEPTS = [
   "interfaces",
   "unions",
   "pagination",
+  "directives",
 ] as const;
 export type Concept = (typeof CONCEPTS)[number];
 

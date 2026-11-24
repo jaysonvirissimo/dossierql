@@ -5,6 +5,7 @@ import {
   TypeInfo,
   visit,
   visitWithTypeInfo,
+  type DirectiveNode,
   type DocumentNode,
   type ExecutionResult,
   type FieldNode,
@@ -74,6 +75,20 @@ function hasNode(document: DocumentNode, kind: Kind): boolean {
   visit(document, {
     enter(node) {
       if (node.kind === kind) found = true;
+    },
+  });
+  return found;
+}
+
+/** Whether a directive that passes `test` is written anywhere in the request. */
+function hasDirective(
+  document: DocumentNode,
+  test: (directive: DirectiveNode) => boolean,
+): boolean {
+  let found = false;
+  visit(document, {
+    Directive(node) {
+      if (test(node)) found = true;
     },
   });
   return found;
@@ -267,6 +282,49 @@ export const STEPS: readonly Step[] = [
             typeof error.path?.[error.path.length - 1] === "number",
         ),
       ),
+  },
+  {
+    id: "skip-directive",
+    clearance: 10,
+    summary: "@skip, which leaves a field out when its condition is true",
+    uses: (document) =>
+      hasDirective(document, (directive) => directive.name.value === "skip"),
+  },
+  {
+    id: "directive-on-fragment",
+    clearance: 10,
+    summary:
+      "a directive on a group of fields: an inline fragment with no type condition, or a fragment spread",
+    uses: (document) => {
+      let found = false;
+      visit(document, {
+        InlineFragment(node) {
+          if (!node.typeCondition && (node.directives?.length ?? 0) > 0) {
+            found = true;
+          }
+        },
+        FragmentSpread(node) {
+          if ((node.directives?.length ?? 0) > 0) found = true;
+        },
+      });
+      return found;
+    },
+  },
+  {
+    id: "nested-fragment",
+    clearance: 10,
+    summary: "a fragment that spreads another fragment",
+    uses: (document) =>
+      document.definitions.some((definition) => {
+        if (definition.kind !== Kind.FRAGMENT_DEFINITION) return false;
+        let found = false;
+        visit(definition, {
+          FragmentSpread() {
+            found = true;
+          },
+        });
+        return found;
+      }),
   },
 ];
 

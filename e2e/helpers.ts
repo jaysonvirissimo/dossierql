@@ -225,3 +225,10 @@ export const TO_CLEARANCE_9 = [
   "listening-post",
   "door-watch",
 ] as const;
+
+/** Every case through the clearance 9 assessment. */
+export const TO_CLEARANCE_10 = [
+  ...TO_CLEARANCE_9,
+  "corridor-book",
+  "cipher-counter",
+] as const;

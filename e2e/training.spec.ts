@@ -81,7 +81,7 @@ test("a new player is offered training and can pass every drill", async ({
   await expect(
     induction.getByRole("link", { name: "Repeat training" }),
   ).toBeVisible();
-  await expect(page.locator(".case")).toHaveCount(18);
+  await expect(page.locator(".case")).toHaveCount(20);
 });
 
 test("result rows offer Cite and no Pin, and name the links not yet opened", async ({

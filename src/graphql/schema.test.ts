@@ -89,6 +89,7 @@ const ADDED: Record<number, string[]> = {
     "Query.interceptLog",
   ],
   9: ["PageInfo", "WatchBook", "WatchEntry", "WatchPage", "Query.watchBook"],
+  10: ["Endorsement", "Paper", "PaperFile", "PaperPage", "Query.paperFile"],
 };
 
 function surface(level: number): { types: string[]; fields: string[] } {

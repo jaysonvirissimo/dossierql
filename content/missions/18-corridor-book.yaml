@@ -28,7 +28,7 @@ debrief:
     again.
 
     The entry that says who opened the door of the inner room is COR-0202,
-    and it is classified above your clearance. The inquiry has the name of
+    and it is classified above clearance 9. The inquiry has the name of
     the officer who let GILT_MAGPIE in. It does not have the name of the
     person he came to see.
   stampOnTime: OFFICER IDENTIFIED
@@ -596,7 +596,7 @@ stages:
       Deduction accepted. Duarte Sequeira brought the holder of pass
       PS-0471 out of the inner room and signed him out of the corridor.
       Entry COR-0202, the one that says who opened the door of the inner
-      room, stays classified.
+      room, is classified above clearance 9.
 
     referenceSolution:
       - |

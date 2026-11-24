@@ -1,0 +1,184 @@
+id: envelope-book
+title: The Envelope Book
+campaign: fourth-desk
+order: 10
+clearance: 10
+kind: assessment
+teaches: null
+practises:
+  [nested-selections, arguments, variables, fragments, pagination, directives]
+requires:
+  [nested-selections, arguments, variables, fragments, pagination, directives]
+summary: >
+  A caller from the First Desk left a sealed envelope at the counter of the
+  Cipher Room, to be called for. The counter keeps a book of the envelopes
+  left with it, and somebody called for this one.
+motif: seal
+clock:
+  countdown: The Cipher Room clears its counter's safe in {remaining}
+  expired: The Cipher Room has cleared its counter's safe
+  onExpiry: end
+startingStage: counter
+
+debrief:
+  onTime: |
+    Rui Fontes, messenger to the Standing Committee, called for the
+    envelope that the First Desk's private office had left at the counter
+    of the Cipher Room. He signed it out of the counter's safe for the
+    chair of the Standing Committee, and carried it to the Committee's
+    rooms unopened.
+
+    The standing instructions, the inner room, and the envelope all lead
+    to the Standing Committee, and every one of them went by hand. No paper
+    that the inquiry holds gives the name of the Committee's chair.
+  stampOnTime: ENVELOPE TRACED
+  comparison: >
+    The reference solution writes one operation with the variable
+    `$summary: Boolean!`, and puts `@skip(if: $summary)` on the fragment
+    spread `...Sheet` and on `enclosures`. It sends `{ "summary": true }`
+    to read the subject of all 60 envelopes in one request. The request
+    gives no page size, so the clerk counts its page as the longest file
+    of papers in the archive, 120 papers, and weighs it at 121. Then it
+    sends `{ "first": 1, "after": "ENV-0011", "summary": false }`
+    to read the minute sheet of envelope ENV-0012 and of the slip pinned
+    to it. The fragment `Sheet` spreads the fragment `Signer`, so the
+    fields of an officer are written once for both minute sheets.
+  geography: >
+    Lisbon stands on the estuary of the Tagus, the longest river of the
+    Iberian Peninsula. The river rises in Spain and reaches the Atlantic
+    just west of the city.
+
+stages:
+  counter:
+    location: PT
+    objective: Identify the officer who called for the envelope that the First Desk left at the counter of the Cipher Room.
+
+    briefing: |
+      Entry CRC-0096 in the counter's watch book is no longer classified
+      at your clearance. A caller from the First Desk left a sealed
+      envelope at the counter of the Cipher Room, to be called for,
+      at 08:58, minutes before the instruction for Valparaíso Station was
+      handed in. The counter keeps a book of the envelopes left with it.
+      The book is a file of papers, ENB-0116, in which each envelope is a
+      paper with a minute sheet. The book holds 60 envelopes.
+
+      Identify the officer who called for the envelope that the First Desk
+      left at the counter of the Cipher Room.
+
+    clues:
+      - text: >
+          The officer called for the envelope and signed it out of the
+          counter's safe.
+        constraint:
+          $remark.remark: Called for, and signed out of the counter's safe, for the chair of the Standing Committee.
+          $remark.officer: $officer
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        The counter clerk took the envelope in. Somebody else signed it
+        out again.
+      concept: >
+        Leave the minute sheets out with a directive while you look for
+        the envelope from the First Desk. Then send the same operation
+        with the minute sheets, and first and after, for that one
+        envelope.
+      schema: >
+        Look at Query.paperFile, PaperFile.papers, Paper.minuteSheet,
+        Paper.enclosures, and Endorsement.officer.
+      skeleton: |
+        query Envelopes($first: Int, $after: String, $summary: Boolean!) { paperFile(reference: "ENB-0116") { papers(first: $first, after: $after) { nodes { reference subject minuteSheet @skip(if: $summary) { remark officer { name } } } } } }
+
+    solution:
+      type: deduction
+      officer: rui-fontes
+    labels:
+      officer: Officer
+
+    claims:
+      - id: called-for
+        prompt: This officer called for the envelope from the First Desk.
+        evidenceSets:
+          - facts:
+              - entity: Endorsement:$remark
+                field: remark
+                equals: Called for, and signed out of the counter's safe, for the chair of the Standing Committee.
+              - entity: Endorsement:$remark
+                field: officer
+                equals: Officer:$officer
+          - facts:
+              - entity: Endorsement:END-0603
+                field: remark
+                equals: Received the envelope at the counter, and carried it to the Committee's rooms unopened.
+              - entity: Endorsement:END-0603
+                field: officer
+                equals: Officer:$officer
+
+    leadOutcomes:
+      benedita-rocha:
+        refutation:
+          claim: called-for
+          facts:
+            - entity: Endorsement:END-0601
+              field: remark
+              equals: Taken in at the counter and kept in the counter's safe until it was called for.
+            - entity: Endorsement:END-0601
+              field: officer
+              equals: Officer:$officer
+        ruledOut: |
+          Benedita Rocha keeps the counter. She took the envelope in and
+          kept it in the counter's safe, and somebody else called for it.
+
+    resolved: |
+      Deduction accepted. Rui Fontes, messenger to the Standing Committee,
+      called for the envelope and signed it out for the chair of the
+      Committee.
+
+    referenceSolution:
+      - |
+        query Envelopes($first: Int, $after: String, $summary: Boolean!) {
+          paperFile(reference: "ENB-0116") {
+            papers(first: $first, after: $after) {
+              nodes {
+                reference
+                hour
+                subject
+                ...Sheet @skip(if: $summary)
+                enclosures @skip(if: $summary) { subject ...Sheet }
+              }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+
+        fragment Sheet on Paper {
+          minuteSheet { remark officer { ...Signer } }
+        }
+
+        fragment Signer on Officer { name post office { name } }
+      - |
+        query Envelopes($first: Int, $after: String, $summary: Boolean!) {
+          paperFile(reference: "ENB-0116") {
+            papers(first: $first, after: $after) {
+              nodes {
+                reference
+                hour
+                subject
+                ...Sheet @skip(if: $summary)
+                enclosures @skip(if: $summary) { subject ...Sheet }
+              }
+              pageInfo { hasNextPage endCursor }
+            }
+          }
+        }
+
+        fragment Sheet on Paper {
+          minuteSheet { remark officer { ...Signer } }
+        }
+
+        fragment Signer on Officer { name post office { name } }
+    referenceVariables:
+      - { summary: true }
+      - { first: 1, after: ENV-0011, summary: false }
