@@ -63,8 +63,12 @@ typed once, worked the first time, and found SABLE_IBIS.
    asked twice.** _Logged._ The note was clear and the walkthrough learned
    from it, so the order is left as it is.
 8. **Options in the form's boxes are exposed as disabled to the
-   accessibility tree, yet can be chosen.** _Logged._ Both agents reported
-   it. It needs a check with a screen reader before any change.
+   accessibility tree, yet can be chosen.** _Closed afterwards, not a
+   fault:_ the snapshot tool marks every control `disableable`, which only
+   means it can be turned off, and the agents read it as `disabled`. In
+   Chrome's tree the options are enabled, and a box is off only before
+   there is anything to choose. `e2e/shell.spec.ts` now checks both, and the
+   playtest prompts say what `disableable` means.
 9. **The map was cropped in the narrow panel.** _Logged._ The map is not the
    subject of this milestone.
 10. **The deductions in stages 1 and 3 accept the form with rivals open, and

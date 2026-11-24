@@ -185,6 +185,10 @@ in the summary.
 ## Acting on the findings
 
 - Mark every finding as fixed, or log it with the reason it stands.
+- A report that a form's options are disabled in the accessibility tree is
+  not a finding. The snapshot tool marks every control `disableable`, and
+  `e2e/shell.spec.ts` checks that the options are enabled. Close it without
+  further work.
 - Follow `AGENTS.md` for every fix.
   - Read SDD section 5.7 before you change text a player can read.
   - Search the tests for a phrase before you change it, and update the

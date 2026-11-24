@@ -3,6 +3,7 @@ import {
   expectClean,
   LISBON,
   openCase,
+  draft,
   openTool,
   press,
   record,
@@ -181,4 +182,35 @@ test("a glossary link opens the manual at its entry", async ({ page }) => {
   await expect(entry).toHaveAttribute("data-current", "true");
   await expect(entry).toBeFocused();
   await expect(entry).toBeInViewport();
+});
+
+// The playtest agents' snapshot tool marks every control "disableable",
+// which says only that it could be turned off. This pins down what the
+// accessibility tree really says about a form's box.
+test("a form's box is off until there is something to choose, and its options are not", async ({
+  page,
+}) => {
+  await openCase(page, "vanishing-azulejos");
+  const box = draft(page).getByRole("combobox", {
+    name: "Shipment to set aside",
+  });
+  // Before any response, the box is off and says why in its only option.
+  await expect(box).toBeDisabled();
+  await expect(box).toMatchAriaSnapshot(`
+    - combobox "Shipment to set aside" [disabled]:
+      - option "No shipment retrieved yet" [selected]
+  `);
+
+  await send(page, LISBON);
+  await expect(box).toBeEnabled();
+  for (const id of ["LIS-0417", "LIS-0486", "LIS-0522"]) {
+    await expect(box.getByRole("option", { name: id })).toBeEnabled();
+  }
+  await expect(box).toMatchAriaSnapshot(`
+    - combobox "Shipment to set aside":
+      - option "Not yet chosen" [selected]
+      - option "LIS-0417"
+      - option "LIS-0486"
+      - option "LIS-0522"
+  `);
 });

@@ -86,7 +86,9 @@ at [URL]. You may operate only that page.
   other files it loads, network traffic, localStorage, cookies, or DOM
   attributes that are not visible text. Do not search the web or read any
   files about the game. If a tool would show you any of these, do not use
-  it.
+  it. In the accessibility tree, `disableable` means only that a control
+  can be turned off. A control is off only when the tree says `disabled`,
+  and a box that cannot be used yet says why in its first option.
 - Do not change the URL by hand, except to go back to a page you have
   already reached through the game.
 
