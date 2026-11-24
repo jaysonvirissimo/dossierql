@@ -1,0 +1,171 @@
+# Records for clearance 12: the pursuit of GILT_MAGPIE from Lisbon to
+# Trieste, and of the courier COPPER_STARLING from Trieste to Vienna (SDD
+# 3.4). Premises are on the police list, and a Find is reached only through
+# the receipt for a search warrant, so the inquiry reads what the police
+# found by applying for searches. Each find that sends the pursuit on is a
+# fact about the next place: a currency, a language, or a city whose country
+# borders another.
+Operative:
+  GILT_MAGPIE:
+    coverNames: [the-registrar, e-corvo]
+    habit: Buys the newspaper of the next place he means to go, the day before he goes, and leaves it behind unread.
+    weakness: Tips in the money of the next country on his journey, because he always changes his money a day early.
+  COPPER_STARLING:
+    codename: COPPER_STARLING
+    coverNames: [l-weiss]
+    organization: parallax-circle
+    lastKnownLocation: trieste
+    habit: Carries a guidebook to every city he visits, and has never been seen to open one.
+    weakness: Cannot pass a bookshop.
+  BRASS_PIPIT:
+    habit: Reserves two tables in every restaurant, and eats at neither.
+    weakness: Hums when he is lying.
+  IRON_FINCH:
+    habit: Sets his watch by every railway clock he passes.
+    weakness: Cannot leave a hotel without complaining about the pillows.
+CoverName:
+  e-corvo: { name: E. Corvo }
+  l-weiss: { name: L. Weiss }
+  m-abreu: { name: M. Abreu }
+  c-ruiz: { name: C. Ruiz }
+Company:
+  adriatic-line:
+    name: Adriatic Line
+    registeredIn: IT
+Premises:
+  # Lisbon: GILT_MAGPIE's room the night before he left.
+  PRM-1201:
+    reference: PRM-1201
+    name: Pensão Flor de Lis
+    kind: Boarding house
+    city: lisbon
+    witness: The guest in room 4 left before breakfast. He paid in escudos and tipped the maid in something else.
+    statementRequired: false
+    watched: false
+  # Tangier: the magistrate wants the porter quoted word for word.
+  PRM-1211:
+    reference: PRM-1211
+    name: Hotel Atlas Marina
+    kind: Hotel
+    city: tangier
+    witness: 'Mr Corvo paid his bill and said, "Keep the change, I shan''t need it where I''m going." Then he asked me the time of the evening boat.'
+    statementRequired: true
+    watched: false
+  # Valletta: three premises, and only the shipping office was watched.
+  PRM-1221:
+    reference: PRM-1221
+    name: Harbour Hotel
+    kind: Hotel
+    city: valletta
+    witness: Mr Corvo kept his room until noon and left his luggage tickets on the dressing table.
+    statementRequired: false
+    watched: false
+  PRM-1222:
+    reference: PRM-1222
+    name: Café Kalkara
+    kind: Café
+    city: valletta
+    witness: He drank one coffee and read nothing.
+    statementRequired: false
+    watched: false
+  PRM-1223:
+    reference: PRM-1223
+    name: Shipping office of the Adriatic Line
+    kind: Office
+    city: valletta
+    witness: The gentleman booked a berth on the night steamer and asked how far the quay is from the frontier.
+    statementRequired: false
+    watched: true
+  # Trieste: the courier's room, and the bookshop below it.
+  PRM-1251:
+    reference: PRM-1251
+    name: Pensione Miramare
+    kind: Boarding house
+    city: trieste
+    witness: 'Signor Weiss said, "I have a letter to leave for a friend at the Albergo Duino." He left the letter at noon and did not come back for his bag.'
+    statementRequired: true
+    watched: false
+  PRM-1252:
+    reference: PRM-1252
+    name: Libreria del Molo
+    kind: Bookshop
+    city: trieste
+    witness: He bought a guidebook and asked whether he would need to change his money where he was going. I told him he would not.
+    statementRequired: false
+    watched: true
+Find:
+  FND-1201:
+    reference: FND-1201
+    description: Forty Moroccan dirhams on the washstand of room 4, left as a tip for the maid.
+    foundAt: PRM-1201
+    leftBy: e-corvo
+    currency: MAD
+  FND-1202:
+    reference: FND-1202
+    description: Tunisian dinars in an envelope at the desk, left by the guest of room 6 for her sister.
+    foundAt: PRM-1201
+    leftBy: m-abreu
+    currency: TND
+  FND-1211:
+    reference: FND-1211
+    description: A newspaper in Maltese, folded on the bed of room 12. Nobody had opened it.
+    foundAt: PRM-1211
+    leftBy: e-corvo
+    language: maltese
+  FND-1212:
+    reference: FND-1212
+    description: A newspaper in Spanish, left in the lounge by the guest of room 3.
+    foundAt: PRM-1211
+    leftBy: c-ruiz
+    language: spanish
+  FND-1221:
+    reference: FND-1221
+    description: A ticket for the steamer to Marseille, bought in the name of E. Corvo and never used.
+    foundAt: PRM-1221
+    leftBy: e-corvo
+    city: marseille
+  FND-1222:
+    reference: FND-1222
+    description: A coffee cup, cold, and a saucer with two euro coins of Malta under it.
+    foundAt: PRM-1222
+    leftBy: e-corvo
+    currency: EUR
+  FND-1223:
+    reference: FND-1223
+    description: The counterfoil of a berth on the night steamer to Trieste, booked by the Adriatic Line for E. Corvo. On the back the clerk wrote the distance from the quay to the frontier.
+    foundAt: PRM-1223
+    leftBy: e-corvo
+    city: trieste
+  FND-1251:
+    reference: FND-1251
+    description: A railway ticket to Zurich in the name of L. Weiss, bought and never used.
+    foundAt: PRM-1251
+    leftBy: l-weiss
+    city: zurich
+  FND-1252:
+    reference: FND-1252
+    description: The bookshop's copy of a receipt for a guidebook to Vienna, sold to L. Weiss, with a railway timetable folded inside it.
+    foundAt: PRM-1252
+    leftBy: l-weiss
+    city: vienna
+Sighting:
+  SGT-1241:
+    city: trieste
+    operative: GILT_MAGPIE
+    nameGiven: e-corvo
+    note: Came ashore from the night steamer from Valletta and took a room at the Albergo Duino. Asked the porter for the time of the evening train to Ljubljana.
+  SGT-1242:
+    city: trieste
+    operative: BRASS_PIPIT
+    nameGiven: herr-frick
+    note: Came ashore from the night steamer from Valletta and reserved two tables for dinner on the waterfront.
+  SGT-1261:
+    city: vienna
+    operative: COPPER_STARLING
+    nameGiven: l-weiss
+    note: Arrived on the overnight train from Trieste and asked the porter at the Westbahnhof for the next train to Prague.
+  SGT-1262:
+    city: vienna
+    operative: IRON_FINCH
+    nameGiven: j-novak
+    note: Set his watch by the clock of the Südbahnhof and took a room near the station.

@@ -39,7 +39,8 @@ const RULES: Rule[] = [
     message: nameAsVerb,
   },
   {
-    pattern: /(?<!\bJSON )\bobjects?\b/i,
+    // "JSON object" and "input object" are the real names of things.
+    pattern: /(?<!\bJSON |\binput[ -])\bobjects?\b/i,
     message: (found) =>
       `"${found}": the game calls one item in the archive a record.`,
   },

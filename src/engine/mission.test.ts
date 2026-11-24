@@ -975,3 +975,169 @@ describe("paperwork filed as a mutation in The Messengers' Fares", () => {
     expect(state.dispatches.at(-1)?.kind).toBe("travel");
   });
 });
+
+describe("search warrants and warrants in The Handler's Road", () => {
+  const road = envFor("handlers-road");
+  const play = (state: MissionState, ...actions: Action[]) =>
+    actions.reduce((s, action) => act(road, s, action).state, state);
+  const at = (stageId: string): MissionState => {
+    const begun = play(startMission(road), { type: "begin" });
+    const desk = begun.stages[begun.stageId]!;
+    return {
+      ...begun,
+      stageId,
+      stages: { [stageId]: { ...desk, editor: "", variables: "" } },
+    };
+  };
+  const send = (state: MissionState, editor: string, variables = "") =>
+    play(state, { type: "edit", editor, variables }, { type: "transmit" });
+  const last = (state: MissionState) => state.transmissions.at(-1)?.data;
+  const SEARCH = `mutation S($premises: ID!, $urgency: Urgency = ROUTINE) {
+    requestSearchWarrant(input: { premises: $premises, urgency: $urgency }) {
+      serial granted remark findings { reference }
+    }
+  }`;
+  const SIGHTINGS = `{ city(name: "Trieste") { sightings { operative { codename } } } operative(codename: "GILT_MAGPIE") { coverNames { name } } }`;
+  const warrant = (codename: string) =>
+    `mutation { requestWarrant(input: { subject: { operative: "${codename}" } }) { serial approved reasons hours } }`;
+
+  it("files a search and puts what the police found in the ledger", () => {
+    const state = send(
+      at("lisbon"),
+      `mutation { requestSearchWarrant(input: { premises: "PRM-1201" }) { granted findings { reference leftBy { name } currency { code } } } }`,
+    );
+    expect(state.filed?.map((r) => r.id)).toEqual(["SRW-0001"]);
+    expect(state.ledger["Find:FND-1201.currency"]?.fact.value).toEqual({
+      kind: "ref",
+      ref: "Currency:MAD",
+    });
+  });
+
+  it("refuses a search that does not quote the witness, and grants one that does", () => {
+    const refused = send(
+      at("tangier"),
+      `mutation { requestSearchWarrant(input: { premises: "PRM-1211", statement: "He left." }) { granted findings { reference } } }`,
+    );
+    expect(last(refused)).toEqual({
+      requestSearchWarrant: { granted: false, findings: [] },
+    });
+    const granted = send(
+      at("tangier"),
+      `mutation { requestSearchWarrant(input: {
+        premises: "PRM-1211"
+        statement: """
+        Mr Corvo paid his bill and said, "Keep the change, I shan't need
+        it where I'm going." Then he asked me the time of the evening boat.
+        """
+      }) { granted findings { reference } } }`,
+    );
+    expect(last(granted)).toEqual({
+      requestSearchWarrant: {
+        granted: true,
+        findings: [{ reference: "FND-1211" }, { reference: "FND-1212" }],
+      },
+    });
+  });
+
+  it("searches watched premises only when the search is urgent", () => {
+    const routine = send(at("valletta"), SEARCH, `{ "premises": "PRM-1223" }`);
+    expect(last(routine)).toMatchObject({
+      requestSearchWarrant: { granted: true, findings: [] },
+    });
+    const urgent = send(
+      routine,
+      SEARCH,
+      `{ "premises": "PRM-1223", "urgency": "URGENT" }`,
+    );
+    expect(last(urgent)).toMatchObject({
+      requestSearchWarrant: {
+        serial: "SRW-0002",
+        granted: true,
+        findings: [{ reference: "FND-1223" }],
+      },
+    });
+    const elsewhere = send(
+      urgent,
+      SEARCH,
+      `{ "premises": "PRM-1221", "urgency": "URGENT" }`,
+    );
+    expect(last(elsewhere)).toMatchObject({
+      requestSearchWarrant: { granted: false, findings: [] },
+    });
+  });
+
+  it("approves a warrant the responses prove, and ends the case", () => {
+    const start = send(at("trieste"), SIGHTINGS);
+    const state = send(start, warrant("GILT_MAGPIE"));
+    expect(last(state)).toEqual({
+      requestWarrant: {
+        serial: "WRT-0001",
+        approved: true,
+        reasons: [],
+        hours: 0,
+      },
+    });
+    expect(state.status).toBe("complete");
+    expect(state.hoursLeft).toBe(start.hoursLeft - COSTS.transmission);
+  });
+
+  it("charges a rejected warrant, and says why", () => {
+    const start = send(at("trieste"), SIGHTINGS);
+    const state = send(start, warrant("BRASS_PIPIT"));
+    const receipt = (
+      last(state) as {
+        requestWarrant: { approved: boolean; reasons: string[]; hours: number };
+      }
+    ).requestWarrant;
+    expect(receipt.approved).toBe(false);
+    expect(receipt.hours).toBe(COSTS.rejectedWarrant);
+    expect(receipt.reasons.join(" ")).toContain("E. Corvo");
+    expect(state.hoursLeft).toBe(
+      start.hoursLeft - COSTS.transmission - COSTS.rejectedWarrant,
+    );
+    expect(state.status).toBe("investigating");
+  });
+
+  it("charges a warrant rejected from the form, and says what it cost", () => {
+    const start = send(at("trieste"), SIGHTINGS);
+    const rejected = act(road, start, {
+      type: "proceed",
+      leadId: "BRASS_PIPIT",
+    });
+    expect(rejected.state.hoursLeft).toBe(
+      start.hoursLeft - COSTS.rejectedWarrant,
+    );
+    expect(rejected.notice?.kind).toBe("returned");
+    if (rejected.notice?.kind === "returned") {
+      expect(rejected.notice.returned.cost).toBe(COSTS.rejectedWarrant);
+    }
+  });
+
+  it("closes the attempt when the deadline passes first", () => {
+    const state = play(at("trieste"), { type: "let-deadline-pass" });
+    expect(state.clock).toBe("ended");
+    expect(road.mission.debrief.stampExpired).toBe("AT LARGE");
+  });
+
+  it("takes no warrant for a company at a stage that asks for an arrest, at no cost", () => {
+    const start = at("trieste");
+    const state = send(
+      start,
+      `mutation { requestWarrant(input: { subject: { company: "Adriatic Line" } }) { approved reasons hours } }`,
+    );
+    expect(last(state)).toMatchObject({
+      requestWarrant: { approved: false, hours: 0 },
+    });
+    expect(state.hoursLeft).toBe(start.hoursLeft - COSTS.transmission);
+  });
+
+  it("returns a form that fills both boxes of WarrantSubject before transmission", () => {
+    const start = at("trieste");
+    const state = send(
+      start,
+      `mutation { requestWarrant(input: { subject: { operative: "GILT_MAGPIE", company: "Adriatic Line" } }) { approved } }`,
+    );
+    expect(state.rejected?.errors[0]?.message).toMatch(/exactly one field/);
+    expect(state.hoursLeft).toBe(start.hoursLeft);
+  });
+});

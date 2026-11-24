@@ -2,7 +2,7 @@ import { bindingTypes, leadBinding } from "../../content/types.ts";
 import type { Dispatch, Returned } from "../../engine/mission.ts";
 import { refOf } from "../../graphql/store.ts";
 import { useWorkspace } from "./context.ts";
-import { describeFact, labelOf, words } from "./describe.ts";
+import { describeFact, hours, labelOf, words } from "./describe.ts";
 
 /** One fact, with a button that opens the response it first came back in. */
 function FactLine({ factKey }: { factKey: string }) {
@@ -92,6 +92,9 @@ export function ReturnedForm({
         The {returned.order} comes back to you. The archive checked it against
         every response you have received, and some of its claims are not yet
         proved for {leadName}.
+        {returned.cost !== undefined &&
+          returned.cost > 0 &&
+          ` The magistrate rejected the warrant, and the rejection took ${hours(returned.cost)}.`}
       </p>
       <ul className="claims">
         {returned.claims.map((claim) => {

@@ -1,0 +1,326 @@
+id: couriers-guidebook
+title: The Courier's Guidebook
+campaign: fourth-desk
+order: 14
+clearance: 12
+kind: assessment
+teaches: null
+practises: [nested-selections, arguments, variables, mutations, input-objects]
+requires: [nested-selections, arguments, variables, mutations, input-objects]
+summary: >
+  The letter signed M reached GILT_MAGPIE by courier, and the courier left
+  Trieste the same afternoon. He cannot pass a bookshop.
+motif: seal
+quarry: COPPER_STARLING
+clock:
+  countdown: The overnight train for Prague leaves Vienna with COPPER_STARLING aboard in {remaining}
+  expired: The overnight train for Prague has left Vienna with COPPER_STARLING aboard
+  onExpiry: end
+startingStage: trieste
+
+debrief:
+  onTime: |
+    The police in Vienna took COPPER_STARLING on the platform of the
+    Westbahnhof, with an unopened guidebook to Prague under his arm.
+
+    He carried the letter signed M from Madrid to Trieste. He says that it
+    was handed to him already sealed, on the platform of the Estación del
+    Norte, by a man who stepped out of a car of Madrid Station. He did not
+    see the man's face, and he was not told who wrote the letter. The
+    inquiry knows whose account paid for that car. It does not know whose
+    hand wrote the M.
+  stampOnTime: DETAINED
+  stampExpired: AT LARGE
+  comparison: >
+    The reference solution reads the courier's file and the premises in
+    Trieste with one query. The magistrate for the boarding house wants the
+    witness quoted word for word, so its search carries the statement as a
+    [block string](glossary:block-string), between three quotation marks at
+    each end, and the witness's own quotation marks need no backslashes.
+    The bookshop was watched within the hour, so its search goes through
+    the operation `mutation Search($premises: ID!, $urgency: Urgency = ROUTINE)`
+    with `"urgency": "URGENT"` in the variables panel. The part `= ROUTINE`
+    is a [default value](glossary:default-value): a search whose variables
+    leave `urgency` out is routine. In Vienna the
+    warrant fills one box of `WarrantSubject`:
+    `subject: { operative: "COPPER_STARLING" }`.
+  geography: >
+    Trieste and Vienna were joined by the Südbahn, one of the first
+    mountain railways in Europe. Its line over the Semmering pass, south of
+    Vienna, climbs through fourteen tunnels and over sixteen viaducts.
+
+stages:
+  trieste:
+    location: IT
+    objective: File the travel order that follows COPPER_STARLING to the country of the journey he kept.
+
+    briefing: |
+      You are in Trieste. GILT_MAGPIE is in a police cell, and says
+      nothing. The letter signed M reached him by courier, and the police
+      know the courier: COPPER_STARLING, of the Parallax Circle, who left
+      Trieste the same afternoon. Two premises in Trieste are on the
+      police list for him. One of the two magistrates wants the witness
+      quoted word for word, and the police watched one of the premises
+      within the hour.
+
+      COPPER_STARLING was told he would not need to change his money where
+      he was going, because the country uses the euro, as Italy does.
+
+      File the travel order that follows COPPER_STARLING to the country of
+      the journey he kept.
+
+    clues:
+      - text: >
+          COPPER_STARLING left the find at premises in Trieste, under one
+          of the names he travels under.
+        constraint:
+          $find.foundAt.city: City:trieste
+          $find.leftBy.operative: Operative:COPPER_STARLING
+      - text: >
+          He would not need to change his money. The find shows a journey
+          to a city of the country he went to, and that country uses the
+          euro.
+        constraint:
+          $find.city.country: $country
+          $country.currency: Currency:EUR
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        He bought two journeys and kept one. Only one of the two cities is
+        in a country that uses the euro.
+      concept: >
+        Read the premises first. Quote the witness in a block string where
+        the magistrate wants a statement, and ask for an urgent search only
+        where the police watched the premises.
+      schema: >
+        Look at City.premises, Premises.statementRequired, Premises.watched,
+        SearchApplication.urgency, and Find.city.
+      skeleton: |
+        mutation Search($premises: ID!, $urgency: Urgency = ROUTINE) { requestSearchWarrant(input: { premises: $premises, urgency: $urgency }) { granted remark findings { reference leftBy { name } city { name country { name currency { name } } } } } }
+
+    solution:
+      type: destination
+      find: FND-1252
+      country: AT
+    labels:
+      find: Find
+      country: Destination country
+
+    claims:
+      - id: left
+        prompt: COPPER_STARLING left this find behind.
+        evidenceSets:
+          - facts:
+              - entity: Find:$find
+                field: leftBy
+                equals: CoverName:$name
+              - entity: CoverName:$name
+                field: operative
+                equals: Operative:COPPER_STARLING
+          - facts:
+              - entity: Find:$find
+                field: leftBy
+                equals: CoverName:$name
+              - entity: Operative:COPPER_STARLING
+                field: coverNames
+                includes: CoverName:$name
+      - id: euro
+        prompt: The find shows a journey to a city of the destination country, and that country uses the euro.
+        evidenceSets:
+          - facts:
+              - entity: Find:$find
+                field: city
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: currency
+                equals: Currency:EUR
+          - facts:
+              - entity: Find:$find
+                field: city
+                equals: City:$city
+              - entity: Country:$country
+                field: cities
+                includes: City:$city
+              - entity: Currency:EUR
+                field: countries
+                includes: Country:$country
+
+    leadOutcomes:
+      FND-1251:
+        refutation:
+          claim: euro
+          facts:
+            - entity: Find:FND-1251
+              field: city
+              equals: City:zurich
+            - entity: City:zurich
+              field: country
+              equals: Country:CH
+            - entity: Country:CH
+              field: currency
+              equals: Currency:CHF
+        ruledOut: |
+          COPPER_STARLING bought the ticket to Zurich and left it in his
+          room. Switzerland uses the Swiss franc, and he would have needed
+          to change his money there.
+
+    resolved: |
+      Travel order approved. The train climbs out of Trieste over the
+      karst, and by evening Vienna is wide avenues, trams, and the smell
+      of roasting chestnuts outside the Südbahnhof. The police saw two
+      operatives of interest at the city's stations today.
+
+    referenceSolution:
+      - |
+        query {
+          operative(codename: "COPPER_STARLING") {
+            coverNames { name }
+            weakness
+          }
+          city(name: "Trieste") {
+            premises { reference name witness statementRequired watched }
+          }
+        }
+      - |
+        mutation {
+          requestSearchWarrant(input: {
+            premises: "PRM-1251"
+            statement: """
+            The witness at the Pensione Miramare told me: Signor Weiss said,
+            "I have a letter to leave for a friend at the Albergo Duino." He
+            left the letter at noon and did not come back for his bag.
+            """
+          }) {
+            granted
+            remark
+            findings {
+              reference
+              leftBy { name }
+              city { name country { name currency { name } } }
+            }
+          }
+        }
+      - |
+        mutation Search($premises: ID!, $urgency: Urgency = ROUTINE) {
+          requestSearchWarrant(input: { premises: $premises, urgency: $urgency }) {
+            granted
+            remark
+            findings {
+              reference
+              leftBy { name }
+              city { name country { name currency { name } } }
+            }
+          }
+        }
+    referenceVariables:
+      - {}
+      - {}
+      - { premises: PRM-1252, urgency: URGENT }
+
+    next: vienna
+
+  vienna:
+    location: AT
+    paperwork: terminal
+    objective: Apply for a warrant to arrest the operative who travels as L. Weiss and was seen in Vienna.
+
+    briefing: |
+      You are in Vienna. The police saw two operatives of interest at the
+      city's stations today. The warrant is filed from the terminal, and a
+      warrant that the magistrate rejects costs 3 hours.
+
+      Apply for a warrant to arrest the operative who travels as L. Weiss
+      and was seen in Vienna.
+
+    clues:
+      - text: >
+          The operative travels under the name L. Weiss.
+        constraint:
+          $operative.coverNames: CoverName:l-weiss
+      - text: >
+          The police saw the operative in Vienna.
+        constraint:
+          $sighting.city: City:vienna
+          $sighting.operative: $operative
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        Two operatives were seen in Vienna today. Only one of them travels
+        as L. Weiss.
+      concept: >
+        The warrant's subject is an input object of its own. Fill exactly
+        one of its boxes.
+      schema: >
+        Look at City.sightings, CoverName.operative, Mutation.requestWarrant,
+        and WarrantSubject.operative.
+      skeleton: |
+        mutation { requestWarrant(input: { subject: { operative: "…" } }) { approved reasons hours } }
+
+    solution:
+      type: warrant
+      operative: COPPER_STARLING
+    labels:
+      operative: Operative
+
+    claims:
+      - id: alias
+        prompt: This operative travels under the name L. Weiss.
+        evidenceSets:
+          - facts:
+              - entity: CoverName:l-weiss
+                field: operative
+                equals: Operative:$operative
+          - facts:
+              - entity: Operative:$operative
+                field: coverNames
+                includes: CoverName:l-weiss
+      - id: seen
+        prompt: The police saw this operative in Vienna.
+        evidenceSets:
+          - facts:
+              - entity: Sighting:$sighting
+                field: city
+                equals: City:vienna
+              - entity: Sighting:$sighting
+                field: operative
+                equals: Operative:$operative
+          - facts:
+              - entity: City:vienna
+                field: sightings
+                includes: Sighting:$sighting
+              - entity: Sighting:$sighting
+                field: operative
+                equals: Operative:$operative
+
+    resolved: |
+      Warrant approved. The police take COPPER_STARLING on the platform,
+      ten minutes before the Prague train.
+
+    referenceSolution:
+      - |
+        query {
+          city(name: "Vienna") {
+            sightings {
+              note
+              operative { codename }
+              nameGiven { name operative { codename } }
+            }
+          }
+        }
+      - |
+        mutation {
+          requestWarrant(input: { subject: { operative: "COPPER_STARLING" } }) {
+            approved
+            reasons
+            hours
+          }
+        }

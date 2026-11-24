@@ -25,6 +25,7 @@
 - { id: riga, name: Riga, country: LV, lat: 56.95, lon: 24.11 }
 - { id: saint-petersburg, name: Saint Petersburg, country: RU, lat: 59.94, lon: 30.31 }
 - { id: odesa, name: Odesa, country: UA, lat: 46.48, lon: 30.72 }
+- { id: valletta, name: Valletta, country: MT, lat: 35.90, lon: 14.51 }
 - { id: piraeus, name: Piraeus, country: GR, lat: 37.94, lon: 23.65 }
 - { id: vienna, name: Vienna, country: AT, lat: 48.21, lon: 16.37 }
 - { id: zurich, name: Zurich, country: CH, lat: 47.37, lon: 8.54 }

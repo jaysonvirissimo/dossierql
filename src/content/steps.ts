@@ -1,4 +1,6 @@
 import {
+  getNamedType,
+  isInputObjectType,
   isObjectType,
   isUnionType,
   Kind,
@@ -347,6 +349,64 @@ export const STEPS: readonly Step[] = [
     summary: "a decimal number, as in an expense claim's amount: 412.5",
     term: "decimal number",
     uses: (document) => hasNode(document, Kind.FLOAT),
+  },
+  {
+    id: "block-string",
+    clearance: 12,
+    summary:
+      'a block string, """…""", for a sworn statement, with escapes in ordinary strings',
+    term: "block string",
+    uses: (document) => {
+      let found = false;
+      visit(document, {
+        StringValue(node) {
+          if (node.block === true) found = true;
+        },
+      });
+      return found;
+    },
+  },
+  {
+    id: "variable-default",
+    clearance: 12,
+    summary:
+      "a variable with a default value, as in $urgency: Urgency = ROUTINE",
+    term: "default value",
+    uses: (document) => {
+      let found = false;
+      visit(document, {
+        VariableDefinition(node) {
+          if (node.defaultValue) found = true;
+        },
+      });
+      return found;
+    },
+  },
+  {
+    id: "one-of-input",
+    clearance: 12,
+    summary:
+      "an input object that takes exactly one of its fields, marked @oneOf, where a warrant is for either an operative or a company",
+    uses: (document) => {
+      const info = new TypeInfo(schemaFor(MAX_CLEARANCE));
+      let found = false;
+      visit(
+        document,
+        visitWithTypeInfo(info, {
+          ObjectValue() {
+            const type = info.getInputType();
+            const named = type && getNamedType(type);
+            if (isInputObjectType(named) && named.isOneOf) found = true;
+          },
+          Variable() {
+            const type = info.getInputType();
+            const named = type && getNamedType(type);
+            if (isInputObjectType(named) && named.isOneOf) found = true;
+          },
+        }),
+      );
+      return found;
+    },
   },
 ];
 

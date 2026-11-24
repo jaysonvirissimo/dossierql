@@ -317,6 +317,12 @@ describe("annotate at clearance 11", () => {
     fileTravelOrder: () => {
       throw new Error("not used");
     },
+    requestSearchWarrant: () => {
+      throw new Error("not used");
+    },
+    requestWarrant: () => {
+      throw new Error("not used");
+    },
   };
   const sent = (operation: string, withActions = true) =>
     transmit(store, {
@@ -365,4 +371,78 @@ describe("annotate at clearance 11", () => {
       expect(styleIssues(found[0] ?? "")).toEqual([]);
     });
   }
+});
+
+describe("annotate at clearance 12", () => {
+  const at12 = (operation: string, blockStrings = true): string[] =>
+    check(operation, schemaFor(12)).map((error) =>
+      annotate(
+        {
+          message: error.message,
+          ...(error.locations?.[0] ? { line: error.locations[0].line } : {}),
+        },
+        true,
+        blockStrings,
+      ),
+    );
+  const cases: [string, string[], RegExp][] = [
+    [
+      "a @oneOf form with both boxes filled",
+      at12(
+        `mutation { requestWarrant(input: { subject: { operative: "GILT_MAGPIE", company: "Adriatic Line" } }) { approved } }`,
+      ),
+      /exactly one of its boxes/,
+    ],
+    [
+      "a form without a box it must have",
+      at12(
+        `mutation { requestWarrant(input: { statement: "x" }) { approved } }`,
+      ),
+      /box "subject" that must be filled/,
+    ],
+    [
+      "a box the form does not have",
+      at12(
+        `mutation { requestSearchWarrant(input: { premises: "PRM-1201", room: 4 }) { granted } }`,
+      ),
+      /no box called "room"/,
+    ],
+    [
+      "a form given as text",
+      at12(`mutation { requestSearchWarrant(input: "PRM-1201") { granted } }`),
+      /written in braces/,
+    ],
+    [
+      "a quotation mark that ends a string early",
+      at12(
+        `mutation { requestSearchWarrant(input: { premises: "PRM-1211", statement: "He said "Keep" it" }) { granted } }`,
+      ),
+      /block string/,
+    ],
+    [
+      "an application filed as a query",
+      at12(
+        `{ requestWarrant(input: { subject: { operative: "GILT_MAGPIE" } }) { approved } }`,
+      ),
+      /field of Mutation/,
+    ],
+  ];
+  for (const [name, found, expected] of cases) {
+    it(`explains ${name}`, () => {
+      expect(found).toHaveLength(1);
+      expect(found[0]).toMatch(expected);
+      expect(found[0]).not.toMatch(FALLBACK);
+      expect(found[0]).not.toMatch(/[{}]/);
+      expect(styleIssues(found[0] ?? "")).toEqual([]);
+    });
+  }
+
+  it("names a block string only from the clearance that introduces it", () => {
+    const [note] = at12(
+      `mutation { requestSearchWarrant(input: { premises: "PRM-1211", statement: "He said "Keep" it" }) { granted } }`,
+      false,
+    );
+    expect(note).toMatch(/backslash/);
+    expect(note).not.toMatch(/block string/);
+  });
 });

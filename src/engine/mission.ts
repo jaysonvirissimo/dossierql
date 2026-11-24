@@ -114,8 +114,10 @@ export interface ReturnedClaim {
 /** A form the archive returned because a claim is not established. */
 export interface Returned {
   leadId: string;
-  order: "travel order" | "deduction";
+  order: "travel order" | "deduction" | "warrant";
   claims: ReturnedClaim[];
+  /** The hours a rejected warrant took from the clock (SDD 3.4). */
+  cost?: number;
   /** The lead can take a field check now (SDD 3.5). */
   canFieldCheck: boolean;
 }
@@ -316,6 +318,11 @@ export function revealCost(state: MissionState): number {
   return state.clock === "active" ? COSTS.solutionReveal : 0;
 }
 
+/** What a warrant costs if it is submitted and rejected (SDD 3.4). */
+export function warrantRejectionCost(state: MissionState): number {
+  return state.clock === "active" ? COSTS.rejectedWarrant : 0;
+}
+
 export function proceedCost(env: Env, state: MissionState): number {
   const stage = stageOf(env.mission, state.stageId);
   const next = stage.next ? env.mission.stages[stage.next] : undefined;
@@ -472,7 +479,7 @@ function doTransmit(env: Env, state: MissionState): Outcome {
           state: outcome.state,
           approved: journey !== undefined,
           reasons,
-          hours: journey?.cost ?? 0,
+          hours: s.hoursLeft - outcome.state.hoursLeft,
           events: outcome.events,
         };
       },
@@ -578,8 +585,39 @@ export function proceed(
   const draft = draftOf(current(state), leadId);
   const review = reviewDraft(stage, draft, state.ledger);
   const order =
-    stage.solution.type === "destination" ? "travel order" : "deduction";
+    stage.solution.type === "destination"
+      ? "travel order"
+      : stage.solution.type === "warrant"
+        ? "warrant"
+        : "deduction";
   if (draft.ruledOut) return refuse(state, "This lead is ruled out.");
+  // A warrant that is submitted and rejected costs hours (SDD 3.4). One
+  // with a blank box is refused before it is submitted, at no cost.
+  const rejected = (outcome: Outcome): Outcome =>
+    order !== "warrant"
+      ? outcome
+      : charge(
+          env,
+          state,
+          warrantRejectionCost(state),
+          "This warrant",
+          (paid) => {
+            const cost = state.hoursLeft - paid.hoursLeft;
+            const notice =
+              outcome.notice?.kind === "returned"
+                ? {
+                    ...outcome.notice,
+                    returned: { ...outcome.notice.returned, cost },
+                  }
+                : outcome.notice?.kind === "refused" && cost > 0
+                  ? {
+                      ...outcome.notice,
+                      text: `${outcome.notice.text} The rejection took ${String(cost)} hours.`,
+                    }
+                  : outcome.notice;
+            return { ...outcome, state: paid, ...(notice ? { notice } : {}) };
+          },
+        );
   if (review.unnamed.length > 0) {
     const boxes = review.unnamed
       .map((name) => `“${stage.labels?.[name] ?? name}”`)
@@ -590,24 +628,28 @@ export function proceed(
     );
   }
   if (!review.allSupported && fromLedger(stage)) {
-    return {
+    return rejected({
       state,
       notice: { kind: "returned", returned: returnedOf(draft, review, order) },
       events: [],
-    };
+    });
   }
   if (!review.allSupported) {
-    return refuse(
-      state,
-      `The ${order} is returned to you: a claim still needs evidence.`,
+    return rejected(
+      refuse(
+        state,
+        `The ${order} is returned to you: a claim still needs evidence.`,
+      ),
     );
   }
   if (!review.correct) {
-    return refuse(
-      state,
-      fromLedger(stage)
-        ? `The ${order} is returned to you: your responses do not prove its claims for the choices on the form.`
-        : `The ${order} is returned to you: the facts you cited do not prove its claims for the choices on the form.`,
+    return rejected(
+      refuse(
+        state,
+        fromLedger(stage)
+          ? `The ${order} is returned to you: your responses do not prove its claims for the choices on the form.`
+          : `The ${order} is returned to you: the facts you cited do not prove its claims for the choices on the form.`,
+      ),
     );
   }
   const cost = proceedCost(env, state);
@@ -621,7 +663,9 @@ export function proceed(
       stage.resolved ??
       (stage.solution.type === "destination"
         ? "Travel order approved."
-        : "Deduction accepted.");
+        : stage.solution.type === "warrant"
+          ? "Warrant approved."
+          : "Deduction accepted.");
     const added = addDispatch(paid, {
       kind: journey ? "travel" : next ? "accepted" : "resolved",
       leadId,

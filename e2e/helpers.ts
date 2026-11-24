@@ -263,3 +263,10 @@ export const TO_CLEARANCE_11 = [
   "inner-room",
   "envelope-book",
 ] as const;
+
+/** Every case through the clearance 11 assessment. */
+export const TO_CLEARANCE_12 = [
+  ...TO_CLEARANCE_11,
+  "messengers-fares",
+  "chairs-account",
+] as const;

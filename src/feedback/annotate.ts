@@ -20,6 +20,7 @@ interface Rule {
     match: RegExpExecArray,
     error: ResultError,
     aliasAvailable: boolean,
+    blockStrings: boolean,
   ) => string;
 }
 
@@ -38,8 +39,21 @@ const RULES: Rule[] = [
   },
   {
     test: /^Syntax Error: Unterminated string/,
-    note: (_m, e) =>
-      `A quotation mark${near(e)} is opened and never closed. Text needs a quotation mark at both ends.`,
+    note: (_m, e, _a, blockStrings) =>
+      `A quotation mark${near(e)} is opened and never closed. Text needs a quotation mark at both ends.${
+        blockStrings
+          ? " Text that holds quotation marks of its own, or runs over several lines, can go in a block string, with three quotation marks at each end."
+          : ""
+      }`,
+  },
+  {
+    test: /^Syntax Error: Expected ":", found (?:String|Name) /,
+    note: (_m, e, _a, blockStrings) =>
+      `The clerk expected a colon${near(e)}. Either a box or an argument there lacks the colon between its name and its value, or a string ended early: a quotation mark inside the text closes the string, and the clerk reads the words after it as something else. A quotation mark inside text needs a backslash in front of it, as in \\".${
+        blockStrings
+          ? " Or the whole text can go in a block string, with three quotation marks at each end. The glossary entry for a block string shows how."
+          : ""
+      }`,
   },
   {
     test: /^Syntax Error: Expected "on"/,
@@ -88,6 +102,36 @@ const RULES: Rule[] = [
     test: /^Fragment cannot be spread here as objects of type "(\w+)" can never be of type "(\w+)"/,
     note: (m) =>
       `The inline fragment for ${String(m[2])} stands inside a field that returns ${String(m[1])} records, and a record of type ${String(m[1])} is never of type ${String(m[2])}. An inline fragment goes inside a field that can return ${String(m[2])} records. The documentation panel lists the kinds of record that each interface and each union stands for.`,
+  },
+  {
+    test: /^Within OneOf Input Object type "(\w+)", exactly one field must be specified/,
+    note: (m) =>
+      `${String(m[1])} is marked @oneOf, so you fill exactly one of its boxes, with a value that is not null. This form fills more than one box, or none. The documentation panel lists the boxes of ${String(m[1])}.`,
+  },
+  {
+    test: /^Expected value of type "(\w+)!?" to include required field "(\w+)"/,
+    note: (m) =>
+      `The form ${String(m[1])} has a box "${String(m[2])}" that must be filled, and this form leaves it out. You fill a box inside the form's braces: its name, a colon, and a value.`,
+  },
+  {
+    test: /^Expected value of type "(\w+)!?" not to include unknown field "(\w+)"/,
+    note: (m) =>
+      `The form ${String(m[1])} has no box called "${String(m[2])}". The documentation panel lists the boxes of ${String(m[1])}.`,
+  },
+  {
+    test: /^Expected value of type "(\w+)!?" to be an object, found/,
+    note: (m) =>
+      `This argument takes a form, ${String(m[1])}, and a form is written in braces, with each box inside as its name, a colon, and a value. The glossary entry for an input object shows how.`,
+  },
+  {
+    test: /^Cannot query field "(requestSearchWarrant|requestWarrant)" on type "Query"/,
+    note: (m) =>
+      `"${String(m[1])}" files an application, so it is a field of Mutation, not of Query. A request that files paperwork starts with the word mutation instead of query.`,
+  },
+  {
+    test: /^The police list holds no premises "([^"]*)"/,
+    note: (m) =>
+      `The magistrate found no premises with the reference "${String(m[1])}" on the police list, so nothing was filed for that search. The query field premises, and premises on a city, give each reference as the police wrote it.`,
   },
   {
     test: /^Cannot query field "(fileExpenseClaim|fileTravelOrder)" on type "Query"/,
@@ -337,10 +381,14 @@ const RULES: Rule[] = [
 const FALLBACK = (error: ResultError) =>
   `The clerk returns the request with the archive's own note${near(error)}, and suggests checking the request against the documentation panel.`;
 
-export function annotate(error: ResultError, aliasAvailable: boolean): string {
+export function annotate(
+  error: ResultError,
+  aliasAvailable: boolean,
+  blockStrings = false,
+): string {
   for (const rule of RULES) {
     const match = rule.test.exec(error.message);
-    if (match) return rule.note(match, error, aliasAvailable);
+    if (match) return rule.note(match, error, aliasAvailable, blockStrings);
   }
   return FALLBACK(error);
 }

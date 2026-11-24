@@ -75,6 +75,10 @@ start.
 | `novice-walkthrough.md`          | _The Messengers' Fares_            | `envelope-book`        | 11        |
 | `clean-room-solve.md`            | _The Chair's Account_              | `envelope-book`        | 11        |
 | `novice-walkthrough.md`          | _The Chair's Account_              | `envelope-book`        | 11        |
+| `clean-room-solve.md`            | _The Handler's Road_               | `chairs-account`       | 12        |
+| `novice-walkthrough.md`          | _The Handler's Road_               | `chairs-account`       | 12        |
+| `clean-room-solve.md`            | _The Courier's Guidebook_          | `chairs-account`       | 12        |
+| `novice-walkthrough.md`          | _The Courier's Guidebook_          | `chairs-account`       | 12        |
 | `simulated-sessions.md`, round 1 | the drills and the first two cases | none                   | 1         |
 | `simulated-sessions.md`, round 2 | the path given in the prompt       | in the prompt          | 2         |
 
@@ -131,6 +135,16 @@ start.
   and you remember what their debriefs taught. You have only ever read from
   the archive, and you have never written a mutation." For _The Chair's
   Account_, add: "You have also played The Messengers' Fares."
+- **_The Handler's Road_ and _The Courier's Guidebook_.** They are the
+  clearance 12 cases of the second campaign, and the first cases that end
+  in a warrant. Seed the completion of `chairs-account`, and for _The
+  Courier's Guidebook_ the completion of `handlers-road` as well. For the
+  novice walkthrough of _The Handler's Road_, set [PRIOR PLAY] to: "You have
+  played every case of the first campaign and every earlier case of the
+  second, through The Chair's Account, and you remember what their debriefs
+  taught. You have filed mutations with simple arguments, and you have never
+  filled a form in braces or applied for a warrant." For _The Courier's
+  Guidebook_, add: "You have also played The Handler's Road."
 - **The simulated rounds.** Run each round once for each persona, P1 to P4,
   in a fresh context each time. Start round 2 only after round 1's summary
   is written and its fixes are made. If round 1's fixes change the opening,

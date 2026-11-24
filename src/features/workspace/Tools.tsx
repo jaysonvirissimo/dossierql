@@ -327,7 +327,10 @@ function EvidencePanel() {
 }
 
 function DossierPanel() {
-  const { state } = useWorkspace();
+  const { env, state } = useWorkspace();
+  const quarry = env.mission.quarry
+    ? `Operative:${env.mission.quarry}`
+    : undefined;
   const operatives = new Map<string, typeof entries>();
   const entries = Object.values(state.ledger);
   for (const entry of entries) {
@@ -341,24 +344,47 @@ function DossierPanel() {
       <p className="tool__lede">
         A dossier shows only what your queries have retrieved.
       </p>
-      {operatives.size === 0 && (
+      {quarry && !operatives.has(quarry) && (
+        <article className="dossier dossier--quarry" data-testid="quarry">
+          <p className="label">The quarry</p>
+          <h3>{env.mission.quarry}</h3>
+          <p className="draft__none">
+            Nothing about the quarry has appeared in your results yet.
+          </p>
+        </article>
+      )}
+      {operatives.size === 0 && !quarry && (
         <p className="draft__none">
           No operative has appeared in your results yet.
         </p>
       )}
-      {[...operatives.entries()].map(([entity, facts]) => (
-        <article key={entity} className="dossier">
-          <h3>{labelOf(entity, state.ledger)}</h3>
-          <dl>
-            {facts.map(({ fact }) => (
-              <div key={fact.key} className="dossier__row">
-                <dt>{words(fact.field)}</dt>
-                <dd>{describeValue(fact, state.ledger)}</dd>
-              </div>
-            ))}
-          </dl>
-        </article>
-      ))}
+      {[...operatives.entries()]
+        .sort(([a], [b]) => Number(b === quarry) - Number(a === quarry))
+        .map(([entity, facts]) => (
+          <article
+            key={entity}
+            className={
+              entity === quarry ? "dossier dossier--quarry" : "dossier"
+            }
+            {...(entity === quarry ? { "data-testid": "quarry" } : {})}
+          >
+            {entity === quarry && <p className="label">The quarry</p>}
+            {/* The briefing gives the quarry's codename, so the heading may. */}
+            <h3>
+              {entity === quarry
+                ? env.mission.quarry
+                : labelOf(entity, state.ledger)}
+            </h3>
+            <dl>
+              {facts.map(({ fact }) => (
+                <div key={fact.key} className="dossier__row">
+                  <dt>{words(fact.field)}</dt>
+                  <dd>{describeValue(fact, state.ledger)}</dd>
+                </div>
+              ))}
+            </dl>
+          </article>
+        ))}
     </div>
   );
 }

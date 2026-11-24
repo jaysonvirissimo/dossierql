@@ -1,0 +1,677 @@
+id: handlers-road
+title: The Handler's Road
+campaign: fourth-desk
+order: 13
+clearance: 12
+kind: teaching
+teaches: input-objects
+practises: [nested-selections, arguments, variables, mutations]
+requires: [nested-selections, arguments, variables, mutations]
+summary: >
+  GILT_MAGPIE, the Parallax Circle's handler, has left Lisbon. The police
+  in four countries will search wherever he slept, but only on a warrant,
+  and a warrant is a form with a box for everything.
+motif: seal
+quarry: GILT_MAGPIE
+clock:
+  countdown: GILT_MAGPIE is out of reach of every warrant in {remaining}
+  expired: GILT_MAGPIE is out of reach of every warrant
+  onExpiry: end
+startingStage: lisbon
+
+debrief:
+  onTime: |
+    The police in Trieste took GILT_MAGPIE at the Albergo Duino, with his
+    bag packed for the evening train to Ljubljana. He gave his name as
+    E. Corvo, and then as nobody at all.
+
+    In his breast pocket was a letter, sealed, on the paper of the
+    Standing Committee's chair. It is signed with the single letter M. It
+    tells him to wait in Trieste for a courier, and the courier had been
+    and gone: the letter was left for him at the hotel's desk that noon.
+    Afonso Mascarenhas's vouchers are initialled A.M. in a clear, upright
+    hand. The M on the letter slopes the other way.
+  stampOnTime: DETAINED
+  stampExpired: AT LARGE
+  comparison: >
+    The reference solution applies for each search with one mutation, and
+    the form goes in braces after `input:`, as in
+    `requestSearchWarrant(input: { premises: "PRM-1201" })`. In Tangier the
+    sworn statement is a block string, `"""…"""`, so the porter's quotation
+    marks need no backslashes. In Valletta one operation,
+    `mutation Search($premises: ID!, $urgency: Urgency = ROUTINE)`, is sent
+    twice: once with only `premises` in the variables panel, so the archive
+    uses the default value `ROUTINE`, and once with `"urgency": "URGENT"`.
+    In Trieste the warrant's `subject` is an input object inside the
+    input object, and `WarrantSubject` takes exactly one of its boxes:
+    `subject: { operative: "GILT_MAGPIE" }`.
+  geography: >
+    Malta has no land border at all. Maltese, its national language,
+    grew from the Arabic of Sicily and North Africa, and it is written in
+    the Latin alphabet.
+
+stages:
+  lisbon:
+    location: PT
+    objective: File the travel order that follows GILT_MAGPIE to the country whose money he left in his room.
+
+    briefing: |
+      You read this case at a desk in Lisbon. GILT_MAGPIE, the Parallax
+      Circle's handler, slept last night at the Pensão Flor de Lis and
+      left before breakfast. The police list the boarding house as
+      premises PRM-1201. The police will search it, but only on a search
+      warrant, and you apply for a search warrant with a mutation.
+
+      The mutation field is `requestSearchWarrant`. It takes one argument,
+      `input`, and the value of `input` is a form with several boxes. You
+      write the form in braces, and you write each box inside the braces
+      as its name, a colon, and a value, as in
+      `input: { premises: "PRM-1201" }`. These braces hold values that you
+      send. They do not ask for fields. A form like this is an
+      [input object](glossary:input-object). The documentation panel lists
+      its boxes under `SearchApplication`. Only the box `premises` has a
+      `!`, so `premises` is the only box that you have to fill.
+
+      The receipt lists what the police found, under `findings`, and each
+      find is a record. On a find, `leftBy` is the cover name of the guest
+      who left it. A cover name is a record, so you open `leftBy` with
+      braces and ask for its `name`. `currency` is a record too, and it
+      gives the money that the find holds. The registry's
+      file on GILT_MAGPIE gives the names he travels under. Ask for
+      `coverNames` on `operative(codename: "GILT_MAGPIE")`, and the
+      dossier fills in as your responses come back.
+
+      File the travel order that follows GILT_MAGPIE to the country whose
+      money he left in his room.
+
+    clues:
+      - text: >
+          GILT_MAGPIE left the find at the Pensão Flor de Lis, under one
+          of the names he travels under.
+        constraint:
+          $find.foundAt: Premises:PRM-1201
+          $find.leftBy.operative: Operative:GILT_MAGPIE
+      - text: >
+          He tips in the money of the next country on his journey. The
+          find holds the currency of the country he went to.
+        constraint:
+          $find.currency: $currency
+          $country.currency: $currency
+
+    scaffold:
+      level: guided
+      starterQuery: |
+        mutation {
+          requestSearchWarrant(input: { premises: "PRM-1201" }) {
+            granted
+            remark
+            findings {
+              description
+              # Ask for leftBy and currency here. Each of them is a record,
+              # so open it with braces.
+            }
+          }
+        }
+
+    hints:
+      nudge: >
+        Two guests left money at the boarding house. Only one of them
+        travels under a name in GILT_MAGPIE's file.
+      concept: >
+        The form goes in braces after input:, with a colon between each
+        box and its value. Inside findings, open leftBy and currency the
+        way you open any record. Then read the countries that use the
+        currency.
+      schema: >
+        Look at Mutation.requestSearchWarrant, SearchApplication,
+        Find.leftBy, Find.currency, and Currency.countries.
+      skeleton: |
+        mutation { requestSearchWarrant(input: { premises: "PRM-1201" }) { findings { reference leftBy { name } currency { name countries { name } } } } }
+
+    solution:
+      type: destination
+      find: FND-1201
+      country: MA
+    labels:
+      find: Find
+      country: Destination country
+
+    claims:
+      - id: left
+        prompt: GILT_MAGPIE left this find behind.
+        evidenceSets:
+          - facts:
+              - entity: Find:$find
+                field: leftBy
+                equals: CoverName:$name
+              - entity: CoverName:$name
+                field: operative
+                equals: Operative:GILT_MAGPIE
+          - facts:
+              - entity: Find:$find
+                field: leftBy
+                equals: CoverName:$name
+              - entity: Operative:GILT_MAGPIE
+                field: coverNames
+                includes: CoverName:$name
+      - id: destination
+        prompt: The find holds the currency of the destination country.
+        evidenceSets:
+          - facts:
+              - entity: Find:$find
+                field: currency
+                equals: Currency:$currency
+              - entity: Currency:$currency
+                field: countries
+                includes: Country:$country
+          - facts:
+              - entity: Find:$find
+                field: currency
+                equals: Currency:$currency
+              - entity: Country:$country
+                field: currency
+                equals: Currency:$currency
+
+    resolved: |
+      Travel order approved. The morning boat crosses the strait in two
+      hours, and Tangier comes up white on its hill above the harbour,
+      with the smell of mint tea and diesel on the quay. At the Hotel
+      Atlas Marina the porter says that Mr Corvo had room 12, and went
+      down to the harbour an hour before your boat came in. The police
+      list the hotel as premises PRM-1211.
+
+    referenceSolution:
+      - |
+        query {
+          operative(codename: "GILT_MAGPIE") {
+            codename
+            coverNames { name }
+            habit
+            weakness
+          }
+        }
+      - |
+        mutation {
+          requestSearchWarrant(input: { premises: "PRM-1201" }) {
+            granted
+            remark
+            findings {
+              reference
+              description
+              leftBy { name }
+              currency { name countries { name } }
+            }
+          }
+        }
+
+    next: tangier
+
+  tangier:
+    location: MA
+    step: block-string
+    objective: File the travel order that follows GILT_MAGPIE to the country whose language he means to read on the way.
+
+    briefing: |
+      You are in Tangier. Read the hotel's entry on the police list with
+      `premises(reference: "PRM-1211")`, and ask for `witness` and
+      `statementRequired`. The magistrate in Tangier grants this search
+      only on a sworn statement that contains the porter's words exactly,
+      as the field `witness` gives the words. Your statement may add words
+      of its own before or after the porter's. You write the statement in
+      the box `statement` of the search warrant's form.
+
+      The porter's words hold quotation marks of their own. An ordinary
+      string starts and ends with a quotation mark, so a quotation mark
+      inside it ends the string too early. You can put a backslash in
+      front of each inner quotation mark, as in `"He said \"Keep the
+      change\" and left."`. Or you can write a
+      [block string](glossary:block-string): three quotation marks, the
+      text, and three quotation marks to close it, as in
+      `statement: """He said "Keep the change" and left."""`. Inside a
+      block string, a quotation mark is only a character, and the text may
+      run over several lines. The magistrate reads a line break as a space
+      between two words.
+
+      File the travel order that follows GILT_MAGPIE to the country whose
+      language he means to read on the way.
+
+    clues:
+      - text: >
+          GILT_MAGPIE left the find at the Hotel Atlas Marina, under one
+          of the names he travels under.
+        constraint:
+          $find.foundAt: Premises:PRM-1211
+          $find.leftBy.operative: Operative:GILT_MAGPIE
+      - text: >
+          He buys the newspaper of the next place he means to go. The find
+          is written in a language of the country he went to.
+        constraint:
+          $find.language: $language
+          $country.languages: $language
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          premises(reference: "PRM-1211") {
+            name
+            witness
+            statementRequired
+          }
+        }
+
+    hints:
+      nudge: >
+        The magistrate refuses a statement that leaves out any of the
+        porter's words, the quotation marks included.
+      concept: >
+        Put the statement in the box statement, as a block string: three
+        quotation marks, the porter's words exactly as witness gives them,
+        and three quotation marks.
+      schema: >
+        Look at Premises.witness, SearchApplication.statement,
+        Find.language, and Language.countries.
+      skeleton: |
+        mutation { requestSearchWarrant(input: { premises: "PRM-1211", statement: """…""" }) { granted remark findings { reference leftBy { name } language { name countries { name } } } } }
+
+    solution:
+      type: destination
+      find: FND-1211
+      country: MT
+    labels:
+      find: Find
+      country: Destination country
+
+    claims:
+      - id: left
+        prompt: GILT_MAGPIE left this find behind.
+        evidenceSets:
+          - facts:
+              - entity: Find:$find
+                field: leftBy
+                equals: CoverName:$name
+              - entity: CoverName:$name
+                field: operative
+                equals: Operative:GILT_MAGPIE
+          - facts:
+              - entity: Find:$find
+                field: leftBy
+                equals: CoverName:$name
+              - entity: Operative:GILT_MAGPIE
+                field: coverNames
+                includes: CoverName:$name
+      - id: destination
+        prompt: The find is written in a language of the destination country.
+        evidenceSets:
+          - facts:
+              - entity: Find:$find
+                field: language
+                equals: Language:$language
+              - entity: Language:$language
+                field: countries
+                includes: Country:$country
+          - facts:
+              - entity: Find:$find
+                field: language
+                equals: Language:$language
+              - entity: Country:$country
+                field: languages
+                includes: Language:$language
+
+    resolved: |
+      Travel order approved. The steamer comes into the Grand Harbour of
+      Valletta at dusk, under walls the colour of honey, and the bells of
+      a dozen churches start at once. The police watched a man who gave
+      his name as E. Corvo come ashore from the evening boat this
+      morning. Three premises in Valletta are on their list for him, and
+      the police watched one of them within the hour.
+
+    referenceSolution:
+      - |
+        query {
+          premises(reference: "PRM-1211") {
+            name
+            witness
+            statementRequired
+          }
+        }
+      - |
+        mutation {
+          requestSearchWarrant(input: {
+            premises: "PRM-1211"
+            statement: """
+            The porter of the Hotel Atlas Marina told me: Mr Corvo paid his
+            bill and said, "Keep the change, I shan't need it where I'm
+            going." Then he asked me the time of the evening boat.
+            """
+          }) {
+            granted
+            remark
+            findings {
+              reference
+              description
+              leftBy { name }
+              language { name countries { name } }
+            }
+          }
+        }
+
+    next: valletta
+
+  valletta:
+    location: MT
+    step: variable-default
+    objective: File the travel order that follows GILT_MAGPIE to the country of the ticket he kept, which borders Slovenia.
+
+    briefing: |
+      You are in Valletta. Ask for the premises on the police list with
+      `city(name: "Valletta") { premises { reference name watched } }`.
+      The police watched one of the three premises within the hour, and the
+      field `watched` says which one. GILT_MAGPIE left those premises
+      within the hour.
+
+      A search is routine unless the form's box `urgency` says `URGENT`.
+      The police make a routine search the next morning. By then the room
+      has been cleaned and let again, so a routine search of the watched
+      premises finds nothing. The magistrate grants an urgent search only
+      of the watched premises, and refuses an urgent search of any other.
+
+      One operation can carry each search, with the premises and the
+      urgency as variables. Write the variable for the urgency as
+      `$urgency: Urgency = ROUTINE`. The part `= ROUTINE` is a
+      [default value](glossary:default-value): when the variables panel
+      leaves `urgency` out, the archive uses `ROUTINE`. Then put the
+      variables in the form, as in
+      `input: { premises: $premises, urgency: $urgency }`. For a routine
+      search, the variables panel holds only the premises, as in
+      `{ "premises": "PRM-1221" }`. For the urgent one, add
+      `"urgency": "URGENT"`. The variables panel holds JSON, so the value
+      goes in quotation marks there, although in the query an enum value
+      takes none.
+
+      File the travel order that follows GILT_MAGPIE to the country of the
+      ticket he kept, which borders Slovenia.
+
+    clues:
+      - text: >
+          GILT_MAGPIE left the find at premises in Valletta, under one of
+          the names he travels under.
+        constraint:
+          $find.foundAt.city: City:valletta
+          $find.leftBy.operative: Operative:GILT_MAGPIE
+      - text: >
+          He asked how far the quay is from the frontier. The find shows a
+          journey to a city of the country he went to, and that country
+          borders Slovenia.
+        constraint:
+          $find.city.country: $country
+          $country.borders: Country:SI
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        mutation Search($premises: ID!, $urgency: Urgency = ROUTINE) {
+          requestSearchWarrant(input: { premises: $premises }) {
+            granted
+            remark
+            findings { reference description }
+          }
+        }
+        # Put $urgency in the form too, beside premises. Then type the
+        # premises in the variables panel, as JSON.
+
+    hints:
+      nudge: >
+        Only one of the three premises was watched within the hour. A
+        routine search there comes too late, and an urgent search anywhere
+        else is refused.
+      concept: >
+        Declare $urgency: Urgency = ROUTINE and leave urgency out of the
+        variables panel for a routine search. For the watched premises,
+        add "urgency": "URGENT" to the variables panel and transmit the
+        same operation again.
+      schema: >
+        Look at City.premises, Premises.watched, SearchApplication.urgency,
+        Find.city, and Country.borders.
+      skeleton: |
+        mutation Search($premises: ID!, $urgency: Urgency = ROUTINE) { requestSearchWarrant(input: { premises: $premises, urgency: $urgency }) { granted remark findings { reference leftBy { name } city { name country { name borders { name } } } } } }
+
+    solution:
+      type: destination
+      find: FND-1223
+      country: IT
+    labels:
+      find: Find
+      country: Destination country
+
+    claims:
+      - id: left
+        prompt: GILT_MAGPIE left this find behind.
+        evidenceSets:
+          - facts:
+              - entity: Find:$find
+                field: leftBy
+                equals: CoverName:$name
+              - entity: CoverName:$name
+                field: operative
+                equals: Operative:GILT_MAGPIE
+          - facts:
+              - entity: Find:$find
+                field: leftBy
+                equals: CoverName:$name
+              - entity: Operative:GILT_MAGPIE
+                field: coverNames
+                includes: CoverName:$name
+      - id: frontier
+        prompt: The find shows a journey to a city of the destination country, and that country borders Slovenia.
+        evidenceSets:
+          - facts:
+              - entity: Find:$find
+                field: city
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: borders
+                includes: Country:SI
+          - facts:
+              - entity: Find:$find
+                field: city
+                equals: City:$city
+              - entity: Country:$country
+                field: cities
+                includes: City:$city
+              - entity: Country:$country
+                field: borders
+                includes: Country:SI
+
+    leadOutcomes:
+      FND-1221:
+        refutation:
+          claim: frontier
+          facts:
+            - entity: Find:FND-1221
+              field: city
+              equals: City:marseille
+            - entity: City:marseille
+              field: country
+              equals: Country:FR
+            - entity: Country:FR
+              field: borders
+              excludes: Country:SI
+        ruledOut: |
+          GILT_MAGPIE bought the ticket to Marseille in his own cover name
+          and left it on the dressing table, where anyone would find it.
+          France does not border Slovenia.
+
+    resolved: |
+      Travel order approved. The night steamer comes up the Adriatic, and
+      Trieste is grey stone and wide squares opening onto the sea, with
+      the karst hills close behind the town and the frontier just beyond
+      them. The police watched E. Corvo come ashore an hour before you,
+      and so did somebody else.
+
+    referenceSolution:
+      - |
+        query {
+          city(name: "Valletta") {
+            premises { reference name watched }
+          }
+        }
+      - |
+        mutation Search($premises: ID!, $urgency: Urgency = ROUTINE) {
+          requestSearchWarrant(input: { premises: $premises, urgency: $urgency }) {
+            granted
+            remark
+            findings {
+              reference
+              description
+              leftBy { name }
+              city { name country { name borders { name } } }
+            }
+          }
+        }
+      - |
+        mutation Search($premises: ID!, $urgency: Urgency = ROUTINE) {
+          requestSearchWarrant(input: { premises: $premises, urgency: $urgency }) {
+            granted
+            remark
+            findings {
+              reference
+              description
+              leftBy { name }
+              city { name country { name borders { name } } }
+            }
+          }
+        }
+    referenceVariables:
+      - {}
+      - { premises: PRM-1221 }
+      - { premises: PRM-1223, urgency: URGENT }
+
+    next: trieste
+
+  trieste:
+    location: IT
+    step: one-of-input
+    introduces: warrant
+    paperwork: terminal
+    objective: Apply for a warrant to arrest the operative who travels as E. Corvo and was seen in Trieste.
+
+    briefing: |
+      You are in Trieste. The police saw two operatives come ashore from
+      the night steamer from Valletta, and the Adriatic Line, which booked
+      E. Corvo's berth, has offices in the town. Ask the archive for the
+      sightings in Trieste with `city(name: "Trieste") { sightings { … } }`,
+      and for the operative behind each name.
+
+      You apply for a warrant with the mutation field `requestWarrant`. Its
+      form, `WarrantApplication`, has a box `subject`, and the value of
+      `subject` is a form of its own, `WarrantSubject`. The documentation
+      panel marks `WarrantSubject` with `@oneOf`, which means that you
+      fill exactly one of its two boxes: `operative`, for an arrest, or
+      `company`, for a search of a company's offices. A form with both
+      boxes filled, or with neither, is returned by the records clerk
+      before transmission. The case calls for an arrest, so the value is
+      written as `subject: { operative: "…" }`, with the operative's
+      codename.
+
+      Before the magistrate grants a warrant of arrest, the archive checks
+      the warrant against every response you have received, as it checks a
+      form. The responses must show that the operative travels under the
+      name E. Corvo, and that the police saw the operative in Trieste. The
+      warrant is filed from the terminal. A warrant with a blank box costs
+      nothing, but a warrant that the magistrate rejects costs 3 hours, and
+      its receipt's `reasons` say why it was rejected.
+
+      Apply for a warrant to arrest the operative who travels as E. Corvo
+      and was seen in Trieste.
+
+    clues:
+      - text: >
+          The operative travels under the name E. Corvo.
+        constraint:
+          $operative.coverNames: CoverName:e-corvo
+      - text: >
+          The police saw the operative in Trieste.
+        constraint:
+          $sighting.city: City:trieste
+          $sighting.operative: $operative
+
+    scaffold:
+      level: none
+
+    hints:
+      nudge: >
+        Two operatives came ashore in Trieste, but only one of them
+        travels as E. Corvo. The Adriatic Line only booked the berth.
+      concept: >
+        The value of subject is an input object inside the input object.
+        Fill only its operative box, with the codename in quotation marks.
+      schema: >
+        Look at City.sightings, Sighting.operative, CoverName.operative,
+        Mutation.requestWarrant, and WarrantSubject.
+      skeleton: |
+        mutation { requestWarrant(input: { subject: { operative: "…" } }) { approved reasons hours } }
+
+    solution:
+      type: warrant
+      operative: GILT_MAGPIE
+    labels:
+      operative: Operative
+
+    claims:
+      - id: alias
+        prompt: This operative travels under the name E. Corvo.
+        evidenceSets:
+          - facts:
+              - entity: CoverName:e-corvo
+                field: operative
+                equals: Operative:$operative
+          - facts:
+              - entity: Operative:$operative
+                field: coverNames
+                includes: CoverName:e-corvo
+      - id: seen
+        prompt: The police saw this operative in Trieste.
+        evidenceSets:
+          - facts:
+              - entity: Sighting:$sighting
+                field: city
+                equals: City:trieste
+              - entity: Sighting:$sighting
+                field: operative
+                equals: Operative:$operative
+          - facts:
+              - entity: City:trieste
+                field: sightings
+                includes: Sighting:$sighting
+              - entity: Sighting:$sighting
+                field: operative
+                equals: Operative:$operative
+
+    resolved: |
+      Warrant approved. The magistrate signs it at the third attempt to
+      find a pen, and the police take GILT_MAGPIE at the Albergo Duino with
+      his bag packed and the evening train still in the station.
+
+    referenceSolution:
+      - |
+        query {
+          city(name: "Trieste") {
+            sightings {
+              note
+              operative { codename }
+              nameGiven { name operative { codename } }
+            }
+          }
+        }
+      - |
+        mutation {
+          requestWarrant(input: { subject: { operative: "GILT_MAGPIE" } }) {
+            approved
+            reasons
+            hours
+          }
+        }

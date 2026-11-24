@@ -3,6 +3,7 @@ import {
   getNullableType,
   isAbstractType,
   isEnumType,
+  isInputObjectType,
   isInterfaceType,
   isListType,
   isObjectType,
@@ -11,6 +12,8 @@ import {
   type GraphQLAbstractType,
   type GraphQLArgument,
   type GraphQLEnumType,
+  type GraphQLInputField,
+  type GraphQLInputObjectType,
   type GraphQLInterfaceType,
   type GraphQLObjectType,
   type GraphQLSchema,
@@ -23,10 +26,14 @@ import { isUndocumented, schemaFor } from "../graphql/schema.ts";
 const DIRECTIVES_FROM = 10;
 
 type Entry =
-  GraphQLObjectType | GraphQLInterfaceType | GraphQLUnionType | GraphQLEnumType;
+  | GraphQLObjectType
+  | GraphQLInterfaceType
+  | GraphQLUnionType
+  | GraphQLEnumType
+  | GraphQLInputObjectType;
 
 /** An argument as the entry shows it, with its default value if it has one. */
-function argumentText(argument: GraphQLArgument): string {
+function argumentText(argument: GraphQLArgument | GraphQLInputField): string {
   const text = `${argument.name}: ${String(argument.type)}`;
   const value = argument.astNode?.defaultValue;
   return value ? `${text} = ${print(value)}` : text;
@@ -92,7 +99,8 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
         (isObjectType(t) ||
           isInterfaceType(t) ||
           isUnionType(t) ||
-          isEnumType(t)) &&
+          isEnumType(t) ||
+          isInputObjectType(t)) &&
         !t.name.startsWith("__") &&
         t !== query &&
         t !== mutation &&
@@ -232,6 +240,21 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
                 <code>{exampleValue(schema, type)}</code>.
               </span>
             )}
+            {isInputObjectType(type) && (
+              <span>
+                {" "}
+                · An input object: a form that an argument takes. You write it
+                in braces, and each box inside the braces as its name, a colon,
+                and a value. A box with <code>!</code> must be filled.
+                {type.isOneOf && (
+                  <>
+                    {" "}
+                    Marked <code>@oneOf</code>: fill exactly one of its boxes,
+                    and leave the other out.
+                  </>
+                )}
+              </span>
+            )}
             {isObjectType(type) && type.getInterfaces().length > 0 && (
               <span>
                 {" "}
@@ -256,6 +279,25 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
               ))}
             </dl>
           )}
+          {isInputObjectType(type) && (
+            <dl className="doc__fields">
+              {Object.values(type.getFields()).map((box) => (
+                <div key={box.name} className="doc__field">
+                  <dt>
+                    <code>{argumentText(box)}</code>
+                  </dt>
+                  <dd>
+                    {box.description ?? ""}
+                    {box.astNode?.defaultValue &&
+                      ` When you leave this box out, the archive uses ${print(box.astNode.defaultValue)}, the value written after = above.`}
+                    {isInputObjectType(getNamedType(box.type))
+                      ? " Holds a form of its own, which you write in braces."
+                      : ""}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          )}
           {(isObjectType(type) || isInterfaceType(type)) && (
             <dl className="doc__fields">
               {Object.values(type.getFields())
@@ -274,7 +316,9 @@ export function SchemaDocs({ clearance }: { clearance: number }) {
                       {field.description ?? ""}
                       {!isObjectType(getNamedType(field.type)) &&
                       !isAbstractType(getNamedType(field.type))
-                        ? " Holds a single value, so this field takes no braces."
+                        ? isListType(getNullableType(field.type))
+                          ? " Holds a list of values, so this field takes no braces."
+                          : " Holds a single value, so this field takes no braces."
                         : isListType(getNullableType(field.type))
                           ? ` Returns a list of ${String(getNamedType(field.type))} records, so this field needs braces after it. The fields inside the braces come back once for each record in the list.`
                           : ` Returns one ${String(getNamedType(field.type))} record, so this field needs braces after it.`}

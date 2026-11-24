@@ -323,3 +323,41 @@
     `amount: 412.5` or `amount: 12`. Write the number without quotation
     marks: `"412.5"` is text, and the archive refuses text where a `Float`
     goes.
+- id: input-object
+  term: input object
+  clearance: 12
+  matches: [input objects, input type, input types]
+  definition: >
+    A form that an argument takes, with a box for each of its fields. You
+    write it in braces, and each box inside the braces as its name, a
+    colon, and a value, as in `input: { premises: "PRM-1201" }`. The
+    braces hold values that you send to the archive, so you write a value
+    after each box rather than braces of fields to ask for. The
+    documentation panel lists the boxes of an input object as it lists
+    the fields of a record type. A box with `!` must be filled, and a box
+    with a default value may be left out. A box can hold an input object
+    of its own, as in `subject: { operative: "GILT_MAGPIE" }`.
+- id: block-string
+  term: block string
+  clearance: 12
+  matches: [block strings]
+  definition: >
+    Text written between three quotation marks at each end, as in
+    `"""He said "Keep the change" and left."""`. Inside a block string, a
+    quotation mark is only a character, and the text may run over several
+    lines. In an ordinary string, which has one quotation mark at each
+    end, you write a quotation mark inside the text with a backslash in
+    front of it, as in `"He said \"Keep the change\" and left."`.
+- id: default-value
+  term: default value
+  clearance: 12
+  matches: [default values]
+  definition: >
+    The value that a variable takes when the variables panel leaves the
+    variable out. You write it after the variable's type, with an equals
+    sign, as in `$urgency: Urgency = ROUTINE`. When the variables panel
+    holds `{ "premises": "PRM-1221" }`, the variable `$urgency` is
+    `ROUTINE`. When the panel holds `"urgency": "URGENT"` as well, the
+    variable is `URGENT`. An argument or a box of an input object can have
+    a default value too, and the documentation panel shows it after the
+    type.

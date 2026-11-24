@@ -16,6 +16,7 @@ import {
   fieldCheckCost,
   knownRecords,
   proceedCost,
+  warrantRejectionCost,
 } from "../../engine/mission.ts";
 import { parseRef, refOf } from "../../graphql/store.ts";
 import { useWorkspace } from "./context.ts";
@@ -42,7 +43,8 @@ export function DraftPanel() {
   const leadType = types[lead] ?? "";
   const leadLabel = stage.labels?.[lead] ?? words(leadType);
   const travel = stage.solution.type === "destination";
-  const formName = travel ? "Travel order" : "Deduction";
+  const warrant = stage.solution.type === "warrant";
+  const formName = travel ? "Travel order" : warrant ? "Warrant" : "Deduction";
   const closed = state.status === "complete" || state.clock === "ended";
   const timed = state.clock === "active";
 
@@ -460,7 +462,12 @@ export function DraftPanel() {
                 {cost(fieldCheckCost(env, state, draft.leadId))}
               </button>
             )}
-            {travel && stage.paperwork === "terminal" ? (
+            {warrant && stage.paperwork === "terminal" ? (
+              <WarrantFromTerminal
+                leadId={draft.leadId}
+                rejection={warrantRejectionCost(state)}
+              />
+            ) : travel && stage.paperwork === "terminal" ? (
               <p className="draft__status" data-testid="terminal-order">
                 At your clearance, you file this travel order from the terminal.
                 When the claims are supported, transmit a mutation with{" "}
@@ -480,7 +487,11 @@ export function DraftPanel() {
                   dispatch({ type: "proceed", leadId: draft.leadId })
                 }
               >
-                {travel ? `Travel${cost(journey)}` : "Submit deduction"}
+                {travel
+                  ? `Travel${cost(journey)}`
+                  : warrant
+                    ? applyLabel(warrantRejectionCost(state))
+                    : "Submit deduction"}
               </button>
             )}
           </div>
@@ -561,7 +572,8 @@ function DecisionForm({
   const lead = leadBinding(stage);
   const leadType = types[lead] ?? "";
   const travel = stage.solution.type === "destination";
-  const formName = travel ? "travel order" : "deduction";
+  const warrant = stage.solution.type === "warrant";
+  const formName = travel ? "travel order" : warrant ? "warrant" : "deduction";
   const closed = state.status === "complete" || state.clock === "ended";
   const timed = state.clock === "active";
   const active = stageState.activeLead;
@@ -683,7 +695,12 @@ function DecisionForm({
             Rule out this {words(leadType)} (free)
           </button>
         )}
-        {travel && stage.paperwork === "terminal" ? (
+        {warrant && stage.paperwork === "terminal" ? (
+          <WarrantFromTerminal
+            {...(draft ? { leadId: draft.leadId } : {})}
+            rejection={warrantRejectionCost(state)}
+          />
+        ) : travel && stage.paperwork === "terminal" ? (
           <p className="draft__status" data-testid="terminal-order">
             At your clearance, you file this travel order from the terminal.
             Transmit a mutation with <code>fileTravelOrder</code>. Give{" "}
@@ -709,10 +726,53 @@ function DecisionForm({
               draft && dispatch({ type: "proceed", leadId: draft.leadId })
             }
           >
-            {travel ? `Travel${cost(journey)}` : "Submit deduction"}
+            {travel
+              ? `Travel${cost(journey)}`
+              : warrant
+                ? applyLabel(warrantRejectionCost(state))
+                : "Submit deduction"}
           </button>
         )}
       </div>
     </div>
+  );
+}
+
+/** The label of the warrant control, with what a rejection costs. */
+function applyLabel(rejection: number): string {
+  return rejection > 0
+    ? `Apply for the warrant (a rejection costs ${hours(rejection)})`
+    : "Apply for the warrant";
+}
+
+/**
+ * Where a warrant is filed from the terminal (SDD 6.2), the form says how,
+ * and what a rejection costs.
+ */
+function WarrantFromTerminal({
+  leadId,
+  rejection,
+}: {
+  leadId?: string;
+  rejection: number;
+}) {
+  return (
+    <p className="draft__status" data-testid="terminal-warrant">
+      At your clearance, you file this warrant from the terminal. Transmit a
+      mutation with <code>requestWarrant</code>, and fill the box{" "}
+      <code>operative</code> of its <code>subject</code> with the
+      operative&apos;s codename
+      {leadId ? (
+        <>
+          , <code>{leadId}</code>
+        </>
+      ) : null}
+      . The archive checks the claims above when it receives the warrant.
+      Choosing an operative in the box above files nothing: the box shows which
+      operative the claims are about, and lets you rule one out where the case
+      allows it.
+      {rejection > 0 &&
+        ` A warrant that the magistrate rejects costs ${hours(rejection)}.`}
+    </p>
   );
 }

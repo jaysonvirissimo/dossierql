@@ -56,8 +56,11 @@ const stage = z.strictObject({
   solution: z
     .record(z.string(), z.string())
     .refine(
-      (s) => s.type === "destination" || s.type === "deduction",
-      "A solution's type is destination or deduction.",
+      (s) =>
+        s.type === "destination" ||
+        s.type === "deduction" ||
+        s.type === "warrant",
+      "A solution's type is destination, deduction, or warrant.",
     ),
   labels: z.record(z.string(), text).optional(),
   claims: z.array(claim).min(1),
@@ -104,6 +107,7 @@ export const missionSchema = z
     requires: z.array(concept),
     summary: text,
     motif: z.string().optional(),
+    quarry: z.string().optional(),
     clock: z
       .strictObject({
         countdown: text.refine((t) => t.includes("{remaining}"), {
@@ -119,6 +123,7 @@ export const missionSchema = z
       afterDeadline: text.optional(),
       stampOnTime: text,
       stampLate: text.optional(),
+      stampExpired: text.optional(),
       comparison: text,
       geography: text,
     }),
@@ -128,7 +133,8 @@ export const missionSchema = z
     (m) =>
       m.clock !== undefined ||
       (m.debrief.afterDeadline === undefined &&
-        m.debrief.stampLate === undefined),
+        m.debrief.stampLate === undefined &&
+        m.debrief.stampExpired === undefined),
     "A mission with no clock has no deadline to finish after.",
   );
 

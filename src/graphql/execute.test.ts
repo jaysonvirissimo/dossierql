@@ -265,6 +265,34 @@ describe("mutations", () => {
         hours: 0,
       };
     },
+    requestSearchWarrant({ input }) {
+      filed.push(
+        `search ${input.premises} ${input.urgency} ${input.statement ?? "-"}`,
+      );
+      return {
+        type: "SearchReceipt",
+        id: "SRW-1",
+        serial: "SRW-1",
+        premises: input.premises,
+        urgency: input.urgency,
+        granted: false,
+        remark: "Refused.",
+        findings: [],
+      };
+    },
+    requestWarrant({ input }) {
+      filed.push(`warrant ${input.subject.operative ?? "-"}`);
+      return {
+        type: "WarrantReceipt",
+        id: "WRT-1",
+        serial: "WRT-1",
+        approved: false,
+        operative: null,
+        company: null,
+        reasons: ["No draft."],
+        hours: 0,
+      };
+    },
   };
   const journeys = new Store(
     [
@@ -311,6 +339,40 @@ describe("mutations", () => {
     const keys = out.facts.map((f) => f.fact.key);
     expect(keys).toContain("ClaimReceipt:CLM-1.status");
     expect(keys).toContain("Journey:JRN-1.fare");
+  });
+
+  it("read an input object's boxes, with the default value of a box left out", () => {
+    filed.length = 0;
+    const out = transmit(
+      journeys.with([
+        {
+          type: "Premises",
+          id: "PRM-1",
+          reference: "PRM-1",
+          name: "A room",
+          kind: "Room",
+          city: "lisbon",
+          statementRequired: false,
+          watched: false,
+        },
+      ]),
+      {
+        operation: `mutation S($u: Urgency = URGENT) {
+          a: requestSearchWarrant(input: { premises: "PRM-1" }) { serial }
+          b: requestSearchWarrant(input: { premises: "PRM-1", urgency: $u, statement: """He said "go"
+          and left.""" }) { serial }
+          requestWarrant(input: { subject: { operative: "GILT_MAGPIE" } }) { approved }
+        }`,
+        clearance: 12,
+        actions,
+      },
+    );
+    expect(out.result.errors).toBeUndefined();
+    expect(filed).toEqual([
+      "search PRM-1 ROUTINE -",
+      'search PRM-1 URGENT He said "go"\nand left.',
+      "warrant GILT_MAGPIE",
+    ]);
   });
 
   it("take no paperwork outside a case", () => {

@@ -4898,6 +4898,13 @@
       "lon": 9.52
     },
     {
+      "id": "valletta",
+      "name": "Valletta",
+      "country": "MT",
+      "lat": 35.9,
+      "lon": 14.51
+    },
+    {
       "id": "valparaiso",
       "name": "Valparaíso",
       "country": "CL",

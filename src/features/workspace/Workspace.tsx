@@ -311,6 +311,11 @@ export default function Workspace({ mission }: { mission: Mission }) {
 
         {mission.clock && state.clock === "ended" && (
           <div className="note note--bad workspace__ended" role="alert">
+            {mission.debrief.stampExpired && (
+              <p className="stamp" data-testid="stamp">
+                {mission.debrief.stampExpired}
+              </p>
+            )}
             <p>
               {mission.clock.expired}. The deadline has passed and this attempt
               is closed. The solution to this stage is now free to view under

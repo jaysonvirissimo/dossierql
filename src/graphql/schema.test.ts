@@ -3,6 +3,7 @@ import {
   isInterfaceType,
   isUnionType,
   getIntrospectionQuery,
+  isInputObjectType,
   isObjectType,
   type IntrospectionQuery,
 } from "graphql";
@@ -101,17 +102,36 @@ const ADDED: Record<number, string[]> = {
     "Query.claim",
     "Query.journeyBook",
   ],
+  12: [
+    "Find",
+    "Premises",
+    "SearchApplication",
+    "SearchReceipt",
+    "WarrantApplication",
+    "WarrantReceipt",
+    "WarrantSubject",
+    "City.premises",
+    "Mutation.requestSearchWarrant",
+    "Mutation.requestWarrant",
+    "Operative.habit",
+    "Operative.weakness",
+    "Query.premises",
+    "Query.search",
+  ],
 };
 
 function surface(level: number): { types: string[]; fields: string[] } {
   const schema = schemaFor(level);
   const types = Object.values(schema.getTypeMap())
-    .filter((t) => isObjectType(t) && !t.name.startsWith("__"))
+    .filter(
+      (t) =>
+        (isObjectType(t) || isInputObjectType(t)) && !t.name.startsWith("__"),
+    )
     .map((t) => t.name)
     .sort();
   const fields = types.flatMap((name) => {
     const type = schema.getType(name);
-    return isObjectType(type)
+    return isObjectType(type) || isInputObjectType(type)
       ? Object.keys(type.getFields()).map((field) => `${name}.${field}`)
       : [];
   });
@@ -146,9 +166,13 @@ describe("the schema at each clearance", () => {
       expect(sent.result.errors).toBeUndefined();
       const data = sent.result.data as unknown as IntrospectionQuery;
       const seen = data.__schema.types
-        .filter((t) => t.kind === "OBJECT" && !t.name.startsWith("__"))
+        .filter((t) => !t.name.startsWith("__"))
         .flatMap((t) =>
-          t.kind === "OBJECT" ? t.fields.map((f) => `${t.name}.${f.name}`) : [],
+          t.kind === "OBJECT"
+            ? t.fields.map((f) => `${t.name}.${f.name}`)
+            : t.kind === "INPUT_OBJECT"
+              ? t.inputFields.map((f) => `${t.name}.${f.name}`)
+              : [],
         )
         .sort();
       expect(seen).toEqual(surface(level).fields.sort());

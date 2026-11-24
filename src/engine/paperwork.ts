@@ -64,6 +64,22 @@ function findCountry(store: Store, wanted: string): RawRecord | undefined {
     );
 }
 
+/** Text a statement quotes, compared without regard to line breaks. */
+function words(text: string): string {
+  return plain(text).replace(/\s+/g, " ");
+}
+
+function findPremises(store: Store, wanted: string): RawRecord | undefined {
+  return store
+    .all("Premises")
+    .find(
+      (r) =>
+        plain(r.id) === plain(wanted) ||
+        (typeof r.reference === "string" &&
+          plain(r.reference) === plain(wanted)),
+    );
+}
+
 /** The fare as a person writes it: 412.5, not 412.50000001. */
 function money(amount: number): string {
   return String(Math.round(amount * 100) / 100);
@@ -181,6 +197,131 @@ export function paperwork<S>(desk: Desk<S>): {
       return receipt({
         approved: outcome.approved,
         to: country.id,
+        reasons: outcome.reasons,
+        hours: outcome.hours,
+      });
+    },
+
+    requestSearchWarrant({ input }) {
+      const premises = findPremises(desk.store, input.premises);
+      if (!premises) {
+        throw new GraphQLError(
+          `The police list holds no premises "${input.premises}". Premises are given by the reference the police gave them.`,
+        );
+      }
+      const id = serial("SRW", count("SearchReceipt") + 1);
+      const name =
+        typeof premises.name === "string" ? premises.name : premises.id;
+      const witness =
+        typeof premises.witness === "string" ? premises.witness : "";
+      const urgency = input.urgency;
+      let granted = false;
+      let findings: string[] = [];
+      let remark: string;
+      if (
+        premises.statementRequired === true &&
+        !words(input.statement ?? "").includes(words(witness))
+      ) {
+        remark = `The magistrate grants a search of ${name} only on a sworn statement that quotes the witness word for word, and this statement does not. Nothing was searched.`;
+      } else if (urgency === "URGENT" && premises.watched !== true) {
+        remark = `The magistrate grants an urgent search only of premises that the police watched within the hour, and the police did not watch ${name}. Nothing was searched.`;
+      } else if (urgency === "ROUTINE" && premises.watched === true) {
+        granted = true;
+        remark = `Granted. The police searched ${name} on their morning round. By then the premises had been cleaned and let again, and the police found nothing.`;
+      } else {
+        granted = true;
+        findings = desk.store
+          .all("Find")
+          .filter((f) => f.foundAt === premises.id)
+          .map((f) => f.id);
+        remark =
+          urgency === "URGENT"
+            ? `Granted. The police searched ${name} within the hour.`
+            : `Granted. The police searched ${name}.`;
+      }
+      const receipt: RawRecord = {
+        type: "SearchReceipt",
+        id,
+        serial: id,
+        premises: premises.id,
+        urgency,
+        granted,
+        remark,
+        findings,
+      };
+      state = desk.file(state, receipt);
+      return receipt;
+    },
+
+    requestWarrant({ input }) {
+      const id = serial("WRT", count("WarrantReceipt") + 1);
+      const receipt = (
+        fields: Omit<RawRecord, "type" | "id" | "serial">,
+      ): RawRecord => {
+        const record: RawRecord = {
+          type: "WarrantReceipt",
+          id,
+          serial: id,
+          operative: null,
+          company: null,
+          hours: 0,
+          ...fields,
+        };
+        state = desk.file(state, record);
+        return record;
+      };
+      const stage = desk.stage(state);
+      const { operative, company } = input.subject;
+      if (company != null) {
+        const found = desk.store
+          .all("Company")
+          .find(
+            (r) =>
+              typeof r.name === "string" && plain(r.name) === plain(company),
+          );
+        return receipt({
+          approved: false,
+          company: found?.id ?? null,
+          reasons: [
+            found
+              ? "A warrant for a company searches its offices, and this case does not call for a search of a company. A warrant of arrest is for an operative."
+              : `The registry holds no company called "${company}". Give a company by its registered name.`,
+          ],
+        });
+      }
+      const wanted = operative ?? "";
+      const found = desk.store
+        .all("Operative")
+        .find(
+          (r) =>
+            plain(r.id) === plain(wanted) ||
+            (typeof r.codename === "string" &&
+              plain(r.codename) === plain(wanted)),
+        );
+      if (!found) {
+        return receipt({
+          approved: false,
+          reasons: [
+            `The registry holds no operative with the codename "${wanted}". Give an operative by codename.`,
+          ],
+        });
+      }
+      if (stage.solution.type !== "warrant") {
+        return receipt({
+          approved: false,
+          operative: found.id,
+          reasons: [
+            "Nothing at this stage of the case calls for a warrant. The case asks for a form on the draft.",
+          ],
+        });
+      }
+      state = desk.choose(state, found.id, leadBinding(stage), found.id);
+      const outcome = desk.proceed(state, found.id);
+      state = outcome.state;
+      events.push(...outcome.events);
+      return receipt({
+        approved: outcome.approved,
+        operative: found.id,
         reasons: outcome.reasons,
         hours: outcome.hours,
       });

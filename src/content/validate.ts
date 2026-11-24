@@ -1,6 +1,7 @@
 import {
   getNamedType,
   isEnumType,
+  isInputObjectType,
   isInterfaceType,
   isObjectType,
   isUnionType,
@@ -325,7 +326,10 @@ function asksThrough(
   return found;
 }
 
-/** The concepts an operation's text makes use of. */
+/**
+ * Whether an operation files the paperwork that a stage with `paperwork:
+ * terminal` files from the terminal: a travel order or a warrant.
+ */
 export function filesTravelOrder(operation: string): boolean {
   let found = false;
   visit(parse(operation), {
@@ -334,7 +338,12 @@ export function filesTravelOrder(operation: string): boolean {
       return undefined;
     },
     Field(node) {
-      if (node.name.value === "fileTravelOrder") found = true;
+      if (
+        node.name.value === "fileTravelOrder" ||
+        node.name.value === "requestWarrant"
+      ) {
+        found = true;
+      }
     },
   });
   return found;
@@ -372,6 +381,8 @@ export function conceptsUsed(operation: string): Set<Concept> {
       }
     },
     VariableDefinition: () => void used.add("variables"),
+    // A value written in braces fills the boxes of an input object.
+    ObjectValue: () => void used.add("input-objects"),
     OperationDefinition: (node) => {
       if (node.operation === "mutation") used.add("mutations");
     },
@@ -712,7 +723,9 @@ function checkReachability(mission: Mission, report: Report): void {
     const stage: Stage | undefined = mission.stages[id];
     if (!stage) break;
     if (stage.next === undefined) {
-      terminal = stage.solution.type === "deduction";
+      terminal =
+        stage.solution.type === "deduction" ||
+        stage.solution.type === "warrant";
       if (!terminal) {
         report(
           `${mission.id}.stages.${id}`,
@@ -1375,11 +1388,11 @@ function checkSolvable(
       return;
     }
     if (stage.paperwork === "terminal") {
-      if (stage.solution.type !== "destination" || held.length === 0) {
+      if (stage.solution.type === "deduction" || held.length === 0) {
         report(
           `${at}.paperwork`,
           "paperwork",
-          "A stage whose travel order is filed through the terminal needs a destination, and a reference solution that files the order with fileTravelOrder.",
+          "A stage whose paperwork is filed through the terminal needs a destination or a warrant, and a reference solution that files it with fileTravelOrder or requestWarrant.",
         );
         return;
       }
@@ -1395,7 +1408,7 @@ function checkSolvable(
         report(
           `${at}.referenceSolution`,
           "solvability",
-          "The travel order that the reference solution files is not approved.",
+          "The travel order or warrant that the reference solution files is not approved.",
         );
         return;
       }
@@ -1501,6 +1514,7 @@ function checkCurriculum(
     "pagination",
     "directives",
     "mutations",
+    "input-objects",
   ] as const) {
     if (used.has(concept) && !declared.has(concept)) {
       report(
@@ -1539,6 +1553,7 @@ export function mechanicsUsed(mission: Mission, stage: Stage): Mechanic[] {
   const outcomes = Object.values(stage.leadOutcomes ?? {});
   const used: Mechanic[] = [fromLedger(stage) ? "conclusion" : "citing"];
   if (stage.solution.type === "destination") used.push("travel-order");
+  else if (stage.solution.type === "warrant") used.push("warrant");
   else if (solutionBindings(stage).length > 1) used.push("deduction");
   if (mission.clock) used.push("clock");
   if (outcomes.some((o) => o.refutation)) used.push("ruling-out");
@@ -1769,6 +1784,71 @@ function checkCodas(missions: readonly Mission[], report: Report): void {
   }
 }
 
+/**
+ * Warrants (SDD 3.4): a warrant ends its case, it is for an operative or a
+ * company, and a case that ends in one is stamped DETAINED, or AT LARGE when
+ * the deadline passes first.
+ */
+function checkWarrants(
+  mission: Mission,
+  catalog: Catalog,
+  report: Report,
+): void {
+  if (
+    mission.quarry !== undefined &&
+    !catalog.store.get("Operative", mission.quarry)
+  ) {
+    report(
+      mission.id,
+      "references",
+      `No operative ${mission.quarry} for the quarry.`,
+    );
+  }
+  let ends = false;
+  for (const [id, stage] of Object.entries(mission.stages)) {
+    if (stage.solution.type !== "warrant") continue;
+    const at = `${mission.id}.stages.${id}`;
+    if (stage.next !== undefined) {
+      report(at, "warrant", "A warrant ends its case: its stage has no next.");
+    }
+    const type = bindingTypes(stage)[leadBinding(stage)];
+    if (type !== "Operative" && type !== "Company") {
+      report(at, "warrant", "A warrant is for an operative or a company.");
+    }
+    if (solutionBindings(stage).length !== 1) {
+      report(at, "warrant", "A warrant identifies one record.");
+    }
+    ends = true;
+  }
+  if (!ends) {
+    if (mission.debrief.stampExpired !== undefined) {
+      report(
+        `${mission.id}.debrief`,
+        "warrant",
+        "Only a case that ends in a warrant has a stamp for an escape.",
+      );
+    }
+    return;
+  }
+  if (!mission.clock || mission.clock.onExpiry !== "end") {
+    report(
+      mission.id,
+      "warrant",
+      "A case that ends in a warrant has a clock whose deadline is the escape, and the deadline ends the attempt.",
+    );
+  }
+  if (
+    mission.debrief.stampOnTime !== "DETAINED" ||
+    mission.debrief.stampExpired !== "AT LARGE"
+  ) {
+    report(
+      `${mission.id}.debrief`,
+      "warrant",
+      "A case that ends in a warrant is stamped DETAINED, or AT LARGE when the deadline passes first.",
+    );
+  }
+}
+
 function checkCourseShape(catalog: Catalog, report: Report): void {
   const { missions } = catalog;
   const ids = new Set<string>();
@@ -1897,7 +1977,7 @@ function checkHintsAndText(
       const type = schema.getType(typeName as string);
       if (
         !type ||
-        !isRecordType(type) ||
+        !(isRecordType(type) || isInputObjectType(type)) ||
         !type.getFields()[fieldName as string]
       ) {
         report(
@@ -1913,6 +1993,8 @@ function checkHintsAndText(
       for (const [, quoted] of code
         .replace(/"[^"]+"\s*:/g, "")
         .matchAll(/"([^"]+)"/g)) {
+        // An ellipsis marks the part that the player fills in.
+        if (quoted === "…") continue;
         const known = catalog.store
           .types()
           .some((type) =>
@@ -2333,6 +2415,7 @@ export function validateContent(raw: RawContent): Issue[] {
     const before = issues.length;
     checkReferences(mission, catalog, report);
     checkReachability(mission, report);
+    checkWarrants(mission, catalog, report);
     if (issues.length > before) continue;
     for (const stageId of Object.keys(mission.stages)) {
       checkStageEvidence(mission, stageId, catalog, truth, report);

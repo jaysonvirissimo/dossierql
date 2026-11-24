@@ -290,9 +290,24 @@ const resolveField: GraphQLFieldResolver<unknown, Context> = (
       throw new GraphQLError("The archive takes paperwork only during a case.");
     }
     const actions = context.actions;
-    return name === "fileExpenseClaim"
-      ? actions.fileExpenseClaim(args as { journey: string; amount: number })
-      : actions.fileTravelOrder(args as { following: string; to: string });
+    switch (name) {
+      case "fileExpenseClaim":
+        return actions.fileExpenseClaim(
+          args as Parameters<Actions["fileExpenseClaim"]>[0],
+        );
+      case "fileTravelOrder":
+        return actions.fileTravelOrder(
+          args as Parameters<Actions["fileTravelOrder"]>[0],
+        );
+      case "requestSearchWarrant":
+        return actions.requestSearchWarrant(
+          args as Parameters<Actions["requestSearchWarrant"]>[0],
+        );
+      case "requestWarrant":
+        return actions.requestWarrant(
+          args as Parameters<Actions["requestWarrant"]>[0],
+        );
+    }
   }
 
   if (info.parentType === info.schema.getQueryType()) {

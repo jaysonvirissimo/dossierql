@@ -44,7 +44,7 @@ the game communicates on screen. Run both before a mission ships (SDD 10.1).
   Assessment ids by level: `borrowed-chronometer`, `quiet-consignee`,
   `bound-ledgers`, `lantern-export`, `registrars-return`, `exchange-book`,
   `station-file`, `door-watch`, `cipher-counter`, `envelope-book`,
-  `chairs-account`.
+  `chairs-account`, `couriers-guidebook`.
 
 - **Every finding is fixed or logged with a reason**, in the report, and the
   walkthrough is then run again.

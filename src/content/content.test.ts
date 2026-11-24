@@ -28,9 +28,9 @@ describe("the authored course", () => {
     expect(validateContent(raw)).toEqual([]);
   });
 
-  it("covers clearance 1 to 11 with a teaching mission and an assessment each", () => {
+  it("covers clearance 1 to 12 with a teaching mission and an assessment each", () => {
     const cases = raw.missions.filter((m) => m.kind !== "coda");
-    expect(cases).toHaveLength(22);
+    expect(cases).toHaveLength(24);
   });
 
   it("ends the first campaign with one coda", () => {
@@ -919,5 +919,116 @@ describe("the steps of clearance 11 are recognised", () => {
     expect(
       uses("decimal-number", `mutation { ${claim("JRN-0402", "24")} }`),
     ).toBe(false);
+  });
+});
+
+describe("the steps of clearance 12 are recognised", () => {
+  const uses = (id: string, query: string) =>
+    stepById(id)?.uses(parse(query)) ?? false;
+  const search = (input: string) =>
+    `requestSearchWarrant(input: ${input}) { granted }`;
+
+  it("a block string, and not an ordinary string", () => {
+    expect(
+      uses(
+        "block-string",
+        `mutation { ${search(`{ premises: "PRM-1211", statement: """He said "go" """ }`)} }`,
+      ),
+    ).toBe(true);
+    expect(
+      uses(
+        "block-string",
+        `mutation { ${search(`{ premises: "PRM-1211", statement: "He said \\"go\\"" }`)} }`,
+      ),
+    ).toBe(false);
+  });
+
+  it("a variable with a default value, and not one without", () => {
+    expect(
+      uses(
+        "variable-default",
+        `mutation S($p: ID!, $u: Urgency = ROUTINE) { ${search("{ premises: $p, urgency: $u }")} }`,
+      ),
+    ).toBe(true);
+    expect(
+      uses(
+        "variable-default",
+        `mutation S($p: ID!, $u: Urgency) { ${search("{ premises: $p, urgency: $u }")} }`,
+      ),
+    ).toBe(false);
+  });
+
+  it("a @oneOf input object, and not an ordinary one", () => {
+    expect(
+      uses(
+        "one-of-input",
+        `mutation { requestWarrant(input: { subject: { operative: "GILT_MAGPIE" } }) { approved } }`,
+      ),
+    ).toBe(true);
+    expect(
+      uses(
+        "one-of-input",
+        `mutation { ${search(`{ premises: "PRM-1201" }`)} }`,
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("warrants", () => {
+  it("are stamped DETAINED and AT LARGE", () => {
+    expect(
+      codes(
+        mutated("handlers-road", (m) => {
+          m.debrief.stampExpired = "ESCAPED";
+        }),
+      ),
+    ).toContain("warrant");
+  });
+
+  it("end their case", () => {
+    expect(
+      codes(
+        mutated("handlers-road", (m) => {
+          const stage = m.stages.trieste;
+          if (stage) stage.next = "lisbon";
+        }),
+      ),
+    ).toContain("warrant");
+  });
+
+  it("are introduced before they are used", () => {
+    expect(
+      codes(
+        mutated("handlers-road", (m) => {
+          const stage = m.stages.trieste;
+          if (stage) delete stage.introduces;
+        }),
+      ),
+    ).toContain("pacing");
+  });
+
+  it("are filed from the terminal where the stage says so", () => {
+    expect(
+      codes(
+        mutated("handlers-road", (m) => {
+          const stage = m.stages.trieste;
+          if (stage) {
+            stage.referenceSolution = (
+              stage.referenceSolution as string[]
+            ).slice(0, 1);
+          }
+        }),
+      ),
+    ).toContain("paperwork");
+  });
+
+  it("name a quarry that is in the registry", () => {
+    expect(
+      codes(
+        mutated("handlers-road", (m) => {
+          m.quarry = "NO_SUCH_BIRD";
+        }),
+      ),
+    ).toContain("references");
   });
 });

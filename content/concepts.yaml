@@ -251,3 +251,28 @@
   payoff: >
     One transmission files several forms, and every receipt that comes
     back is evidence the archive can use.
+- id: input-objects
+  title: Input objects
+  clearance: 12
+  summary: >
+    An input object is a form that an argument takes. You write the form
+    in braces after the argument, and each box of the form as its name, a
+    colon, and a value. The braces hold values that you send, so nothing
+    inside them asks for a field. A box can hold a form of its own, as
+    `subject` does in the example. `WarrantSubject` is marked `@oneOf`, so
+    you fill exactly one of its boxes.
+  example: |
+    mutation {
+      requestWarrant(input: {
+        subject: { operative: "GILT_MAGPIE" }
+        statement: """
+        The police saw him come ashore in Trieste.
+        """
+      }) {
+        approved
+        reasons
+      }
+    }
+  payoff: >
+    One argument carries a whole form, and the documentation panel says
+    which boxes you must fill and which ones have a default value.

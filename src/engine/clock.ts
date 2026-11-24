@@ -14,6 +14,8 @@ export const COSTS = {
   hints: [1, 2, 4, 8],
   /** More than all the hints together. */
   solutionReveal: 16,
+  /** A warrant that is submitted and rejected (SDD 3.4). */
+  rejectedWarrant: 3,
   /** Travel hours for a journey up to each distance in kilometres. */
   travel: [
     { upToKm: 1500, hours: 2 },

@@ -897,3 +897,9 @@
   flex-direction: column;
   gap: var(--space-3);
 }
+
+/* The operative a pursuit follows (SDD 3.4) heads the dossiers. */
+.dossier--quarry {
+  border-left: 3px solid var(--rust);
+  padding-left: 0.75rem;
+}

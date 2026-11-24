@@ -12,6 +12,7 @@ export const CONCEPTS = [
   "pagination",
   "directives",
   "mutations",
+  "input-objects",
 ] as const;
 export type Concept = (typeof CONCEPTS)[number];
 
@@ -24,6 +25,7 @@ export const MECHANICS = [
   "ruling-out",
   "field-check",
   "citing",
+  "warrant",
 ] as const;
 export type Mechanic = (typeof MECHANICS)[number];
 
@@ -76,7 +78,7 @@ export interface Hints {
 }
 
 export interface Solution {
-  type: "destination" | "deduction";
+  type: "destination" | "deduction" | "warrant";
   [binding: string]: string;
 }
 
@@ -89,7 +91,8 @@ export interface Stage {
   step?: string;
   /**
    * `terminal`: the stage's travel order is filed through the terminal, as
-   * a mutation, and the findings panel shows no button for it (SDD 6).
+   * a mutation, and the findings panel shows no button for it (SDD 6). At
+   * a stage whose solution is a warrant, the warrant is filed that way.
    */
   paperwork?: "terminal";
   /**
@@ -135,6 +138,11 @@ export interface Mission {
   requires: Concept[];
   summary: string;
   motif?: string;
+  /**
+   * The codename of the operative a pursuit follows (SDD 3.4). The dossier
+   * shows the quarry first.
+   */
+  quarry?: string;
   /** A mission with no clock is untimed (SDD 3.3). */
   clock?: {
     countdown: string;
@@ -147,6 +155,8 @@ export interface Mission {
     afterDeadline?: string;
     stampOnTime: string;
     stampLate?: string;
+    /** The stamp on an attempt that the deadline closed, such as AT LARGE. */
+    stampExpired?: string;
     /** What the reference solution shows about the concept. */
     comparison: string;
     geography: string;

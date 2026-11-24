@@ -41,7 +41,8 @@ export function schemaDocumentFor(
         definition.kind === Kind.INTERFACE_TYPE_DEFINITION ||
         definition.kind === Kind.UNION_TYPE_DEFINITION ||
         definition.kind === Kind.ENUM_TYPE_DEFINITION ||
-        definition.kind === Kind.SCALAR_TYPE_DEFINITION) &&
+        definition.kind === Kind.SCALAR_TYPE_DEFINITION ||
+        definition.kind === Kind.INPUT_OBJECT_TYPE_DEFINITION) &&
       clearanceOf(definition.directives) > level
     ) {
       hidden.add(definition.name.value);
@@ -71,6 +72,8 @@ export function schemaDocumentFor(
     EnumTypeDefinition: (node) =>
       hidden.has(node.name.value) ? null : undefined,
     ScalarTypeDefinition: (node) =>
+      hidden.has(node.name.value) ? null : undefined,
+    InputObjectTypeDefinition: (node) =>
       hidden.has(node.name.value) ? null : undefined,
     FieldDefinition: (node) =>
       clearanceOf(node.directives) > level || hidden.has(namedType(node.type))

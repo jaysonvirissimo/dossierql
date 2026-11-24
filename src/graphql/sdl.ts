@@ -9,9 +9,9 @@
 export const SDL = /* GraphQL */ `
   directive @clearance(
     level: Int!
-  ) on OBJECT | INTERFACE | UNION | ENUM | SCALAR | FIELD_DEFINITION
+  ) on OBJECT | INTERFACE | UNION | ENUM | SCALAR | INPUT_OBJECT | FIELD_DEFINITION
   directive @inverse(of: String!) on FIELD_DEFINITION
-  directive @undocumented on OBJECT | UNION | ENUM | SCALAR | FIELD_DEFINITION
+  directive @undocumented on OBJECT | UNION | ENUM | SCALAR | INPUT_OBJECT | FIELD_DEFINITION
 
   type Query {
     "One city, by name."
@@ -58,14 +58,24 @@ export const SDL = /* GraphQL */ `
     journeyBook(reference: ID!): JourneyBook @clearance(level: 11)
     "One expense claim that you filed, by the serial on its receipt."
     claim(serial: ID!): ClaimReceipt @clearance(level: 11)
+    "One premises on the police list, by the reference the police gave it."
+    premises(reference: ID!): Premises @clearance(level: 12)
+    "One search warrant that you applied for, by the serial on its receipt."
+    search(serial: ID!): SearchReceipt @clearance(level: 12)
   }
 
   "The paperwork you can file with the archive. Each field files one form and returns the receipt for it. When a request files several forms, the archive files them one at a time, in the order the request lists them."
   type Mutation @clearance(level: 11) {
     "Files an expense claim for the fare of one journey in a journey book. The accounts office pays a fare once, and only for the amount of the fare. The receipt says whether the fare was already paid, and if it was, gives the voucher it was paid on."
     fileExpenseClaim(journey: ID!, amount: Float!): ClaimReceipt
-    "Files the travel order on your draft for one lead. following is the record the draft is for, and to is the country the order sends you to, by its name or its two-letter code. The receipt says whether the order was approved, and why not when it was not."
+    "Files the travel order on your draft for one lead. following is the reference of the record that you choose first on the travel order, such as a journey or a find, and to is the country the order sends you to, by its name or its two-letter code. The receipt says whether the order was approved, and why not when it was not."
     fileTravelOrder(following: ID!, to: String!): TravelReceipt
+    "Applies to the magistrate for a search warrant on one premises. When the magistrate grants the warrant, the police search the premises, and the receipt lists what they found. The argument input is the application form, with a box for each of its fields."
+    requestSearchWarrant(input: SearchApplication!): SearchReceipt
+      @clearance(level: 12)
+    "Applies to the magistrate for a warrant. The archive checks a warrant of arrest against every response you have received, as it checks a form. A warrant that is submitted and not approved costs hours, and its receipt says why it was not approved."
+    requestWarrant(input: WarrantApplication!): WarrantReceipt
+      @clearance(level: 12)
   }
 
   "A sovereign state."
@@ -126,6 +136,8 @@ export const SDL = /* GraphQL */ `
     arrivingShipments: [Shipment!]! @inverse(of: "destination")
     "Reported sightings of operatives in this city."
     sightings: [Sighting!]! @inverse(of: "city") @clearance(level: 2)
+    "Premises in this city that are on the police list."
+    premises: [Premises!]! @inverse(of: "city") @clearance(level: 12)
   }
 
   "A consignment moving between two cities."
@@ -240,6 +252,10 @@ export const SDL = /* GraphQL */ `
     handler: Operative @clearance(level: 3)
     "Companies whose books the operative signs off."
     audits: [Company!]! @inverse(of: "auditor") @clearance(level: 4)
+    "A habit the operative is known for, as the registry wrote it down."
+    habit: String @clearance(level: 12)
+    "A weakness the operative is known for, as the registry wrote it down."
+    weakness: String @clearance(level: 12)
   }
 
   "A name an operative travels under."
@@ -728,6 +744,108 @@ export const SDL = /* GraphQL */ `
     "The hours that the journey took from the mission clock."
     hours: Int!
   }
+
+  "How soon the police are to search premises."
+  enum Urgency @clearance(level: 12) {
+    "The police search the premises the next morning. A routine search of premises that the police watched within the hour comes too late, and finds nothing."
+    ROUTINE
+    "The police search the premises within the hour. The magistrate grants an urgent search only of premises that the police watched within the hour."
+    URGENT
+  }
+
+  "The application form for a search warrant."
+  input SearchApplication @clearance(level: 12) {
+    "The reference of the premises to be searched, as the police list gives it."
+    premises: ID!
+    "Your sworn statement of why the premises should be searched. Some magistrates grant a search only on a statement that quotes the witness word for word. When the witness's words hold quotation marks, write the statement as a block string: three quotation marks, the words, and three more quotation marks. The glossary entry for a block string shows an example."
+    statement: String
+    "How soon the police are to search. Leave it out for a routine search."
+    urgency: Urgency = ROUTINE
+  }
+
+  "Who a warrant is for. Fill exactly one of the two boxes: a warrant is for an operative or for a company, never for both."
+  input WarrantSubject @oneOf @clearance(level: 12) {
+    "The codename of the operative to be arrested."
+    operative: ID
+    "The registered name of the company whose offices are to be searched."
+    company: ID
+  }
+
+  "The application form for a warrant."
+  input WarrantApplication @clearance(level: 12) {
+    "Who the warrant is for."
+    subject: WarrantSubject!
+    "Your sworn statement of why the warrant should be granted."
+    statement: String
+  }
+
+  "Premises on the police list: a room, a shop, or an office that the police can search with a warrant."
+  type Premises @clearance(level: 12) {
+    "The reference the police gave the premises."
+    reference: ID!
+    "The name of the premises."
+    name: String!
+    "What kind of premises they are."
+    kind: String!
+    "The city the premises are in."
+    city: City!
+    "What a witness at the premises told the police, word for word."
+    witness: String
+    "Whether the magistrate grants a search of the premises only on a sworn statement that quotes the witness word for word."
+    statementRequired: Boolean!
+    "Whether the police watched the premises within the hour. The magistrate grants an urgent search only of premises that the police watched within the hour."
+    watched: Boolean!
+  }
+
+  "Something the police found when they searched premises."
+  type Find @clearance(level: 12) {
+    "The reference the police gave the find."
+    reference: ID!
+    "What the police found, in their words."
+    description: String!
+    "The premises where the police found it."
+    foundAt: Premises!
+    "The name that the guest who left it gave the premises. Empty when nobody knows who left it."
+    leftBy: CoverName
+    "The currency of the money in the find. Empty when the find holds no money."
+    currency: Currency
+    "The language the find is written in. Empty when nothing is written on it."
+    language: Language
+    "The city that the find shows a journey to, such as the city on a ticket. Empty when it shows none."
+    city: City
+  }
+
+  "The receipt for a search warrant that you applied for."
+  type SearchReceipt @clearance(level: 12) {
+    "The receipt's serial. The magistrate numbers applications in the order they were made."
+    serial: ID!
+    "The premises the application was for."
+    premises: Premises!
+    "How soon the application asked the police to search."
+    urgency: Urgency!
+    "Whether the magistrate granted the warrant."
+    granted: Boolean!
+    "The magistrate's remark on the application."
+    remark: String!
+    "What the police found. Empty when the magistrate refused the warrant or the police found nothing."
+    findings: [Find!]!
+  }
+
+  "The receipt for a warrant that you applied for."
+  type WarrantReceipt @clearance(level: 12) {
+    "The receipt's serial."
+    serial: ID!
+    "Whether the warrant was approved."
+    approved: Boolean!
+    "The operative the warrant was for. Empty when it was for a company."
+    operative: Operative
+    "The company the warrant was for. Empty when it was for an operative."
+    company: Company
+    "Why the warrant was not approved. Empty when it was."
+    reasons: [String!]!
+    "The hours that the application took from the mission clock."
+    hours: Int!
+  }
 `;
 
-export const MAX_CLEARANCE = 11;
+export const MAX_CLEARANCE = 12;

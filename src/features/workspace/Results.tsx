@@ -62,6 +62,9 @@ export function Errors({
   const aliasAvailable = course.glossary.some(
     (entry) => entry.id === "alias" && entry.clearance <= clearance,
   );
+  const blockStrings = course.glossary.some(
+    (entry) => entry.id === "block-string" && entry.clearance <= clearance,
+  );
   // The same complaint about three fields is said once, with every place
   // it was made.
   const groups: { error: ResultError; places: string[] }[] = [];
@@ -84,7 +87,7 @@ export function Errors({
           )}
           <p className="clerk">
             <span className="visually-hidden">Clerk's note: </span>
-            {annotate(error, aliasAvailable)}
+            {annotate(error, aliasAvailable, blockStrings)}
           </p>
         </li>
       ))}
