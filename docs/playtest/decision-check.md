@@ -67,7 +67,9 @@ down, in this person's words:
 - each fact on the screen that made you choose it, and where on the screen
   you saw it;
 - for each other city, the fact that made you drop it, or that you dropped it
-  without one.
+  without one;
+- whether you thought about ordering a field check on any sighting, what
+  the screen said it would cost, and why you did or did not order one.
 
 Then send the order and carry on.
 
@@ -87,3 +89,6 @@ operative it found. Then finish the case.
    every change you made, and the result.
 10. **The courier**: in this person's words, what happened to the courier
     after you reached Lusaka, and whether the case felt like a chase.
+11. **The risk**: what you would have lost by going to the wrong city, and
+    what a field check, if you ordered one, showed you. Say what made you
+    want to follow the courier, or that nothing did.

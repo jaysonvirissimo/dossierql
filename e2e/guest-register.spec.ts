@@ -11,6 +11,7 @@ import {
   watchPage,
   writeQuery,
   type PageWatch,
+  readDebrief,
 } from "./helpers.ts";
 
 let watch: PageWatch;
@@ -109,7 +110,7 @@ test("the leads are on the map before departure, and the debrief replays the ded
   await choose(page, "Country of the sighting", "TZ");
   await expect(travel).toBeDisabled();
   await expect(draft(page).getByTestId("form-hold")).toHaveText(
-    "The Maputo sighting is still in contention. Choose it in the “Sighting” box and press Rule out before you send the travel order.",
+    "The Maputo sighting is still in contention. Rule it out on the case board before you send the travel order.",
   );
   await choose(page, "Sighting", "SGT-034");
   await submit(page, /^Rule out/);
@@ -139,6 +140,7 @@ test("the leads are on the map before departure, and the debrief replays the ded
   await choose(page, "Name in the register", "dr-lund");
   await choose(page, "Filed under", "MARBLE_HERON");
   await submit(page);
+  await readDebrief(page);
 
   // The reference asks for two things at once, and the player never did.
   await expect(page.getByTestId("several-fields")).toContainText(

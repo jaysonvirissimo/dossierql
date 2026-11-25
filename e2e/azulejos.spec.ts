@@ -15,6 +15,7 @@ import {
   submit,
   watchPage,
   type PageWatch,
+  readDebrief,
 } from "./helpers.ts";
 
 let watch: PageWatch;
@@ -167,13 +168,18 @@ test("the Azulejos case, by keyboard at 1024 pixels, with no clock", async ({
   await page.reload();
   await expect(page.locator(".casebar")).toContainText("Angola");
   await expect(clock(page)).toHaveCount(0);
+  // The arrival is read first, and Lisbon's paperwork waits, closed, below.
   await openTool(page, "Case");
-  await expect(page.locator(".dispatches")).toContainText(
-    /accepted · LIS-0486/i,
+  await expect(page.getByTestId("opening-dispatch")).toContainText(
+    /travel · LIS-0417/i,
   );
-  await expect(page.locator(".dispatches")).toContainText(/travel · LIS-0417/i);
+  const earlier = page.locator(".dispatches__earlier");
+  await expect(earlier.locator("summary")).toContainText("Earlier dispatches");
+  await expect(earlier).not.toHaveAttribute("open");
+  await earlier.locator("summary").click();
+  await expect(earlier).toContainText(/accepted · LIS-0486/i);
   await expect(
-    page.locator(".dispatches").getByTestId("evidence-chain"),
+    page.locator(".tools__panel").getByTestId("evidence-chain"),
   ).toHaveCount(3);
   await openTool(page, "Evidence");
   await expect(page.locator(".tools__panel")).toContainText(
@@ -183,6 +189,7 @@ test("the Azulejos case, by keyboard at 1024 pixels, with no clock", async ({
   // Luanda: the replacement label identifies the order, and so the signer.
   await solveLuanda(page);
   await submit(page);
+  await readDebrief(page, "HOLD ISSUED");
 
   await expect(
     page.getByRole("heading", { name: "Case resolved" }),

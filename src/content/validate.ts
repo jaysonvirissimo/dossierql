@@ -72,6 +72,7 @@ import {
   quarryRef,
   referenceOperations,
   referenceSteps,
+  refutationSets,
   solutionBindings,
   type Concept,
   type FactPattern,
@@ -692,8 +693,8 @@ function checkReferences(
     }
     const patterns = [
       ...stage.claims.flatMap((c) => c.evidenceSets.flatMap((s) => s.facts)),
-      ...Object.values(stage.leadOutcomes ?? {}).flatMap(
-        (o) => o.refutation?.facts ?? [],
+      ...Object.values(stage.leadOutcomes ?? {}).flatMap((o) =>
+        refutationSets(o).flat(),
       ),
     ];
     for (const pattern of patterns) {
@@ -1033,14 +1034,19 @@ function checkStageEvidence(
           "The solution's own lead cannot be refuted.",
         );
       }
-      const missing = fieldsExist(refutation.facts, mission.clearance);
-      if (missing) report(leadAt, "refutation", `Not retrievable: ${missing}.`);
-      if (!matchSet(refutation.facts, truth, only)) {
-        report(
-          leadAt,
-          "refutation",
-          "The data does not bear the refutation out.",
-        );
+      // Each set of facts must refute the lead on its own.
+      for (const set of refutationSets(outcome)) {
+        const missing = fieldsExist(set, mission.clearance);
+        if (missing) {
+          report(leadAt, "refutation", `Not retrievable: ${missing}.`);
+        }
+        if (!matchSet(set, truth, only)) {
+          report(
+            leadAt,
+            "refutation",
+            "The data does not bear the refutation out.",
+          );
+        }
       }
       const claim = stage.claims.find((c) => c.id === refutation.claim);
       if (claim?.evidenceSets.some((s) => matchSet(s.facts, truth, only))) {
@@ -1232,13 +1238,15 @@ function checkCitations(
     });
   }
   for (const [refuted, outcome] of Object.entries(stage.leadOutcomes ?? {})) {
-    const refutation = outcome.refutation;
-    if (!refutation) continue;
     // The check on refutations proves that the data bears this one out. Here
-    // only what the reference solution retrieves can be cited.
+    // only what the reference solution retrieves can be cited, and the set it
+    // retrieves is the one to cite.
     const only: Bindings = { [lead]: refuted };
-    const bound = matchSet(refutation.facts, facts, only);
-    if (!bound) continue;
+    const sets = refutationSets(outcome);
+    const index = sets.findIndex((set) => matchSet(set, facts, only));
+    const set = sets[index];
+    const bound = set && matchSet(set, facts, only);
+    if (!set || !bound) continue;
     // A row that is evidence for a claim is cited for that claim, and the
     // citation starts where the evidence does (SDD 3.2).
     const evidence = stage.claims.flatMap((c) =>
@@ -1252,8 +1260,10 @@ function checkCitations(
         );
       });
     checkSet(
-      `${at}.leadOutcomes.${refuted}.refutation`,
-      refutation.facts,
+      index === 0
+        ? `${at}.leadOutcomes.${refuted}.refutation`
+        : `${at}.leadOutcomes.${refuted}.refutation.alternatives.${String(index - 1)}`,
+      set,
       bound,
       citeControls(state, stage, refuted),
       refuted,
@@ -1513,18 +1523,19 @@ function checkSolvable(
     // every other one before the form is sent (SDD 3.5).
     for (const rival of Object.keys(stage.leads ?? {})) {
       if (rival === leadId) continue;
-      const refutation = stage.leadOutcomes?.[rival]?.refutation;
-      if (!refutation) continue;
+      const sets = refutationSets(stage.leadOutcomes?.[rival]);
+      if (sets.length === 0) continue;
       if (!fromLedger(stage)) {
         const only: Bindings = { [lead]: rival };
         const facts = Object.values(state.ledger).map((e) => e.fact);
-        const bound = matchSet(refutation.facts, facts, only);
-        if (bound) {
+        const set = sets.find((s) => matchSet(s, facts, only));
+        const bound = set && matchSet(set, facts, only);
+        if (set && bound) {
           state = act(env, state, {
             type: "cite",
             leadId: rival,
             label: "refutation",
-            factKeys: instantiate(refutation.facts, bound).filter(
+            factKeys: instantiate(set, bound).filter(
               (key) => state.ledger[key],
             ),
           }).state;
@@ -2390,22 +2401,29 @@ function checkRuledOutText(
     }
     for (const [leadId, outcome] of Object.entries(stage.leadOutcomes ?? {})) {
       const text = outcome.ruledOut;
-      const refutation = outcome.refutation;
-      if (text === undefined || !refutation) continue;
+      const sets = refutationSets(outcome);
+      if (text === undefined || sets.length === 0) continue;
       const only: Bindings = { [lead]: leadId };
-      const bound = matchSet(refutation.facts, truth, only) ?? only;
-      const retrieved = instantiate(refutation.facts, bound).map((key) =>
-        JSON.stringify(byKey.get(key)?.value ?? null),
-      );
+      // The dispatch follows whichever set the player retrieved, so it may
+      // mention only what every set retrieves.
+      const knownBy = sets.map((set) => {
+        const bound = matchSet(set, truth, only) ?? only;
+        const retrieved = instantiate(set, bound).map((key) =>
+          JSON.stringify(byKey.get(key)?.value ?? null),
+        );
+        return new Set(
+          recordTokens(
+            [JSON.stringify(set), JSON.stringify(bound), ...retrieved].join(
+              " ",
+            ),
+          ),
+        );
+      });
       const known = new Set([
         ...told,
         leadId,
-        ...recordTokens(
-          [
-            JSON.stringify(refutation.facts),
-            JSON.stringify(bound),
-            ...retrieved,
-          ].join(" "),
+        ...[...(knownBy[0] ?? [])].filter((token) =>
+          knownBy.every((tokens) => tokens.has(token)),
         ),
       ]);
       const leaked = [
@@ -2493,7 +2511,7 @@ function checkFieldCheckText(
         c.evidenceSets.map((s) => s.facts),
       );
       const sets = outcome.refutation
-        ? [outcome.refutation.facts]
+        ? refutationSets(outcome)
         : leadId === solution[lead]
           ? claimSets
           : stage.claims

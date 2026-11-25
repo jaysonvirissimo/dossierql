@@ -144,4 +144,25 @@ describe("headingOf", () => {
     );
     expect(headingOf({ note: "Order cleared." }, 2)).toBe("Entry 3");
   });
+
+  it("heads a record with no name by the opening of its description", () => {
+    expect(
+      headingOf(
+        {
+          description:
+            "Forty Moroccan dirhams on the washstand of room 4, left as a tip for the maid.",
+        },
+        0,
+      ),
+    ).toBe("Forty Moroccan dirhams on the washstand of room…");
+    expect(
+      headingOf(
+        { description: "A newspaper in Maltese, folded on the bed." },
+        1,
+      ),
+    ).toBe("A newspaper in Maltese");
+    expect(
+      headingOf({ reference: "FND-1201", description: "Forty dirhams." }, 0),
+    ).toBe("FND-1201");
+  });
 });

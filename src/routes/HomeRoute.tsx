@@ -39,11 +39,14 @@ function underway(state: { status: string } | undefined): boolean {
 function CaseCard({
   mission,
   next,
+  primary,
   titles,
 }: {
   mission: MissionSummary;
   /** Whether this is the next case in the story, which the desk emphasizes. */
   next: boolean;
+  /** Whether its button is the desk's main one. */
+  primary: boolean;
   titles: ReadonlyMap<string, string>;
 }) {
   const { course, standing, save } = useGame();
@@ -111,7 +114,7 @@ function CaseCard({
         ) : (
           <p className="case__go">
             <a
-              className={next ? "button button--primary" : "button"}
+              className={primary ? "button button--primary" : "button"}
               href={href({ name: "mission", missionId: mission.id })}
             >
               {inProgress
@@ -162,6 +165,13 @@ export function HomeRoute() {
   const trained = course.drills.filter((d) =>
     standing.drills.includes(d.id),
   ).length;
+  // On the first day the desk has one main button, Start training. The next
+  // case keeps its chip and its button, and takes the main button once the
+  // player has trained or opened a case.
+  const firstDay =
+    trained === 0 &&
+    done === 0 &&
+    Object.keys(save.investigations).length === 0;
   const katasOpen = course.katas.filter(
     (k) => standing.clearance >= k.clearance,
   );
@@ -263,6 +273,7 @@ export function HomeRoute() {
                   key={mission.id}
                   mission={mission}
                   next={mission === next}
+                  primary={mission === next && !firstDay}
                   titles={titles}
                 />
               ))}
@@ -295,6 +306,7 @@ export function HomeRoute() {
                     key={mission.id}
                     mission={mission}
                     next={false}
+                    primary={false}
                     titles={titles}
                   />
                 ))}

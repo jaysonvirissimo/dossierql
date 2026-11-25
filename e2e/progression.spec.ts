@@ -12,6 +12,7 @@ import {
   submit,
   watchPage,
   type PageWatch,
+  readDebrief,
 } from "./helpers.ts";
 
 let watch: PageWatch;
@@ -72,6 +73,7 @@ test("a player who knows GraphQL is promoted by placement", async ({
     .selectOption({ label: "Meridian Freight" });
   await choose(page, "Director", "PEWTER_SWIFT");
   await submit(page);
+  await readDebrief(page);
 
   await expect(page.getByTestId("stamp")).toHaveText("HELD");
   await expect(
@@ -129,6 +131,7 @@ test("a placement finished with the solution revealed does not promote", async (
   );
   await choose(page, "Director", "PEWTER_SWIFT");
   await submit(page);
+  await readDebrief(page);
 
   await expect(page.getByText(/does not promote you/)).toBeVisible();
   await expect(page.locator(".shell-bar__rank")).toHaveText("Clearance 1");

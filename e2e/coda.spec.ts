@@ -11,6 +11,7 @@ import {
   TO_CLEARANCE_5,
   watchPage,
   type PageWatch,
+  readDebrief,
 } from "./helpers.ts";
 
 let watch: PageWatch;
@@ -68,6 +69,7 @@ test("the coda ends the campaign without a promotion", async ({ page }) => {
   await expect(page.getByRole("button", { name: /^Cite/ })).toHaveCount(0);
   await choose(page, "Office", "fourth-desk");
   await submit(page);
+  await readDebrief(page, "UNSIGNED");
 
   await expect(
     page.getByRole("heading", { name: "File closed" }),

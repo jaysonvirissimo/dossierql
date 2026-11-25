@@ -2,7 +2,7 @@ import { parse } from "graphql";
 import { describe, expect, it } from "vitest";
 import { loadContent } from "../../scripts/load-content.ts";
 import type { RawContent } from "./catalog.ts";
-import type { Mission } from "./types.ts";
+import { quarryShown, type Mission } from "./types.ts";
 import { stepById } from "./steps.ts";
 import { transmit } from "../graphql/execute.ts";
 import { buildCatalog } from "./catalog.ts";
@@ -198,8 +198,10 @@ describe("validation fails the build when", () => {
     expect(
       issues((m) => {
         const stage = m.stages.zanzibar!;
+        // Dr. Lund's own file proves the claims, and retrieves neither D.
+        // Lund's sightings nor the name the dinner's sighting records.
         stage.referenceSolution = [
-          `query { city(name: "Zanzibar City") { sightings { id note nameGiven { name operative { codename } } } } }`,
+          `query { coverName(name: "Dr. Lund") { operative { codename } sightings { id city { name } } } }`,
         ];
       }),
     ).toContainEqual(
@@ -207,6 +209,26 @@ describe("validation fails the build when", () => {
         "does not retrieve the facts that rule this lead out",
       ),
     );
+  });
+
+  it("an alternative refutation does not hold in the data", () => {
+    expect(
+      validateContent(
+        mutated("guest-register", (m) => {
+          const refutation =
+            m.stages.zanzibar!.leadOutcomes!["d-lund"]!.refutation!;
+          refutation.alternatives = [
+            [
+              {
+                entity: "Sighting:SGT-040",
+                field: "nameGiven",
+                equals: "CoverName:d-lund",
+              },
+            ],
+          ];
+        }),
+      ).map((i) => i.message),
+    ).toContainEqual("The data does not bear the refutation out.");
   });
 
   it("a rule-out dispatch mentions a record the player has not retrieved", () => {
@@ -1166,5 +1188,27 @@ describe("warrants", () => {
         }),
       ),
     ).toContain("references");
+  });
+});
+
+describe("the quarry in the Dossiers tab (SDD 3.4)", () => {
+  const mission = (id: string) => {
+    const found = raw.missions.find((m) => m.id === id);
+    if (!found) throw new Error(`No mission ${id}.`);
+    return found;
+  };
+
+  it("is not shown while the stage asks which operative it is", () => {
+    expect(quarryShown(mission("three-couriers"), "zanzibar")).toBe(false);
+  });
+
+  it("is shown once a stage has identified it", () => {
+    expect(quarryShown(mission("three-couriers"), "trail")).toBe(true);
+  });
+
+  it("is shown at a warrant for the quarry, and from the first stage of a case whose briefing gives it", () => {
+    expect(quarryShown(mission("handlers-road"), "trieste")).toBe(true);
+    expect(quarryShown(mission("handlers-road"), "lisbon")).toBe(true);
+    expect(quarryShown(mission("last-sailing"), "praia")).toBe(true);
   });
 });

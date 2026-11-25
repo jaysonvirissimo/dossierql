@@ -14,6 +14,7 @@ import {
   watchPage,
   writeQuery,
   type PageWatch,
+  readDebrief,
 } from "./helpers.ts";
 
 let watch: PageWatch;
@@ -206,6 +207,7 @@ test("the last assessment arrests an officer and completes the course", async ({
     page,
     `mutation { requestWarrant(input: { subject: { officer: "Afonso Mascarenhas" } }) { approved reasons } }`,
   );
+  await readDebrief(page, "DETAINED");
   await expect(
     page.getByRole("heading", { name: "Case resolved" }),
   ).toBeVisible();

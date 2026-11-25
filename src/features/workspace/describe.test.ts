@@ -45,6 +45,19 @@ describe("labelOf", () => {
     );
     expect(labelOf("Operative:NIGHTJAR", ledger)).toBe("NIGHTJAR");
   });
+
+  it("calls a record with no name by the opening of its description", () => {
+    const ledger = ledgerOf([
+      scalar(
+        "Find:FND-1201",
+        "description",
+        "Forty Moroccan dirhams on the washstand of room 4, left as a tip for the maid.",
+      ),
+    ]);
+    expect(labelOf("Find:FND-1201", ledger)).toBe(
+      "Forty Moroccan dirhams on the washstand of room…",
+    );
+  });
 });
 
 describe("describeFact", () => {

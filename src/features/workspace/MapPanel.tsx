@@ -1,12 +1,21 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import map from "../../../data/map.json";
-import type { Country } from "../../content/types.ts";
+import {
+  bindingTypes,
+  leadBinding,
+  type Country,
+} from "../../content/types.ts";
 import { travelHours } from "../../engine/clock.ts";
-import { stageOf } from "../../engine/mission.ts";
+import { knownRecords, leadCountry, stageOf } from "../../engine/mission.ts";
 import { parseRef } from "../../graphql/store.ts";
 import { useWorkspace } from "./context.ts";
 import { hours } from "./describe.ts";
-import { STATUS_WORDS, stageLeads } from "./leads.ts";
+import {
+  leadCountryActions,
+  STATUS_WORDS,
+  stageLeads,
+  type LeadView,
+} from "./leads.ts";
 
 interface Shape {
   code: string | null;
@@ -50,6 +59,16 @@ interface Route {
   cost: number;
 }
 
+/** A field check: a visit to a lead's country and back to the same desk. */
+interface Visit {
+  n: number;
+  from: Country;
+  to: Country;
+  /** Where the visit went: the lead's city, or else the country's capital. */
+  at: { lat: number; lon: number; name: string };
+  cost: number;
+}
+
 /**
  * Present-day geography in period dress. The map marks where the player
  * is, the leads the stage keeps in contention, and the countries their
@@ -57,7 +76,7 @@ interface Route {
  * each would cost, so the map can help decide where to go (SDD 8.2).
  */
 export default function MapPanel() {
-  const { env, state, stage } = useWorkspace();
+  const { env, state, stage, dispatch } = useWorkspace();
   const byCode = new Map(env.world.countries.map((c) => [c.code, c]));
   const here = byCode.get(stage.location);
   const seen = new Set<string>();
@@ -147,7 +166,52 @@ export default function MapPanel() {
       : undefined;
     if (from && to) routes.push({ n: d.n, from, to, cost: d.cost });
   }
-  const latest = routes.at(-1);
+  // A lead that the responses have turned up can be chosen on the form from
+  // the map, by its pin or its line in the list. On a travel order the form
+  // also takes the country the lead points to, once a response has returned
+  // that country. The player still sends the form (SDD 8.2).
+  const types = bindingTypes(stage);
+  const leadType = types[leadBinding(stage)] ?? "";
+  const retrieved = new Set(knownRecords(state, leadType));
+  const closed = state.status === "complete" || state.clock === "ended";
+  const choosable = (lead: LeadView) =>
+    !closed && lead.status !== "ruled-out" && retrieved.has(lead.id);
+  const choose = (lead: LeadView) => {
+    dispatch({ type: "open-lead", leadId: lead.id });
+    leadCountryActions(state, stage, lead).forEach(dispatch);
+    const form = document.querySelector<HTMLElement>("section.draft");
+    form?.scrollIntoView({ block: "nearest" });
+    form
+      ?.querySelector<HTMLElement>(
+        "select:not([disabled]), button:not([disabled])",
+      )
+      ?.focus();
+  };
+  // Each field check went out to the lead's country and came back, so it is
+  // drawn as a visit and the player's pin stays where it was (SDD 3.5).
+  const visits: Visit[] = [];
+  for (const d of state.dispatches) {
+    if (d.kind !== "field-check" || !d.leadId) continue;
+    const at = stageOf(env.mission, d.stageId);
+    const from = byCode.get(at.location);
+    const code = leadCountry(env, at, d.leadId);
+    const to = code ? byCode.get(code) : undefined;
+    if (!from || !to || to.code === from.code) continue;
+    const cityId = at.leads?.[d.leadId]?.city;
+    const city = cityId
+      ? env.world.cities.find((c) => c.id === cityId)
+      : undefined;
+    visits.push({
+      n: d.n,
+      from,
+      to,
+      at: city
+        ? { lat: city.lat, lon: city.lon, name: city.name }
+        : { lat: to.capitalLat, lon: to.capitalLon, name: to.name },
+      cost: d.cost,
+    });
+  }
+  const latest = [...routes, ...visits].sort((a, b) => a.n - b.n).at(-1);
   const latestKey = latest ? `${env.mission.id}:${String(latest.n)}` : null;
   const [fresh] = useState(() => latestKey !== null && !drawn.has(latestKey));
   useEffect(() => {
@@ -209,6 +273,27 @@ export default function MapPanel() {
             />
           );
         })}
+        {visits.map((visit) => {
+          const a = project(visit.from.capitalLat, visit.from.capitalLon);
+          const b = project(visit.at.lat, visit.at.lon);
+          return (
+            <line
+              key={visit.n}
+              x1={a.x}
+              y1={a.y}
+              x2={b.x}
+              y2={b.y}
+              pathLength={1}
+              strokeWidth={PX.route * unit}
+              data-testid="map-visit"
+              className={
+                fresh && visit === latest
+                  ? "map__route map__route--visit map__route--new"
+                  : "map__route map__route--visit"
+              }
+            />
+          );
+        })}
         {journeys.map(({ country }) => {
           const p = project(country.capitalLat, country.capitalLon);
           return (
@@ -233,8 +318,17 @@ export default function MapPanel() {
           return (
             <g
               key={lead.id}
-              className={struck ? "map__lead map__lead--struck" : "map__lead"}
+              className={
+                struck
+                  ? "map__lead map__lead--struck"
+                  : choosable(lead)
+                    ? "map__lead map__lead--choosable"
+                    : "map__lead"
+              }
+              data-testid={`map-pin-${lead.id}`}
+              {...(choosable(lead) ? { onClick: () => choose(lead) } : {})}
             >
+              <title>{lead.label}</title>
               <circle
                 cx={p.x}
                 cy={p.y}
@@ -266,16 +360,20 @@ export default function MapPanel() {
           />
         )}
       </svg>
-      {routes.length > 0 && (
+      {(routes.length > 0 || visits.length > 0) && (
         <>
           <h3>Your route so far</h3>
           <ol className="journeys" data-testid="route">
-            {routes.map((route) => (
-              <li key={route.n}>
-                {route.from.name} to {route.to.name}
-                {route.cost > 0 && `, ${hours(route.cost)}`}
-              </li>
-            ))}
+            {([...routes, ...visits] as (Route | Visit)[])
+              .sort((a, b) => a.n - b.n)
+              .map((trip) => (
+                <li key={trip.n}>
+                  {"at" in trip
+                    ? `A field check from ${trip.from.name} to ${trip.at.name}, ${trip.to.name}, and back`
+                    : `${trip.from.name} to ${trip.to.name}`}
+                  {trip.cost > 0 && `, ${hours(trip.cost)}`}
+                </li>
+              ))}
           </ol>
         </>
       )}
@@ -298,6 +396,18 @@ export default function MapPanel() {
                   lead.hours,
                 )}{" "}
                 · {STATUS_WORDS[lead.status]}
+                {choosable(lead) && (
+                  <>
+                    {" "}
+                    <button
+                      type="button"
+                      className="button button--quiet button--small"
+                      onClick={() => choose(lead)}
+                    >
+                      Choose on the form
+                    </button>
+                  </>
+                )}
               </li>
             ))}
           </ul>

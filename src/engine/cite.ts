@@ -1,6 +1,7 @@
 import {
   bindingTypes,
   leadBinding,
+  refutationSets,
   type FactPattern,
   type Stage,
 } from "../content/types.ts";
@@ -25,8 +26,8 @@ export function pathKey(path: Path): string {
 export function stagePatterns(stage: Stage): FactPattern[] {
   return [
     ...stage.claims.flatMap((c) => c.evidenceSets.flatMap((s) => s.facts)),
-    ...Object.values(stage.leadOutcomes ?? {}).flatMap(
-      (o) => o.refutation?.facts ?? [],
+    ...Object.values(stage.leadOutcomes ?? {}).flatMap((o) =>
+      refutationSets(o).flat(),
     ),
   ];
 }
@@ -139,8 +140,10 @@ export function citationAt(
   // Find the start of a chain that supports a claim for this lead.
   const forLead = leadId ?? activeLead;
   const bound: Bindings = forLead === null ? {} : { [lead]: forLead };
-  const refutation =
-    forLead === null ? undefined : stage.leadOutcomes?.[forLead]?.refutation;
+  const refuting =
+    forLead === null
+      ? []
+      : refutationSets(stage.leadOutcomes?.[forLead]).flat();
   const evidence = stage.claims.flatMap((c) =>
     c.evidenceSets.flatMap((s) => s.facts),
   );
@@ -156,15 +159,13 @@ export function citationAt(
     );
   };
   let start = chain.findIndex(usable);
-  if (start < 0 && refutation) {
+  if (start < 0 && refuting.length > 0) {
     start = chain.findIndex((key) => {
       const fact = ledger[key]?.fact;
       return (
         fact !== undefined &&
         // A list's omission cannot start a chain from a nested row.
-        refutation.facts.some(
-          (p) => p.excludes === undefined && meets(p, fact, bound),
-        )
+        refuting.some((p) => p.excludes === undefined && meets(p, fact, bound))
       );
     });
   }

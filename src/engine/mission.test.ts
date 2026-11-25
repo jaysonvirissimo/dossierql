@@ -5,7 +5,7 @@ import { loadContent } from "../../scripts/load-content.ts";
 import { buildCatalog } from "../content/catalog.ts";
 import type { Mission, Stage } from "../content/types.ts";
 import { COSTS } from "./clock.ts";
-import { leadFacts } from "./board.ts";
+import { leadFacts, linkedRecords } from "./board.ts";
 import { reviewDraft } from "./draft.ts";
 import {
   act,
@@ -814,6 +814,16 @@ describe("ruling out in The Guest Register", () => {
       { type: "proceed", leadId: "SGT-031" },
     );
 
+  it("leaves the form on the open lead when another is ruled out from the board", () => {
+    const sent = play(
+      send(begun(), guest.mission.stages.luanda!.referenceSolution as string),
+      { type: "open-lead", leadId: "SGT-031" },
+      { type: "rule-out", leadId: "SGT-027" },
+    );
+    expect(leadStatus(sent, "SGT-027")).toBe("ruled-out");
+    expect(sent.stages.luanda!.activeLead).toBe("SGT-031");
+  });
+
   it("puts every lead on the board, with each one's country and status", () => {
     const luanda = guest.mission.stages.luanda!;
     expect(Object.keys(luanda.leads ?? {})).toEqual([
@@ -904,6 +914,34 @@ describe("ruling out in The Guest Register", () => {
     expect(
       act(guest, struck, { type: "proceed", leadId: "SGT-031" }).state.stageId,
     ).toBe("zanzibar");
+  });
+
+  it("rules out D. Lund from the dinner's own sighting, with no lookup of D. Lund", () => {
+    const sent = send(
+      inZanzibar(),
+      'query { city(name: "Zanzibar City") { sightings { id note nameGiven { name operative { codename } } } } }',
+    );
+    expect(Object.keys(sent.ledger)).not.toContain(
+      "CoverName:d-lund.sightings",
+    );
+    const struck = act(guest, sent, { type: "rule-out", leadId: "d-lund" });
+    expect(leadStatus(struck.state, "d-lund")).toBe("ruled-out");
+    expect(struck.notice?.kind).toBe("dispatch");
+    const done = act(
+      guest,
+      play(
+        struck.state,
+        { type: "open-lead", leadId: "dr-lund" },
+        {
+          type: "name",
+          leadId: "dr-lund",
+          binding: "operative",
+          value: "MARBLE_HERON",
+        },
+      ),
+      { type: "proceed", leadId: "dr-lund" },
+    );
+    expect(done.state.status).toBe("complete");
   });
 
   it("holds the deduction until D. Lund is ruled out", () => {
@@ -1349,5 +1387,81 @@ describe("standing watches in The River Quay", () => {
     expect(Object.keys(chosen.transmissions[0]?.data ?? {})).toEqual([
       "countries",
     ]);
+  });
+});
+
+describe("the records a form lists first (SDD 8.2)", () => {
+  const couriers = envFor("three-couriers");
+  const play = (state: MissionState, ...actions: Action[]) =>
+    actions.reduce((s, action) => act(couriers, s, action).state, state);
+
+  it("links a sighting to its city and that city's country, and not to the other sightings' countries", () => {
+    const stage1 = couriers.mission.stages.zanzibar!;
+    const trail = couriers.mission.stages.trail!;
+    const there = play(
+      startMission(couriers),
+      { type: "begin" },
+      { type: "edit", editor: stage1.referenceSolution as string },
+      { type: "transmit" },
+      ...Object.keys(stage1.leadOutcomes ?? {}).flatMap((leadId): Action[] => [
+        { type: "open-lead", leadId },
+        { type: "rule-out", leadId },
+      ]),
+      { type: "open-lead", leadId: "GREY_PETREL" },
+      { type: "proceed", leadId: "GREY_PETREL" },
+      { type: "edit", editor: trail.referenceSolution as string },
+      { type: "transmit" },
+    );
+    expect(there.stageId).toBe("trail");
+    const linked = linkedRecords(there.ledger, "Sighting:SGT-051");
+    expect(linked).toContain("City:lusaka");
+    expect(linked).toContain("Country:ZM");
+    expect(linked).not.toContain("Country:MW");
+    expect(linked).not.toContain("Country:KM");
+  });
+});
+
+describe("a field check on the Lilongwe sighting in Three Couriers", () => {
+  const couriers = envFor("three-couriers");
+  const play = (state: MissionState, ...actions: Action[]) =>
+    actions.reduce((s, action) => act(couriers, s, action).state, state);
+  const onTrail = () => {
+    const stage1 = couriers.mission.stages.zanzibar!;
+    return play(
+      startMission(couriers),
+      { type: "begin" },
+      { type: "edit", editor: stage1.referenceSolution as string },
+      { type: "transmit" },
+      ...Object.keys(stage1.leadOutcomes ?? {}).flatMap((leadId): Action[] => [
+        { type: "open-lead", leadId },
+        { type: "rule-out", leadId },
+      ]),
+      { type: "open-lead", leadId: "GREY_PETREL" },
+      { type: "proceed", leadId: "GREY_PETREL" },
+    );
+  };
+  const BORDERS_ONLY = `query { operative(codename: "GREY_PETREL") { sightings { id city { name country { name borders { name } } } } } }`;
+
+  it("is offered once the border is known and the currency is not, and leaves the player in Tanzania", () => {
+    const trail = couriers.mission.stages.trail!;
+    const sent = play(
+      onTrail(),
+      { type: "edit", editor: BORDERS_ONLY },
+      { type: "transmit" },
+      { type: "open-lead", leadId: "SGT-052" },
+      { type: "name", leadId: "SGT-052", binding: "country", value: "MW" },
+    );
+    const draft = sent.stages.trail!.drafts["SGT-052"]!;
+    expect(reviewDraft(trail, draft, sent.ledger).canFieldCheck).toBe(true);
+    const checked = act(couriers, sent, {
+      type: "field-check",
+      leadId: "SGT-052",
+    });
+    expect(checked.notice?.kind).toBe("dispatch");
+    expect(checked.state.stageId).toBe("trail");
+    expect(checked.state.hoursLeft).toBe(
+      sent.hoursLeft - fieldCheckCost(couriers, sent, "SGT-052"),
+    );
+    expect(checked.state.dispatches.at(-1)?.text).toContain("Malawian kwacha");
   });
 });

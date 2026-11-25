@@ -4,6 +4,7 @@ import {
   referenceOperations,
   solutionBindings,
 } from "../../content/types.ts";
+import { linkedRecords } from "../../engine/board.ts";
 import { COSTS, travelHours } from "../../engine/clock.ts";
 import {
   emptyDraft,
@@ -24,6 +25,43 @@ import { useWorkspace } from "./context.ts";
 import { describeFact, hours, labelOf, typeWords, words } from "./describe.ts";
 import { EvidenceChain, ReturnedForm } from "./Evidence.tsx";
 import { optionLabel } from "./leads.ts";
+
+/**
+ * The options of a box on the form. Where the player's responses link some
+ * of the records to the chosen lead, those come first under their own
+ * heading, and every other record retrieved follows (SDD 8.2).
+ */
+function RecordOptions({
+  list,
+  type,
+  leadRef,
+}: {
+  list: { id: string; label: string }[];
+  type: string;
+  leadRef: string | null;
+}) {
+  const { state } = useWorkspace();
+  const linked = leadRef ? linkedRecords(state.ledger, leadRef) : new Set();
+  const near = list.filter(({ id }) => linked.has(refOf(type, id)));
+  const far = list.filter(({ id }) => !linked.has(refOf(type, id)));
+  const items = (records: typeof list) =>
+    records.map(({ id, label }) => (
+      <option key={id} value={id}>
+        {label}
+      </option>
+    ));
+  if (!leadRef || near.length === 0 || far.length === 0) return items(list);
+  return (
+    <>
+      <optgroup label={`Linked to ${labelOf(leadRef, state.ledger)}`}>
+        {items(near)}
+      </optgroup>
+      <optgroup label={`Every other ${words(type)} retrieved`}>
+        {items(far)}
+      </optgroup>
+    </>
+  );
+}
 
 const STATUS = {
   supported: { chip: "chip--ok", text: "Supported" },
@@ -291,11 +329,11 @@ export function DraftPanel() {
                       ? `No ${words(type)} retrieved yet`
                       : "Not yet chosen"}
                   </option>
-                  {options.map(({ id, label }) => (
-                    <option key={id} value={id}>
-                      {label}
-                    </option>
-                  ))}
+                  <RecordOptions
+                    list={options}
+                    type={type}
+                    leadRef={refOf(leadType, draft.leadId)}
+                  />
                 </select>
               </label>
             );
@@ -708,11 +746,11 @@ function DecisionForm({
                   ? `No ${words(type)} retrieved yet`
                   : "Not yet chosen"}
               </option>
-              {list.map(({ id, label }) => (
-                <option key={id} value={id}>
-                  {label}
-                </option>
-              ))}
+              <RecordOptions
+                list={list}
+                type={type}
+                leadRef={draft ? refOf(leadType, draft.leadId) : null}
+              />
             </select>
           </label>
         );

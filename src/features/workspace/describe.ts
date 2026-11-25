@@ -3,6 +3,7 @@ import { citationAt, pathKey, type CitedRow } from "../../engine/cite.ts";
 import type { LedgerEntry, TransmissionRecord } from "../../engine/mission.ts";
 import type { Fact } from "../../graphql/facts.ts";
 import { parseRef } from "../../graphql/store.ts";
+import { brief } from "./columns.ts";
 
 export type Ledger = Readonly<Record<string, LedgerEntry>>;
 
@@ -27,6 +28,12 @@ function identifiedAs(ref: string, ledger: Ledger): string | null {
   const serial = ledger[`${ref}.serial`]?.fact.value;
   if (serial?.kind === "scalar" && typeof serial.value === "number") {
     return `entry ${String(serial.value)}`;
+  }
+  // A record with no name, such as a find, is known by what it is, as the
+  // results know it.
+  const description = ledger[`${ref}.description`]?.fact.value;
+  if (description?.kind === "scalar" && typeof description.value === "string") {
+    return brief(description.value);
   }
   return null;
 }

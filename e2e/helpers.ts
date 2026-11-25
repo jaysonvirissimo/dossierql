@@ -49,6 +49,17 @@ export function expectClean(watch: PageWatch): void {
   expect(watch.consoleErrors).toEqual([]);
 }
 
+/**
+ * A case closed in this visit ends on its final scene and stamp (SDD 8.1).
+ * Checks the stamp, if given, and goes on to the debrief.
+ */
+export async function readDebrief(page: Page, stamp?: string): Promise<void> {
+  const closing = page.getByTestId("closing-stamp");
+  await expect(closing).toBeVisible();
+  if (stamp !== undefined) await expect(closing).toHaveText(stamp);
+  await page.getByRole("link", { name: "Read the debrief" }).click();
+}
+
 /** Activates a control from the keyboard, as a keyboard player would. */
 export async function press(control: Locator): Promise<void> {
   await control.focus();

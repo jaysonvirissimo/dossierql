@@ -1,6 +1,7 @@
 import {
   bindingTypes,
   leadBinding,
+  solutionBindings,
   type City,
   type Country,
   type Stage,
@@ -10,8 +11,10 @@ import { refOf } from "../../graphql/store.ts";
 import { labelOf, type Ledger } from "./describe.ts";
 import {
   fieldCheckCost,
+  knownRecords,
   leadCountry,
   leadStatus,
+  type Action,
   type Env,
   type LeadStatus,
   type MissionState,
@@ -93,4 +96,27 @@ export function optionLabel(
   return lead && bindingTypes(stage)[leadBinding(stage)] === type
     ? `${lead.label} (${own})`
     : own;
+}
+
+/**
+ * The actions that put a lead's country on its travel order, when a
+ * response has returned that country and the box is still blank. The map
+ * and the case board show each lead's country already, so choosing it gives
+ * nothing away (SDD 8.2).
+ */
+export function leadCountryActions(
+  state: MissionState,
+  stage: Stage,
+  lead: LeadView,
+): Action[] {
+  if (stage.solution.type !== "destination") return [];
+  const types = bindingTypes(stage);
+  const box = solutionBindings(stage).find(
+    ([name]) => types[name] === "Country",
+  )?.[0];
+  const code = lead.country?.code;
+  if (!box || !code || !knownRecords(state, "Country").includes(code)) {
+    return [];
+  }
+  return [{ type: "name", leadId: lead.id, binding: box, value: code }];
 }

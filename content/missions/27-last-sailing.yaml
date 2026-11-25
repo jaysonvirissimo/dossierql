@@ -296,6 +296,12 @@ stages:
                 field: sender
                 equals: Officer:$officer
 
+    resolved: |
+      Warrant approved. The magistrate signs it on the counter of the
+      harbour office, beside the book that the chair has just signed. The
+      police reach the foot of the Atlântida's gangway as Afonso Mascarenhas
+      starts back up it, and the ship's whistle is already blowing.
+
     referenceSolution:
       - |
         subscription Praia {

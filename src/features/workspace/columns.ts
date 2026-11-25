@@ -20,6 +20,23 @@ export function isPlainList(list: readonly unknown[]): boolean {
   );
 }
 
+/** The most words a record's description gives its heading. */
+const BRIEF_WORDS = 8;
+
+/**
+ * The opening of a description, short enough for a heading or a box on a
+ * form: its first clause, cut at eight words. "Forty Moroccan dirhams on the
+ * washstand of room 4, left as a tip" reads "Forty Moroccan dirhams on the
+ * washstand of room…".
+ */
+export function brief(description: string): string {
+  const clause = description.split(/[.,;:](?:\s|$)/)[0]?.trim() ?? "";
+  const words = clause.split(/\s+/).filter(Boolean);
+  return words.length > BRIEF_WORDS
+    ? `${words.slice(0, BRIEF_WORDS).join(" ")}…`
+    : clause;
+}
+
 export function headingOf(
   value: Record<string, unknown>,
   index: number,
@@ -29,6 +46,9 @@ export function headingOf(
   }
   // An entry in a register is known by its serial number.
   if (typeof value.serial === "number") return `Serial ${String(value.serial)}`;
+  // A record with no name, such as a find, is known by what it is, as the
+  // form knows it (SDD 3.2).
+  if (typeof value.description === "string") return brief(value.description);
   return `Entry ${String(index + 1)}`;
 }
 

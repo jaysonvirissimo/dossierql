@@ -340,10 +340,13 @@ function withDraft(
   state: MissionState,
   leadId: string,
   change: (draft: Draft) => Draft,
+  // Ruling out or checking a lead from the case board leaves the form on
+  // the lead the player has open, so it is not opened on the form (SDD 3.5).
+  open = true,
 ): MissionState {
   return withStage(state, (stage) => ({
     ...stage,
-    activeLead: leadId,
+    ...(open ? { activeLead: leadId } : {}),
     drafts: { ...stage.drafts, [leadId]: change(draftOf(stage, leadId)) },
   }));
 }
@@ -457,9 +460,7 @@ export function formHold(
   if (rivals.length > 0) {
     const verb = rivals.length === 1 ? "is" : "are";
     const them = rivals.length === 1 ? "it" : "each of them";
-    const lead = leadBinding(stage);
-    const box = stage.labels?.[lead] ?? lead;
-    return `${listed(rivals, "and")} ${verb} still in contention. Choose ${them} in the “${box}” box and press Rule out before you send the ${order}.`;
+    return `${listed(rivals, "and")} ${verb} still in contention. Rule ${them} out on the case board before you send the ${order}.`;
   }
   return null;
 }
@@ -1117,10 +1118,12 @@ function rule(env: Env, state: MissionState, action: Action): Outcome {
             : "To rule out a lead, you must first cite a fact that contradicts one of the claims about that lead.",
         );
       }
-      const marked = withDraft(state, action.leadId, (d) => ({
-        ...d,
-        ruledOut: true,
-      }));
+      const marked = withDraft(
+        state,
+        action.leadId,
+        (d) => ({ ...d, ruledOut: true }),
+        false,
+      );
       const added = addDispatch(marked, {
         kind: "ruled-out",
         leadId: action.leadId,
@@ -1152,10 +1155,12 @@ function rule(env: Env, state: MissionState, action: Action): Outcome {
       }
       const cost = fieldCheckCost(env, state, action.leadId);
       return charge(env, state, cost, "This field check", (paid) => {
-        const marked = withDraft(paid, action.leadId, (d) => ({
-          ...d,
-          fieldChecked: true,
-        }));
+        const marked = withDraft(
+          paid,
+          action.leadId,
+          (d) => ({ ...d, fieldChecked: true }),
+          false,
+        );
         const added = addDispatch(marked, {
           kind: "field-check",
           leadId: action.leadId,

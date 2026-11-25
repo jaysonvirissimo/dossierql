@@ -62,10 +62,23 @@ export interface Clue {
   constraint: Record<string, Literal>;
 }
 
+/**
+ * The facts that contradict one claim about a lead (SDD 3.5). `facts` is
+ * one complete set. Each of the `alternatives` is another complete set that
+ * contradicts the same claim through other records, so that a player whose
+ * responses already settle the lead need not send a query only to rule it
+ * out. Any one set is enough.
+ */
+export interface Refutation {
+  claim: string;
+  facts: FactPattern[];
+  alternatives?: FactPattern[][];
+}
+
 export interface LeadOutcome {
   /** Country the lead points at, which prices a field check. */
   location?: string;
-  refutation?: { claim: string; facts: FactPattern[] };
+  refutation?: Refutation;
   ruledOut?: string;
   fieldCheck?: string;
 }
@@ -158,8 +171,8 @@ export interface Mission {
   summary: string;
   motif?: string;
   /**
-   * The codename of the operative a pursuit follows (SDD 3.4). The dossier
-   * shows the quarry first.
+   * The codename of the operative a pursuit follows (SDD 3.4). Once a stage
+   * has identified the quarry, the dossier shows the quarry first.
    */
   quarry?: string;
   /** A mission with no clock is untimed (SDD 3.3). */
@@ -382,8 +395,8 @@ export function leadBinding(stage: Stage): string {
 function patternsOf(stage: Stage): FactPattern[] {
   return [
     ...stage.claims.flatMap((c) => c.evidenceSets.flatMap((s) => s.facts)),
-    ...Object.values(stage.leadOutcomes ?? {}).flatMap(
-      (o) => o.refutation?.facts ?? [],
+    ...Object.values(stage.leadOutcomes ?? {}).flatMap((o) =>
+      refutationSets(o).flat(),
     ),
   ];
 }
@@ -420,4 +433,26 @@ export function quarryRef(mission: Mission): string | undefined {
   const quarry = mission.quarry;
   if (quarry === undefined) return undefined;
   return quarry.includes(":") ? quarry : `Operative:${quarry}`;
+}
+
+/**
+ * Whether the Dossiers tab may show which operative is the quarry at a
+ * stage. It may not while the stage's own deduction asks the player to
+ * identify the quarry, as the first stage of *Three Couriers* does, because
+ * the label would give the answer away (SDD 3.4).
+ */
+export function quarryShown(mission: Mission, stageId: string): boolean {
+  const quarry = quarryRef(mission);
+  if (quarry === undefined) return false;
+  const stage = mission.stages[stageId];
+  if (!stage || stage.solution.type !== "deduction") return true;
+  const id = quarry.slice(quarry.indexOf(":") + 1);
+  return !solutionBindings(stage).some(([, value]) => value === id);
+}
+
+/** Every complete set of facts that refutes a lead, the first one first. */
+export function refutationSets(outcome?: LeadOutcome): FactPattern[][] {
+  const refutation = outcome?.refutation;
+  if (!refutation) return [];
+  return [refutation.facts, ...(refutation.alternatives ?? [])];
 }

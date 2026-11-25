@@ -4,10 +4,11 @@ import {
   bindingTypes,
   leadBinding,
   quarryRef,
+  quarryShown,
   referenceSteps,
 } from "../../content/types.ts";
 import { COSTS, HINT_LADDER_COST } from "../../engine/clock.ts";
-import { hintCost, revealCost } from "../../engine/mission.ts";
+import { hintCost, revealCost, type Dispatch } from "../../engine/mission.ts";
 import { parseRef, refOf } from "../../graphql/store.ts";
 import { Prose } from "../Prose.tsx";
 import { SchemaDocs } from "../SchemaDocs.tsx";
@@ -41,49 +42,70 @@ function CasePanel({ onShowMap }: { onShowMap(): void }) {
   const [confirming, setConfirming] = useState(false);
   const [passing, setPassing] = useState(false);
   const here = state.dispatches.filter((d) => d.stageId === state.stageId);
-  const earlier = state.dispatches.filter((d) => d.stageId !== state.stageId);
+  const before = state.dispatches.filter((d) => d.stageId !== state.stageId);
+  // The dispatch that brought the player to this stage, such as an arrival,
+  // is read first, beside the briefing it leads into. The older paperwork
+  // waits, closed, below this stage's own dispatches (SDD 8.2).
+  const opening = before.at(-1);
+  const earlier = before.slice(0, -1);
   // A dispatch is headed with the lead as the player knows it, by its name.
   const leadName = (stageId: string, leadId: string) => {
     const at = env.mission.stages[stageId];
     const type = at ? bindingTypes(at)[leadBinding(at)] : undefined;
     return type ? labelOf(refOf(type, leadId), state.ledger) : leadId;
   };
+  const item = (dispatch: Dispatch) => (
+    <li
+      key={dispatch.n}
+      className={
+        notice?.kind === "dispatch" && notice.dispatch.n === dispatch.n
+          ? "dispatch dispatch--new"
+          : "dispatch"
+      }
+    >
+      <span className="label">
+        {words(dispatch.kind.replace("-", " "))}
+        {dispatch.leadId
+          ? ` · ${leadName(dispatch.stageId, dispatch.leadId)}`
+          : ""}
+        {dispatch.cost > 0 ? ` · ${hours(dispatch.cost)}` : ""}
+      </span>
+      <Prose text={dispatch.text} />
+      <EvidenceChain dispatch={dispatch} />
+    </li>
+  );
   return (
     <div className="tool">
       <h3>Objective</h3>
       <p>{stage.objective}</p>
+      {opening && (
+        <>
+          <h3>{opening.kind === "travel" ? "Arrival" : "Last dispatch"}</h3>
+          <ol className="dispatches-opening" data-testid="opening-dispatch">
+            {item(opening)}
+          </ol>
+        </>
+      )}
       <h3>Briefing</h3>
       <Prose text={stage.briefing} />
       <h3>Clues</h3>
       <Clues stage={stage} />
       <LeadBoard onShowMap={onShowMap} />
-      {state.dispatches.length > 0 && (
-        <>
-          <h3>Dispatches</h3>
-          <ol className="dispatches">
-            {[...earlier, ...here].map((dispatch) => (
-              <li
-                key={dispatch.n}
-                className={
-                  notice?.kind === "dispatch" &&
-                  notice.dispatch.n === dispatch.n
-                    ? "dispatch dispatch--new"
-                    : "dispatch"
-                }
-              >
-                <span className="label">
-                  {words(dispatch.kind.replace("-", " "))}
-                  {dispatch.leadId
-                    ? ` · ${leadName(dispatch.stageId, dispatch.leadId)}`
-                    : ""}
-                  {dispatch.cost > 0 ? ` · ${hours(dispatch.cost)}` : ""}
-                </span>
-                <Prose text={dispatch.text} />
-                <EvidenceChain dispatch={dispatch} />
-              </li>
-            ))}
-          </ol>
-        </>
+      {(here.length > 0 || earlier.length > 0) && (
+        <div className="dispatches">
+          {here.length > 0 && (
+            <>
+              <h3>Dispatches at this stage</h3>
+              <ol className="dispatches__list">{here.map(item)}</ol>
+            </>
+          )}
+          {earlier.length > 0 && (
+            <details className="dispatches__earlier">
+              <summary>Earlier dispatches ({earlier.length})</summary>
+              <ol className="dispatches__list">{earlier.map(item)}</ol>
+            </details>
+          )}
+        </div>
       )}
       <h3>Case file</h3>
       <p>
@@ -348,7 +370,10 @@ function EvidencePanel() {
 
 function DossierPanel() {
   const { env, state } = useWorkspace();
-  const quarry = quarryRef(env.mission);
+  // While the stage asks which operative is the quarry, the tab does not say.
+  const quarry = quarryShown(env.mission, state.stageId)
+    ? quarryRef(env.mission)
+    : undefined;
   // The briefing gives the quarry's codename, or an officer's name, so the
   // heading may.
   const [quarryType, quarryId = ""] = quarry?.split(":") ?? [];

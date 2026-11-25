@@ -42,13 +42,17 @@ test("the early pursuit identifies the courier, then catches up with him (SDD 3.
   await seedCompleted(page, [...TO_CLEARANCE_3]);
   await openCase(page, "three-couriers");
 
-  // The case names its quarry, so the courier's dossier comes first.
+  // Stage 1 asks which courier is the quarry, so the Dossiers tab does not
+  // say, before or after the three files come back.
   await openTool(page, "Dossiers");
-  await expect(page.getByTestId("quarry")).toBeVisible();
+  await expect(page.getByTestId("quarry")).toHaveCount(0);
 
   // Stage 1: three files under aliases identify the courier.
   await send(page, COURIERS);
-  await expect(page.getByTestId("quarry")).toContainText("GREY_PETREL");
+  await expect(
+    page.locator(".dossier h3", { hasText: "GREY_PETREL" }),
+  ).toBeVisible();
+  await expect(page.getByTestId("quarry")).toHaveCount(0);
   await choose(page, "Courier", "SABLE_IBIS");
   await submit(page, /^Rule out/);
   await choose(page, "Courier", "TIN_FALCON");
@@ -58,6 +62,14 @@ test("the early pursuit identifies the courier, then catches up with him (SDD 3.
   await expect(
     page.getByText(/three\s+sightings filed under GREY_PETREL/).first(),
   ).toBeVisible();
+
+  // Once the deduction has identified the courier, his dossier comes first.
+  await openTool(page, "Dossiers");
+  await expect(page.getByTestId("quarry")).toContainText("GREY_PETREL");
+  await expect(page.locator(".dossier").first()).toHaveAttribute(
+    "data-testid",
+    "quarry",
+  );
 
   // Stage 2: the three sightings are on the board and the map before any
   // transmission at this stage.
@@ -103,16 +115,47 @@ test("the early pursuit identifies the courier, then catches up with him (SDD 3.
   await choose(page, "Sighting", "SGT-053");
   await submit(page, /^Rule out/);
   await expect(draft(page)).toContainText("nobody crosses into them by land");
-  await choose(page, "Sighting", "SGT-052");
-  await submit(page, /^Rule out/);
+  // A lead can also be struck off from its card on the case board. The true
+  // lead's card offers the button too, and the archive refuses it at no cost.
+  await openTool(page, "Case");
+  const board = page.getByTestId("case-board");
+  await board
+    .getByTestId("lead-SGT-051")
+    .getByRole("button", { name: /^Rule out/ })
+    .click();
+  await expect(board.getByTestId("lead-SGT-051")).toContainText(
+    "cannot be ruled out",
+  );
+  await board
+    .getByTestId("lead-SGT-052")
+    .getByRole("button", { name: /^Rule out/ })
+    .click();
+  await expect(board.getByTestId("lead-SGT-052")).toHaveAttribute(
+    "data-status",
+    "ruled-out",
+  );
   await expect(draft(page)).toContainText("code MWK");
-  await choose(page, "Sighting", "SGT-051");
   // Until the form has a country, the journey has no price, because the
   // price of the next stage's journey would give the answer away.
+  await choose(page, "Sighting", "SGT-051");
   await expect(draft(page).getByRole("button", { name: /^Travel/ })).toHaveText(
     "Travel",
   );
-  await choose(page, "Country of the sighting", "ZM");
+  // The map chooses a lead on the form, with the country it points to. A
+  // struck lead offers no choice.
+  await openTool(page, "Map");
+  await expect(
+    page.getByTestId("map-leads").locator("li").nth(1).getByRole("button"),
+  ).toHaveCount(0);
+  await page
+    .getByTestId("map-leads")
+    .locator("li")
+    .first()
+    .getByRole("button", { name: "Choose on the form" })
+    .click();
+  await expect(draft(page).getByLabel("Country of the sighting")).toHaveValue(
+    "ZM",
+  );
   await expect(
     draft(page).getByRole("button", { name: /^Travel/ }),
   ).toContainText("hours");
@@ -123,4 +166,49 @@ test("the early pursuit identifies the courier, then catches up with him (SDD 3.
     page.getByText(/left an hour before your\s+plane came in/).first(),
   ).toBeVisible();
   await expect(page.getByText(/lodged three payments/).first()).toBeVisible();
+});
+
+const BORDERS_ONLY = `query {
+  operative(codename: "GREY_PETREL") {
+    sightings { id city { name country { name borders { name } } } }
+  }
+}`;
+
+test("a field check on a wrong turn is drawn as a visit, and the player stays put (SDD 3.5)", async ({
+  page,
+}) => {
+  await seedCompleted(page, [...TO_CLEARANCE_3]);
+  await openCase(page, "three-couriers");
+  await send(page, COURIERS);
+  await choose(page, "Courier", "SABLE_IBIS");
+  await submit(page, /^Rule out/);
+  await choose(page, "Courier", "TIN_FALCON");
+  await submit(page, /^Rule out/);
+  await choose(page, "Courier", "GREY_PETREL");
+  await submit(page, "Submit deduction");
+
+  // The borders alone leave Lilongwe half proved: Malawi borders Tanzania,
+  // and nothing yet says which kwacha the receipt was for.
+  // The travel order waits until the other sightings are ruled out, so the
+  // card on the case board offers the check, at the price it shows.
+  await send(page, BORDERS_ONLY);
+  await openTool(page, "Case");
+  const lilongwe = page.getByTestId("lead-SGT-052");
+  await expect(lilongwe.getByTestId("lead-prices")).toContainText(
+    "A field check sends someone to the place",
+  );
+  await lilongwe.getByRole("button", { name: /Order a field check/ }).click();
+  await expect(lilongwe).toHaveAttribute("data-status", "field-checked");
+  await expect(draft(page)).toContainText("Malawian kwacha");
+
+  // The map draws the visit out and back, and the player is still in
+  // Tanzania.
+  await openTool(page, "Map");
+  await expect(page.locator(".tools__panel")).toContainText(
+    "You are in Tanzania.",
+  );
+  await expect(page.getByTestId("map-visit")).toHaveCount(1);
+  await expect(page.getByTestId("route")).toContainText(
+    "A field check from Tanzania to Lilongwe, Malawi, and back",
+  );
 });

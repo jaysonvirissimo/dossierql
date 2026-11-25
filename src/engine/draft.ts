@@ -1,6 +1,7 @@
 import {
   bindingTypes,
   leadBinding,
+  refutationSets,
   solutionBindings,
   type FactPattern,
   type Stage,
@@ -196,8 +197,12 @@ export function reviewDraft(
   const outcome = stage.leadOutcomes?.[draft.leadId];
   const refutation = outcome?.refutation;
   // A refutation speaks about the lead alone; its other records are free.
+  // Any one of its sets of facts is enough (SDD 3.5).
   const leadOnly: Bindings = { [lead]: draft.leadId };
-  const refuting = refutation && fillSet(refutation.facts, facts, leadOnly);
+  const refuting = refutationSets(outcome).reduce<ReturnType<typeof fillSet>>(
+    (found, set) => found ?? fillSet(set, facts, leadOnly),
+    null,
+  );
   const refutedClaim = refutation && refuting ? refutation.claim : null;
 
   const claims: ClaimReview[] = stage.claims.map((claim) => {
@@ -282,7 +287,7 @@ export function reviewDraft(
 
   const patterns = [
     ...stage.claims.flatMap((c) => c.evidenceSets.flatMap((s) => s.facts)),
-    ...(refutation?.facts ?? []),
+    ...refutationSets(outcome).flat(),
   ];
   const unrelated = ledgerMode
     ? []

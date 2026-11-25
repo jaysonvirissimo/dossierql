@@ -82,6 +82,7 @@ const stage = z.strictObject({
           .strictObject({
             claim: z.string(),
             facts: z.array(factPattern).min(1),
+            alternatives: z.array(z.array(factPattern).min(1)).optional(),
           })
           .optional(),
         ruledOut: text.optional(),

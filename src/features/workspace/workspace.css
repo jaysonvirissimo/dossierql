@@ -820,9 +820,27 @@
   align-self: stretch;
 }
 
-.dispatches .dispatch {
+.dispatches__list,
+.dispatches-opening {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-self: stretch;
+}
+
+.dispatches .dispatch,
+.dispatches-opening .dispatch {
   border-left: 3px solid var(--cobalt);
   padding-left: var(--space-3);
+}
+
+.dispatches__earlier summary {
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+
+.dispatches__earlier[open] summary {
+  margin-bottom: var(--space-2);
 }
 
 .doc {
@@ -958,6 +976,12 @@
   fill: none;
 }
 
+/* A field check went out and came back, so it is drawn fainter. */
+.map__route--visit {
+  stroke: var(--ink-soft);
+  stroke-dasharray: 0.04 0.04;
+}
+
 /* The newest journey draws from city to city (SDD 8.1). */
 .map__route--new {
   stroke-dasharray: 1;
@@ -998,6 +1022,10 @@
   fill: var(--ink);
   paint-order: stroke;
   stroke: var(--paper-raised);
+}
+
+.map__lead--choosable {
+  cursor: pointer;
 }
 
 .map__lead--struck .map__pin--lead {
@@ -1048,6 +1076,10 @@
 .board__prices {
   font-size: 0.9375rem;
   color: var(--ink-soft);
+}
+
+.board__actions {
+  margin: var(--space-2) 0;
 }
 
 .findings__legend,

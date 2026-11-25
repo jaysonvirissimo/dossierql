@@ -8,6 +8,7 @@ import {
   submit,
   watchPage,
   type PageWatch,
+  readDebrief,
 } from "./helpers.ts";
 
 let watch: PageWatch;
@@ -48,6 +49,7 @@ test("a placement passed without its level's technique says so, and keeps the pr
 
   await choose(page, "Shipment", "DAR-0158");
   await submit(page);
+  await readDebrief(page);
 
   await expect(
     page.getByText(/Placement passed. You now hold clearance 4/),

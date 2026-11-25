@@ -137,6 +137,13 @@ test("clearance 12 searches with input objects and ends a pursuit in a warrant",
   await expect(hours).toContainText(`${String(before - 4)} of`);
 
   await send(page, warrant("COPPER_STARLING"));
+  // The arrest has a moment of its own before the debrief, and plays once:
+  // the case reopened after a reload goes straight to the debrief.
+  await expect(page.getByTestId("closing-stamp")).toHaveText("DETAINED");
+  await expect(page.locator(".closing__scene")).toContainText(
+    "COPPER_STARLING",
+  );
+  await page.reload();
   await expect(
     page.getByRole("heading", { name: "Case resolved" }),
   ).toBeVisible();

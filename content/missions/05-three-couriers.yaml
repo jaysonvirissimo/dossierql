@@ -59,8 +59,9 @@ stages:
         constraint:
           $operative.organization: Organization:parallax-circle
       - text: >
-          MARBLE_HERON hands money only to an old acquaintance. The
-          courier's file lists MARBLE_HERON among its known associates.
+          MARBLE_HERON hands money only to an old acquaintance, so
+          MARBLE_HERON is among the known associates in the courier's
+          file.
         constraint:
           $operative.knownAssociates: Operative:MARBLE_HERON
 
@@ -341,6 +342,13 @@ stages:
           Lilongwe's watcher did see somebody pay in kwacha. Malawi's
           kwacha has the code MWK, and the receipt from the bureau
           does not.
+        fieldCheck: |
+          Lilongwe spreads wide across a high plateau, and bicycles
+          crowd the road past the market in the old town. The watcher
+          confirms that the traveller came over the land border from
+          Tanzania. The clerk at the bureau beside the market changes
+          shillings into Malawian kwacha all day, and asks what code
+          the courier's receipt gives for its kwacha.
       SGT-053:
         location: KM
         refutation:

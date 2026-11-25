@@ -37,7 +37,10 @@ test("every screen has its own route and survives a reload", async ({
   await expect(page.locator(".case--next")).toContainText(
     "The Vanishing Azulejos",
   );
-  await expect(page.locator(".case .button--primary")).toHaveCount(1);
+  // On the first day the desk has one main button, and it starts training.
+  await expect(page.locator(".button--primary")).toHaveCount(1);
+  await expect(page.locator(".button--primary")).toHaveText("Start training");
+  await expect(page.locator(".case .button--primary")).toHaveCount(0);
   await expect(page.locator(".placements .case")).toHaveCount(13);
   await expect(page.locator(".placements summary")).toContainText(
     "Placement: 13 assessments",

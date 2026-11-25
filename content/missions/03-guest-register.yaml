@@ -65,12 +65,12 @@ stages:
       NIGHTJAR's file out of the registry.
 
       Two of the three sightings are of somebody else, and in this
-      case you can strike them off. Choose a sighting on the form and
-      press Rule out. The archive then looks through your responses
-      for a fact that contradicts one of the claims about that
-      sighting. If it finds one, the sighting is ruled out, and the
-      form shows the facts that contradict the claim. Ruling out a
-      sighting costs no time.
+      case you can strike them off. Each sighting has a card on the
+      case board, and each card has a Rule out button. When you press
+      it, the archive looks through your responses for a fact that
+      contradicts one of the claims about that sighting. If it finds
+      one, the sighting is ruled out, and a dispatch lists the facts
+      that contradict the claim. Ruling out a sighting costs no time.
 
       The sighting shows which name the guest gave. NIGHTJAR's file
       lists the operative's cover names. The archive can tell that a
@@ -270,7 +270,7 @@ stages:
       Zanzibar City, and a sighting records the name the guest gave.
       Find out which cover name the guest gave, and which
       operative the registry files that name under. Before you submit
-      the deduction, rule out the other name on its own form.
+      the deduction, rule out the other name on the case board.
 
     clues:
       - text: >
@@ -381,10 +381,20 @@ stages:
             - entity: CoverName:$name
               field: sightings
               excludes: Sighting:SGT-040
+          # The dinner's own sighting gives the other name, so a player who
+          # has read it need not look up D. Lund only to strike the name off.
+          alternatives:
+            - - entity: City:zanzibar-city
+                field: sightings
+                includes: Sighting:SGT-040
+              - entity: Sighting:SGT-040
+                field: nameGiven
+                equals: CoverName:dr-lund
         ruledOut: |
-          No sighting in the register gives the name D. Lund, so the
-          guest at the dinner did not sign as D. Lund. The tea is
-          forgiven.
+          The guest at the dinner did not sign as D. Lund. Either the
+          sighting of the dinner records another name, or it is not
+          among the sightings filed under D. Lund. Your responses show
+          one or the other. The tea is forgiven.
 
     resolved: |
       Deduction accepted. NIGHTJAR came to Zanzibar City to dine with

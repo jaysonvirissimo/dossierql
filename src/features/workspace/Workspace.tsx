@@ -161,8 +161,13 @@ export default function Workspace({ mission }: { mission: Mission }) {
     setAttempt((n) => n + 1);
   }, [env, commit, mission.id]);
 
+  // A case closed in this visit ends on its final dispatch, the arrest or the
+  // stopped payment, before the debrief compares queries (SDD 8.1). A case
+  // that was already closed when the page opened goes straight to the
+  // debrief, so the scene plays once.
+  const closedOnOpen = useRef(state.status === "complete");
   useEffect(() => {
-    if (state.status === "complete") {
+    if (state.status === "complete" && closedOnOpen.current) {
       window.location.hash = href({ name: "debrief", missionId: mission.id });
     }
   }, [state.status, mission.id]);
@@ -193,6 +198,49 @@ export default function Workspace({ mission }: { mission: Mission }) {
           <a className="button" href={href({ name: "home" })}>
             Back to assignments
           </a>
+        </article>
+      </main>
+    );
+  }
+
+  if (state.status === "complete") {
+    const scene = state.dispatches.findLast((d) => d.kind === "resolved");
+    const late = state.outcome?.late ?? false;
+    return (
+      <main className="page">
+        <article
+          className="paper sheet closing"
+          aria-labelledby="closing-title"
+        >
+          <div
+            className={`motif motif--${mission.motif ?? "plain"}`}
+            aria-hidden="true"
+          />
+          <div className="sheet__body">
+            <p className="label">
+              {mission.title} ·{" "}
+              {archiveWorld.countries.find((c) => c.code === stage.location)
+                ?.name ?? stage.location}
+            </p>
+            <div className="debrief__head">
+              <h1 id="closing-title">
+                {mission.kind === "coda" ? "File closed" : "Case closed"}
+              </h1>
+              <p className="stamp stamp--land" data-testid="closing-stamp">
+                {late
+                  ? (mission.debrief.stampLate ?? mission.debrief.stampOnTime)
+                  : mission.debrief.stampOnTime}
+                <Strike cue="stamp" />
+              </p>
+            </div>
+            {scene && <Prose text={scene.text} className="closing__scene" />}
+            <a
+              className="button button--primary"
+              href={href({ name: "debrief", missionId: mission.id })}
+            >
+              Read the debrief
+            </a>
+          </div>
         </article>
       </main>
     );
