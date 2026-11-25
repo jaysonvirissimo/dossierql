@@ -34,7 +34,7 @@ not, and the operative it found. Then finish the case.
 
 ## Add to your report
 
-8. **The choice of city**: what you wrote before the travel order, word for
+8. **The choice of city**: what you wrote before each travel order, word for
    word. Say whether you looked at the map or the case board while choosing,
    and whether either one changed what you did.
 9. **The lookup from a blank editor**: the query as you first typed it,
@@ -60,8 +60,8 @@ taught." Then paste everything below the line after it. Seed the save with
 
 ## Two more things to do in Three Couriers
 
-**Before you send the travel order that follows the courier**, stop and write
-down, in this person's words:
+**Before you send each travel order that follows the courier**, stop and
+write down, in this person's words:
 
 - which city you are about to send the order to;
 - each fact on the screen that made you choose it, and where on the screen

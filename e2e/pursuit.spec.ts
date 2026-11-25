@@ -29,6 +29,14 @@ const COURIERS = `query {
   falcon: operative(codename: "TIN_FALCON") { codename organization { name } knownAssociates { codename } }
 }`;
 
+const PHIRI = `query {
+  coverName(name: "T. Phiri") {
+    name
+    operative { codename coverNames { name } }
+    sightings { id city { name country { name borders { name } currency { code name } } } }
+  }
+}`;
+
 const TRAIL = `query {
   operative(codename: "GREY_PETREL") {
     codename
@@ -80,7 +88,7 @@ test("the early pursuit identifies the courier, then catches up with him (SDD 3.
   await openTool(page, "Map");
   const leads = page.getByTestId("map-leads");
   await expect(leads.locator("li")).toHaveCount(3);
-  await expect(leads.locator("li").nth(1)).toContainText(
+  await expect(leads.locator("li").nth(0)).toContainText(
     "The Lilongwe sighting, in Lilongwe, Malawi",
   );
   // In the narrow tools panel the map still frames every lead by name, in
@@ -120,24 +128,24 @@ test("the early pursuit identifies the courier, then catches up with him (SDD 3.
   await openTool(page, "Case");
   const board = page.getByTestId("case-board");
   await board
-    .getByTestId("lead-SGT-051")
-    .getByRole("button", { name: /^Rule out/ })
-    .click();
-  await expect(board.getByTestId("lead-SGT-051")).toContainText(
-    "cannot be ruled out",
-  );
-  await board
     .getByTestId("lead-SGT-052")
     .getByRole("button", { name: /^Rule out/ })
     .click();
-  await expect(board.getByTestId("lead-SGT-052")).toHaveAttribute(
+  await expect(board.getByTestId("lead-SGT-052")).toContainText(
+    "cannot be ruled out",
+  );
+  await board
+    .getByTestId("lead-SGT-054")
+    .getByRole("button", { name: /^Rule out/ })
+    .click();
+  await expect(board.getByTestId("lead-SGT-054")).toHaveAttribute(
     "data-status",
     "ruled-out",
   );
-  await expect(draft(page)).toContainText("code MWK");
+  await expect(draft(page)).toContainText("code KES");
   // Until the form has a country, the journey has no price, because the
   // price of the next stage's journey would give the answer away.
-  await choose(page, "Sighting", "SGT-051");
+  await choose(page, "Sighting", "SGT-052");
   await expect(draft(page).getByRole("button", { name: /^Travel/ })).toHaveText(
     "Travel",
   );
@@ -154,18 +162,45 @@ test("the early pursuit identifies the courier, then catches up with him (SDD 3.
     .getByRole("button", { name: "Choose on the form" })
     .click();
   await expect(draft(page).getByLabel("Country of the sighting")).toHaveValue(
-    "ZM",
+    "MW",
   );
   await expect(
     draft(page).getByRole("button", { name: /^Travel/ }),
   ).toContainText("hours");
   await submit(page, /^Travel/);
 
-  // The player lands just after the courier has left.
+  // Lilongwe: the courier has gone on, under a new name, which the dossier
+  // now holds once a response returns it.
+  await expect(
+    page.getByText(/signed the\s+bureau's book as T\. Phiri/).first(),
+  ).toBeVisible();
+  await send(page, PHIRI);
+  await openTool(page, "Dossiers");
+  await expect(page.getByTestId("quarry")).toContainText("T. Phiri");
+  await openTool(page, "Case");
+  const next = page.getByTestId("case-board");
+  await expect(next.locator(".board__lead")).toHaveCount(2);
+  await next
+    .getByTestId("lead-SGT-055")
+    .getByRole("button", { name: /^Rule out/ })
+    .click();
+  await expect(next.getByTestId("lead-SGT-055")).toHaveAttribute(
+    "data-status",
+    "ruled-out",
+  );
+  await choose(page, "Sighting", "SGT-051");
+  await choose(page, "Country of the sighting", "ZM");
+  await submit(page, /^Travel/);
+
+  // Lusaka: the player lands just after the courier has left, and the map
+  // shows both journeys.
   await expect(
     page.getByText(/left an hour before your\s+plane came in/).first(),
   ).toBeVisible();
   await expect(page.getByText(/lodged three payments/).first()).toBeVisible();
+  await openTool(page, "Map");
+  await expect(page.getByTestId("route")).toContainText("Tanzania to Malawi");
+  await expect(page.getByTestId("route")).toContainText("Malawi to Zambia");
 });
 
 const BORDERS_ONLY = `query {
@@ -187,19 +222,19 @@ test("a field check on a wrong turn is drawn as a visit, and the player stays pu
   await choose(page, "Courier", "GREY_PETREL");
   await submit(page, "Submit deduction");
 
-  // The borders alone leave Lilongwe half proved: Malawi borders Tanzania,
-  // and nothing yet says which kwacha the receipt was for.
+  // The borders alone leave Nairobi half proved: Kenya borders Tanzania,
+  // and nothing yet says which currency the receipt was for.
   // The travel order waits until the other sightings are ruled out, so the
   // card on the case board offers the check, at the price it shows.
   await send(page, BORDERS_ONLY);
   await openTool(page, "Case");
-  const lilongwe = page.getByTestId("lead-SGT-052");
-  await expect(lilongwe.getByTestId("lead-prices")).toContainText(
+  const nairobi = page.getByTestId("lead-SGT-054");
+  await expect(nairobi.getByTestId("lead-prices")).toContainText(
     "A field check sends someone to the place",
   );
-  await lilongwe.getByRole("button", { name: /Order a field check/ }).click();
-  await expect(lilongwe).toHaveAttribute("data-status", "field-checked");
-  await expect(draft(page)).toContainText("Malawian kwacha");
+  await nairobi.getByRole("button", { name: /Order a field check/ }).click();
+  await expect(nairobi).toHaveAttribute("data-status", "field-checked");
+  await expect(draft(page)).toContainText("Kenyan shilling");
 
   // The map draws the visit out and back, and the player is still in
   // Tanzania.
@@ -209,6 +244,6 @@ test("a field check on a wrong turn is drawn as a visit, and the player stays pu
   );
   await expect(page.getByTestId("map-visit")).toHaveCount(1);
   await expect(page.getByTestId("route")).toContainText(
-    "A field check from Tanzania to Lilongwe, Malawi, and back",
+    "A field check from Tanzania to Nairobi, Kenya, and back",
   );
 });

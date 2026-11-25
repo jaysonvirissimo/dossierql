@@ -30,7 +30,7 @@ Operative:
     knownAssociates: [MARBLE_HERON]
   GREY_PETREL:
     codename: GREY_PETREL
-    coverNames: [a-serrano]
+    coverNames: [a-serrano, t-phiri]
     organization: parallax-circle
     lastKnownLocation: lusaka
     knownAssociates: [OPAL_WREN, IRON_FINCH, MARBLE_HERON]
@@ -102,6 +102,7 @@ CoverName:
   dr-lund: { name: Dr. Lund }
   d-lund: { name: D. Lund }
   a-serrano: { name: A. Serrano }
+  t-phiri: { name: T. Phiri }
   p-okello: { name: P. Okello }
   frau-keller: { name: Frau Keller }
   j-novak: { name: J. Novak }

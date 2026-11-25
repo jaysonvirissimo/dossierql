@@ -1204,6 +1204,7 @@ describe("the quarry in the Dossiers tab (SDD 3.4)", () => {
 
   it("is shown once a stage has identified it", () => {
     expect(quarryShown(mission("three-couriers"), "trail")).toBe(true);
+    expect(quarryShown(mission("three-couriers"), "lilongwe")).toBe(true);
   });
 
   it("is shown at a warrant for the quarry, and from the first stage of a case whose briefing gives it", () => {

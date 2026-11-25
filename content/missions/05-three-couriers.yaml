@@ -33,10 +33,12 @@ debrief:
     files come back side by side, each under its alias. One request costs
     one hour, where three separate requests would have cost three.
   geography: >
-    Zambia and Malawi both border Tanzania, and both call their money
-    the kwacha. The Zambian kwacha has the code ZMW and the Malawian
-    kwacha has the code MWK. The Comoros are islands in the Mozambique
-    Channel and border no one.
+    Zambia and Malawi both border Tanzania, and they border each other.
+    Both call their money the kwacha. The Malawian kwacha has the code
+    MWK and the Zambian kwacha has the code ZMW, so a courier who
+    crosses from Malawi into Zambia changes kwacha for kwacha. Kenya
+    borders Tanzania too, and pays in shillings. The Comoros are islands
+    in the Mozambique Channel and border no one.
 
 stages:
   zanzibar:
@@ -188,12 +190,12 @@ stages:
 
   trail:
     location: TZ
-    objective: Identify the sighting that is GREY_PETREL and the country it was in.
+    objective: Identify the sighting that is GREY_PETREL's first stop and the country it was in.
 
     briefing: |
       Three watchers have each filed a sighting under GREY_PETREL
-      since the night the couriers left: one in Lusaka, one in
-      Lilongwe, and one in Moroni. The case board lists the three
+      since the night the couriers left: one in Lilongwe, one in
+      Moroni, and one in Nairobi. The case board lists the three
       sightings, and the map shows where each city is and how long
       the journey there would take. Only one of the watchers saw
       GREY_PETREL. The payment clears when the clock runs out, and the
@@ -214,9 +216,9 @@ stages:
           $sighting.city.country.borders: Country:TZ
       - text: >
           Before crossing, the courier changed shillings into kwacha.
-          The receipt from the bureau gives the currency's code as ZMW.
+          The receipt from the bureau gives the currency's code as MWK.
         constraint:
-          $sighting.city.country.currency.code: ZMW
+          $sighting.city.country.currency.code: MWK
           $sighting.city.country: $country
 
     scaffold:
@@ -233,7 +235,7 @@ stages:
     hints:
       nudge: >
         One sighting is in a country that borders Tanzania and uses the
-        currency with the code ZMW. Each of the other two fails one of
+        currency with the code MWK. Each of the other two fails one of
         those two tests.
       concept: >
         Open sightings inside GREY_PETREL's file. Inside each sighting,
@@ -249,8 +251,8 @@ stages:
 
     solution:
       type: destination
-      sighting: SGT-051
-      country: ZM
+      sighting: SGT-052
+      country: MW
     labels:
       sighting: Sighting
       country: Country of the sighting
@@ -277,6 +279,207 @@ stages:
                 field: country
                 equals: Country:$country
               - entity: Country:TZ
+                field: borders
+                includes: Country:$country
+      - id: currency
+        prompt: The sighting was in a country whose currency has the code MWK.
+        evidenceSets:
+          - facts:
+              - entity: Sighting:$sighting
+                field: city
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: currency
+                equals: Currency:$currency
+              - entity: Currency:$currency
+                field: code
+                equals: MWK
+          - facts:
+              - entity: Sighting:$sighting
+                field: city
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Currency:$currency
+                field: code
+                equals: MWK
+              - entity: Currency:$currency
+                field: countries
+                includes: Country:$country
+
+    leads:
+      SGT-052:
+        label: The Lilongwe sighting
+        city: lilongwe
+      SGT-053:
+        label: The Moroni sighting
+        city: moroni
+      SGT-054:
+        label: The Nairobi sighting
+        city: nairobi
+
+    leadOutcomes:
+      SGT-053:
+        location: KM
+        refutation:
+          claim: border
+          facts:
+            - entity: Sighting:$sighting
+              field: city
+              equals: City:$city
+            - entity: City:$city
+              field: country
+              equals: Country:$country
+            - entity: Country:$country
+              field: borders
+              excludes: Country:TZ
+        ruledOut: |
+          Moroni's watcher saw somebody come off the ferry. The Comoros
+          are islands, and nobody crosses into them by land.
+      SGT-054:
+        location: KE
+        refutation:
+          claim: currency
+          facts:
+            - entity: Sighting:$sighting
+              field: city
+              equals: City:$city
+            - entity: City:$city
+              field: country
+              equals: Country:$country
+            - entity: Country:$country
+              field: currency
+              equals: Currency:$currency
+            - entity: Currency:$currency
+              field: code
+              equals: KES
+        ruledOut: |
+          Nairobi's watcher did see somebody come up the road from
+          Tanzania. Kenya pays in shillings, and its currency has the
+          code KES, not MWK.
+        fieldCheck: |
+          Nairobi is cool at its height above the sea, and the morning
+          traffic hardly moves round the railway station. The watcher
+          confirms that the traveller came up the road from the border
+          with Tanzania. The clerk at the bureau by the station changes
+          money into the Kenyan shilling, and asks what code the
+          courier's receipt gives for its currency.
+
+    resolved: |
+      Travel order approved. The plane comes down over red earth and
+      tobacco fields at Lilongwe, a wide, low city on a high plateau.
+      GREY_PETREL left the night before you landed. The clerk at the
+      bureau beside the bus station remembers the courier, who paid in
+      Malawian kwacha and then changed the kwacha for another kwacha.
+      The courier signed the bureau's book as T. Phiri, not as
+      A. Serrano, and asked for the long-distance buses.
+
+    referenceSolution: |
+      query {
+        operative(codename: "GREY_PETREL") {
+          codename
+          sightings {
+            id
+            city { name country { name borders { name } currency { code name } } }
+          }
+        }
+      }
+
+    next: lilongwe
+
+  lilongwe:
+    location: MW
+    objective: Identify the sighting of T. Phiri that is GREY_PETREL's next stop and the country it was in.
+
+    briefing: |
+      GREY_PETREL is travelling as T. Phiri now, and the courier's file
+      lists the name. Three sightings give it. The bureau here filed
+      one, in Lilongwe, when the courier signed its book. Two watchers
+      filed the others, one in Lusaka and one in Maputo, and the case
+      board lists those two. None of the three is filed under
+      GREY_PETREL, so you find them through the name.
+
+      Your travel order goes to the country of the sighting that was
+      the courier, as it did from Tanzania.
+
+    clues:
+      - text: >
+          The sighting gives the name T. Phiri.
+        constraint:
+          $sighting.nameGiven: CoverName:t-phiri
+      - text: >
+          The courier left Malawi by road, across a land border.
+        constraint:
+          $sighting.city.country.borders: Country:MW
+      - text: >
+          The bureau in Lilongwe changed the courier's Malawian kwacha
+          into another kwacha. Its receipt gives the code ZMW.
+        constraint:
+          $sighting.city.country.currency.code: ZMW
+          $sighting.city.country: $country
+
+    scaffold:
+      level: partial
+      starterQuery: |
+        query {
+          coverName(name: "T. Phiri") {
+            name
+            # Where was this name given? The form asks about the
+            # borders of that country and the code of its currency.
+          }
+        }
+
+    hints:
+      nudge: >
+        One of the two sightings is in a country that borders Malawi and
+        uses the currency with the code ZMW. The other borders Malawi
+        too, and fails the second test.
+      concept: >
+        Open sightings inside the cover name T. Phiri. Inside each
+        sighting, open city, and inside the city open country. Ask for
+        the country's borders and its currency.
+      schema: >
+        Look at CoverName.sightings, Sighting.city, City.country,
+        Country.borders, and Country.currency.
+      skeleton: |
+        coverName(name: "T. Phiri") {
+          sightings { id city { name country { name borders { name } currency { code name } } } }
+        }
+
+    solution:
+      type: destination
+      sighting: SGT-051
+      country: ZM
+    labels:
+      sighting: Sighting
+      country: Country of the sighting
+
+    claims:
+      - id: border
+        prompt: The sighting was in a country that borders Malawi.
+        evidenceSets:
+          - facts:
+              - entity: Sighting:$sighting
+                field: city
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:$country
+                field: borders
+                includes: Country:MW
+          - facts:
+              - entity: Sighting:$sighting
+                field: city
+                equals: City:$city
+              - entity: City:$city
+                field: country
+                equals: Country:$country
+              - entity: Country:MW
                 field: borders
                 includes: Country:$country
       - id: currency
@@ -313,16 +516,13 @@ stages:
       SGT-051:
         label: The Lusaka sighting
         city: lusaka
-      SGT-052:
-        label: The Lilongwe sighting
-        city: lilongwe
-      SGT-053:
-        label: The Moroni sighting
-        city: moroni
+      SGT-055:
+        label: The Maputo sighting
+        city: maputo
 
     leadOutcomes:
-      SGT-052:
-        location: MW
+      SGT-055:
+        location: MZ
         refutation:
           claim: currency
           facts:
@@ -337,50 +537,32 @@ stages:
               equals: Currency:$currency
             - entity: Currency:$currency
               field: code
-              equals: MWK
+              equals: MZN
         ruledOut: |
-          Lilongwe's watcher did see somebody pay in kwacha. Malawi's
-          kwacha has the code MWK, and the receipt from the bureau
-          does not.
+          Maputo's watcher did see a T. Phiri come down from the north
+          and ask where to change money. Mozambique's currency has the
+          code MZN, and the receipt from Lilongwe does not.
         fieldCheck: |
-          Lilongwe spreads wide across a high plateau, and bicycles
-          crowd the road past the market in the old town. The watcher
-          confirms that the traveller came over the land border from
-          Tanzania. The clerk at the bureau beside the market changes
-          shillings into Malawian kwacha all day, and asks what code
-          the courier's receipt gives for its kwacha.
-      SGT-053:
-        location: KM
-        refutation:
-          claim: border
-          facts:
-            - entity: Sighting:$sighting
-              field: city
-              equals: City:$city
-            - entity: City:$city
-              field: country
-              equals: Country:$country
-            - entity: Country:$country
-              field: borders
-              excludes: Country:TZ
-        ruledOut: |
-          Moroni's watcher saw somebody come off the ferry. The Comoros
-          are islands, and nobody crosses into them by land.
+          Maputo is a city of wide avenues running down to the bay, and
+          the coach station is loud with hawkers. The watcher confirms
+          that the traveller came down from the border with Malawi. The
+          clerk at the exchange counter pays out the Mozambican metical,
+          and asks what code the courier's receipt from Lilongwe gives.
 
     resolved: |
       Travel order approved. The plane crosses hours of dry bush and
       comes down at Lusaka, a city on a high plateau, far from any
       sea, with jacaranda trees along its avenues. GREY_PETREL was at
       a bank off Cairo Road this morning and left an hour before your
-      plane came in. The cashier still has the courier's payment
-      slips on the counter. One line of GREY_PETREL's file, the
-      handler, is classified above your clearance. The clerk suggests
-      asking again after a promotion or two.
+      plane came in. The cashier still has the courier's payment slips
+      on the counter. One line of GREY_PETREL's file, the handler, is
+      classified above your clearance. The clerk suggests asking
+      again after a promotion or two.
 
     referenceSolution: |
       query {
-        operative(codename: "GREY_PETREL") {
-          codename
+        coverName(name: "T. Phiri") {
+          name
           sightings {
             id
             city { name country { name borders { name } currency { code name } } }

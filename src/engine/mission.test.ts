@@ -1413,15 +1413,15 @@ describe("the records a form lists first (SDD 8.2)", () => {
       { type: "transmit" },
     );
     expect(there.stageId).toBe("trail");
-    const linked = linkedRecords(there.ledger, "Sighting:SGT-051");
-    expect(linked).toContain("City:lusaka");
-    expect(linked).toContain("Country:ZM");
-    expect(linked).not.toContain("Country:MW");
+    const linked = linkedRecords(there.ledger, "Sighting:SGT-052");
+    expect(linked).toContain("City:lilongwe");
+    expect(linked).toContain("Country:MW");
+    expect(linked).not.toContain("Country:KE");
     expect(linked).not.toContain("Country:KM");
   });
 });
 
-describe("a field check on the Lilongwe sighting in Three Couriers", () => {
+describe("a field check on the Nairobi sighting in Three Couriers", () => {
   const couriers = envFor("three-couriers");
   const play = (state: MissionState, ...actions: Action[]) =>
     actions.reduce((s, action) => act(couriers, s, action).state, state);
@@ -1448,20 +1448,20 @@ describe("a field check on the Lilongwe sighting in Three Couriers", () => {
       onTrail(),
       { type: "edit", editor: BORDERS_ONLY },
       { type: "transmit" },
-      { type: "open-lead", leadId: "SGT-052" },
-      { type: "name", leadId: "SGT-052", binding: "country", value: "MW" },
+      { type: "open-lead", leadId: "SGT-054" },
+      { type: "name", leadId: "SGT-054", binding: "country", value: "KE" },
     );
-    const draft = sent.stages.trail!.drafts["SGT-052"]!;
+    const draft = sent.stages.trail!.drafts["SGT-054"]!;
     expect(reviewDraft(trail, draft, sent.ledger).canFieldCheck).toBe(true);
     const checked = act(couriers, sent, {
       type: "field-check",
-      leadId: "SGT-052",
+      leadId: "SGT-054",
     });
     expect(checked.notice?.kind).toBe("dispatch");
     expect(checked.state.stageId).toBe("trail");
     expect(checked.state.hoursLeft).toBe(
-      sent.hoursLeft - fieldCheckCost(couriers, sent, "SGT-052"),
+      sent.hoursLeft - fieldCheckCost(couriers, sent, "SGT-054"),
     );
-    expect(checked.state.dispatches.at(-1)?.text).toContain("Malawian kwacha");
+    expect(checked.state.dispatches.at(-1)?.text).toContain("Kenyan shilling");
   });
 });

@@ -271,19 +271,34 @@ Sighting:
     nameGiven: p-okello
     note: Hired a dhow for the evening.
   # Three Couriers: the watchers who think they saw GREY_PETREL after the
-  # night the couriers left Zanzibar City.
-  SGT-051:
-    city: lusaka
-    operative: GREY_PETREL
-    nameGiven: a-serrano
-    note: Came in on the bus from the border. Asked the way to the banks.
+  # night the couriers left Zanzibar City. These three are filed under the
+  # courier.
   SGT-052:
     city: lilongwe
     operative: GREY_PETREL
     nameGiven: a-serrano
-    note: Bought a newspaper at the bus station and paid in kwacha.
+    note: Came over the border on the night bus. Bought a newspaper at the bus station and paid in kwacha.
   SGT-053:
     city: moroni
     operative: GREY_PETREL
     nameGiven: a-serrano
     note: Came off the evening ferry with one small case.
+  SGT-054:
+    city: nairobi
+    operative: GREY_PETREL
+    nameGiven: a-serrano
+    note: Came up the road from the border at Namanga. Asked for a room near the station.
+  # In Lilongwe the courier gave a new name, and these three are filed under
+  # the name alone: only a request for the name finds them.
+  SGT-056:
+    city: lilongwe
+    nameGiven: t-phiri
+    note: Changed kwacha for kwacha at the bureau by the bus station, and signed the book.
+  SGT-051:
+    city: lusaka
+    nameGiven: t-phiri
+    note: Came in on the bus from the border. Asked the way to the banks.
+  SGT-055:
+    city: maputo
+    nameGiven: t-phiri
+    note: Came down on the coach from the north. Asked where to change money.
